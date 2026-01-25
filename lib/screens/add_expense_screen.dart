@@ -55,7 +55,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF2bb961).withOpacity(isDark ? 0.1 : 0.4),
+                    Theme.of(context).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -149,14 +149,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2bb961),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 8,
-                  shadowColor: const Color(0xFF2bb961).withOpacity(0.3),
+                  shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -328,12 +328,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               TextButton(
                 onPressed: () {},
-                child: const Text(
+                child: Text(
                   'See all',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2bb961),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -372,7 +372,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             width: 1.5,
                           )
                         : isSelected
-                            ? Border.all(color: const Color(0xFF2bb961), width: 2)
+                            ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
                             : Border.all(color: Colors.transparent),
                     boxShadow: !isMore
                         ? [
@@ -434,7 +434,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             width: 16,
                             height: 16,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2bb961),
+                              color: Theme.of(context).colorScheme.primary,
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isDark ? const Color(0xFF1a2c26) : Colors.white,
@@ -489,12 +489,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 padding: const EdgeInsets.only(right: 12),
                 child: Material(
                   color: isSelected
-                      ? const Color(0xFF2bb961)
+                      ? Theme.of(context).colorScheme.primary
                       : (isDark ? const Color(0xFF1a2c26) : Colors.white),
                   borderRadius: BorderRadius.circular(16),
                   elevation: isSelected ? 8 : 0,
                   shadowColor: isSelected
-                      ? const Color(0xFF2bb961).withOpacity(0.25)
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.25)
                       : Colors.black.withOpacity(0.05),
                   child: InkWell(
                     onTap: () {

@@ -3,20 +3,18 @@ import 'package:flutter/material.dart';
 class EditPaymentMethodScreen extends StatefulWidget {
   final Map<String, dynamic>? paymentMethod;
 
-  const EditPaymentMethodScreen({
-    super.key,
-    this.paymentMethod,
-  });
+  const EditPaymentMethodScreen({super.key, this.paymentMethod});
 
   @override
-  State<EditPaymentMethodScreen> createState() => _EditPaymentMethodScreenState();
+  State<EditPaymentMethodScreen> createState() =>
+      _EditPaymentMethodScreenState();
 }
 
 class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
   String _selectedType = 'Card';
   bool _isPrimary = false;
   String _linkedBank = 'HDFC Bank';
-  Color _selectedCardColor = const Color(0xFF2bb961);
+  Color _selectedCardColor = const Color(0xFF14b8a6); // Default green color
   late TextEditingController _nameController;
   late TextEditingController _accountNumberController;
   late TextEditingController _ifscCodeController;
@@ -28,8 +26,8 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
     {'type': 'UPI', 'icon': Icons.qr_code_scanner_rounded},
   ];
 
-  final List<Color> _cardColors = [
-    const Color(0xFF2bb961), // Green
+  List<Color> get _cardColors => [
+    Theme.of(context).colorScheme.primary, // Green
     const Color(0xFF3b82f6), // Blue
     const Color(0xFF9333ea), // Purple
     const Color(0xFF1f2937), // Black
@@ -66,6 +64,12 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
     _ifscCodeController = TextEditingController();
     _selectedType = widget.paymentMethod?['type'] ?? 'Card';
     _isPrimary = widget.paymentMethod?['isPrimary'] ?? false;
+    // Update card color to theme color after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _selectedCardColor = Theme.of(context).colorScheme.primary;
+      });
+    });
   }
 
   @override
@@ -81,7 +85,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: Stack(
         children: [
           SafeArea(
@@ -89,7 +95,10 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
               children: [
                 // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -99,17 +108,23 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                           'Cancel',
                           style: TextStyle(
                             fontSize: 16,
-                            color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                            color: isDark
+                                ? const Color(0xFF9ca3af)
+                                : const Color(0xFF6b7280),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
                       Text(
-                        isEditMode ? 'Edit Payment Method' : 'Add Payment Method',
+                        isEditMode
+                            ? 'Edit Payment Method'
+                            : 'Add Payment Method',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF111827),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF111827),
                         ),
                       ),
                       const SizedBox(width: 60),
@@ -146,7 +161,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: _selectedCardColor.withOpacity(0.4),
+                                        color: _selectedCardColor.withOpacity(
+                                          0.4,
+                                        ),
                                         blurRadius: 35,
                                         offset: const Offset(0, 15),
                                         spreadRadius: -5,
@@ -163,7 +180,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                           width: 160,
                                           height: 160,
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.1),
+                                            color: Colors.white.withOpacity(
+                                              0.1,
+                                            ),
                                             shape: BoxShape.circle,
                                           ),
                                         ),
@@ -175,7 +194,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                           width: 128,
                                           height: 128,
                                           decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.1),
+                                            color: Colors.black.withOpacity(
+                                              0.1,
+                                            ),
                                             shape: BoxShape.circle,
                                           ),
                                         ),
@@ -184,40 +205,51 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                       Padding(
                                         padding: const EdgeInsets.all(24),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             // Bank name and contactless icon
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
                                                       'BANK NAME',
                                                       style: TextStyle(
                                                         fontSize: 10,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: Colors.white.withOpacity(0.8),
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: Colors.white
+                                                            .withOpacity(0.8),
                                                         letterSpacing: 1.2,
                                                       ),
                                                     ),
                                                     const SizedBox(height: 2),
                                                     Text(
-                                                      _nameController.text.isEmpty
+                                                      _nameController
+                                                              .text
+                                                              .isEmpty
                                                           ? 'HDFC Regalia'
-                                                          : _nameController.text,
+                                                          : _nameController
+                                                                .text,
                                                       style: const TextStyle(
                                                         fontSize: 18,
-                                                        fontWeight: FontWeight.bold,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                         color: Colors.white,
                                                         letterSpacing: 0.5,
                                                       ),
                                                     ),
                                                   ],
                                                 ),
-                                                const Icon(
+                                                Icon(
                                                   Icons.contactless_rounded,
                                                   color: Colors.white,
                                                   size: 24,
@@ -231,15 +263,22 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                                   width: 40,
                                                   height: 28,
                                                   decoration: BoxDecoration(
-                                                    color: const Color(0xFFfbbf24).withOpacity(0.9),
-                                                    borderRadius: BorderRadius.circular(4),
+                                                    color: const Color(
+                                                      0xFFfbbf24,
+                                                    ).withOpacity(0.9),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          4,
+                                                        ),
                                                   ),
                                                   child: Center(
                                                     child: Container(
                                                       width: 24,
                                                       height: 2,
                                                       decoration: BoxDecoration(
-                                                        color: const Color(0xFFb45309).withOpacity(0.5),
+                                                        color: const Color(
+                                                          0xFFb45309,
+                                                        ).withOpacity(0.5),
                                                       ),
                                                     ),
                                                   ),
@@ -248,11 +287,16 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                             ),
                                             // Card number and logo
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
                                               children: [
                                                 Text(
-                                                  _ifscCodeController.text.isEmpty
+                                                  _ifscCodeController
+                                                          .text
+                                                          .isEmpty
                                                       ? '**** 1234'
                                                       : '**** ${_ifscCodeController.text}',
                                                   style: const TextStyle(
@@ -268,7 +312,8 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                                   style: TextStyle(
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.bold,
-                                                    color: Colors.white.withOpacity(0.8),
+                                                    color: Colors.white
+                                                        .withOpacity(0.8),
                                                     letterSpacing: 1,
                                                   ),
                                                 ),
@@ -280,115 +325,134 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     ],
                                   ),
                                 ),
-                              ] else
-                                ...[
-                                  // Circular icon for other types
-                                  Stack(
-                                    alignment: Alignment.center,
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      // Glow effect
-                                      Container(
-                                        width: 144,
-                                        height: 144,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF2bb961).withOpacity(0.2),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Container(
-                                            width: 128,
-                                            height: 128,
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                                colors: isDark
-                                                    ? [
-                                                        const Color(0xFF2c3035),
-                                                        const Color(0xFF1f2327),
-                                                      ]
-                                                    : [
-                                                        Colors.white,
-                                                        const Color(0xFFf9fafb),
-                                                      ],
-                                              ),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: isDark
-                                                    ? const Color(0xFF131f17)
-                                                    : const Color(0xFFf6f8f7),
-                                                width: 6,
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black.withOpacity(0.08),
-                                                  blurRadius: 30,
-                                                  offset: const Offset(0, 8),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Icon(
-                                              methodTypes.firstWhere((m) => m['type'] == _selectedType)['icon'],
-                                              size: 48,
-                                              color: const Color(0xFF2bb961),
-                                            ),
-                                          ),
-                                        ),
+                              ] else ...[
+                                // Circular icon for other types
+                                Stack(
+                                  alignment: Alignment.center,
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    // Glow effect
+                                    Container(
+                                      width: 144,
+                                      height: 144,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary.withOpacity(0.2),
+                                        shape: BoxShape.circle,
                                       ),
-                                      // Checkmark badge
-                                      Positioned(
-                                        bottom: 8,
-                                        right: 8,
+                                      child: Center(
                                         child: Container(
-                                          width: 40,
-                                          height: 40,
+                                          width: 128,
+                                          height: 128,
                                           decoration: BoxDecoration(
-                                            color: isDark ? const Color(0xFF2c3035) : Colors.white,
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: isDark
+                                                  ? [
+                                                      const Color(0xFF2c3035),
+                                                      const Color(0xFF1f2327),
+                                                    ]
+                                                  : [
+                                                      Colors.white,
+                                                      const Color(0xFFf9fafb),
+                                                    ],
+                                            ),
                                             shape: BoxShape.circle,
                                             border: Border.all(
                                               color: isDark
                                                   ? const Color(0xFF131f17)
                                                   : const Color(0xFFf6f8f7),
-                                              width: 4,
+                                              width: 6,
                                             ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.black.withOpacity(0.05),
-                                                blurRadius: 4,
+                                                color: Colors.black.withOpacity(
+                                                  0.08,
+                                                ),
+                                                blurRadius: 30,
+                                                offset: const Offset(0, 8),
                                               ),
                                             ],
                                           ),
-                                          child: const Icon(
-                                            Icons.check,
-                                            color: Color(0xFF2bb961),
-                                            size: 16,
+                                          child: Icon(
+                                            methodTypes.firstWhere(
+                                              (m) => m['type'] == _selectedType,
+                                            )['icon'],
+                                            size: 48,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Text(
-                                    _nameController.text.isEmpty ? _getDefaultName() : _nameController.text,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : const Color(0xFF111827),
                                     ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _getSubtitle(),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                                    // Checkmark badge
+                                    Positioned(
+                                      bottom: 8,
+                                      right: 8,
+                                      child: Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? const Color(0xFF2c3035)
+                                              : Colors.white,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: isDark
+                                                ? const Color(0xFF131f17)
+                                                : const Color(0xFFf6f8f7),
+                                            width: 4,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.05,
+                                              ),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          Icons.check,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          size: 16,
+                                        ),
+                                      ),
                                     ),
-                                    textAlign: TextAlign.center,
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                Text(
+                                  _nameController.text.isEmpty
+                                      ? _getDefaultName()
+                                      : _nameController.text,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF111827),
                                   ),
-                                ],
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _getSubtitle(),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark
+                                        ? const Color(0xFF9ca3af)
+                                        : const Color(0xFF6b7280),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -410,16 +474,25 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                 });
                               },
                               child: Container(
-                                width: (MediaQuery.of(context).size.width - 60) / 2,
-                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                width:
+                                    (MediaQuery.of(context).size.width - 60) /
+                                    2,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                  horizontal: 12,
+                                ),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF2bb961).withOpacity(0.1)
-                                      : (isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4)),
+                                      ? Theme.of(
+                                          context,
+                                        ).colorScheme.primary.withOpacity(0.1)
+                                      : (isDark
+                                            ? const Color(0xFF25282c)
+                                            : const Color(0xFFf2f5f4)),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: isSelected
-                                        ? const Color(0xFF2bb961)
+                                        ? Theme.of(context).colorScheme.primary
                                         : Colors.transparent,
                                     width: 2,
                                   ),
@@ -431,8 +504,12 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                       method['icon'],
                                       size: 20,
                                       color: isSelected
-                                          ? const Color(0xFF2bb961)
-                                          : (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)),
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : (isDark
+                                                ? const Color(0xFF9ca3af)
+                                                : const Color(0xFF6b7280)),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
@@ -441,8 +518,12 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: isSelected
-                                            ? const Color(0xFF2bb961)
-                                            : (isDark ? Colors.white : const Color(0xFF111827)),
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : (isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF111827)),
                                       ),
                                     ),
                                   ],
@@ -456,7 +537,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
 
                         // Name/Label
                         _buildLabel(
-                          _selectedType == 'Cash' ? 'Wallet Label' : '${_selectedType} Name / Label',
+                          _selectedType == 'Cash'
+                              ? 'Wallet Label'
+                              : '${_selectedType} Name / Label',
                           isDark,
                         ),
                         const SizedBox(height: 8),
@@ -465,26 +548,34 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
                           ),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                            fillColor: isDark
+                                ? const Color(0xFF25282c)
+                                : const Color(0xFFf2f5f4),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF2bb961),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
                                 width: 2,
                               ),
                             ),
                             contentPadding: const EdgeInsets.all(16),
                             hintText: _getHintText(),
                             hintStyle: TextStyle(
-                              color: (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)).withOpacity(0.5),
+                              color:
+                                  (isDark
+                                          ? const Color(0xFF9ca3af)
+                                          : const Color(0xFF6b7280))
+                                      .withOpacity(0.5),
                             ),
                           ),
                         ),
@@ -501,31 +592,39 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white : const Color(0xFF111827),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
                               letterSpacing: 2,
                             ),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                              fillColor: isDark
+                                  ? const Color(0xFF25282c)
+                                  : const Color(0xFFf2f5f4),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF2bb961),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
                               contentPadding: const EdgeInsets.all(16),
                               hintText: 'e.g., 1234',
                               hintStyle: TextStyle(
-                                color: (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)).withOpacity(0.5),
+                                color:
+                                    (isDark
+                                            ? const Color(0xFF9ca3af)
+                                            : const Color(0xFF6b7280))
+                                        .withOpacity(0.5),
                               ),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.password_rounded,
-                                color: Color(0xFF2bb961),
+                                color: Theme.of(context).colorScheme.primary,
                                 size: 20,
                               ),
                               counterText: '',
@@ -568,7 +667,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                         : null,
                                   ),
                                   child: isSelected
-                                      ? const Icon(
+                                      ? Icon(
                                           Icons.check,
                                           color: Colors.white,
                                           size: 24,
@@ -591,31 +690,39 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white : const Color(0xFF111827),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
                               letterSpacing: 2,
                             ),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                              fillColor: isDark
+                                  ? const Color(0xFF25282c)
+                                  : const Color(0xFFf2f5f4),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF2bb961),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
                               contentPadding: const EdgeInsets.all(16),
                               hintText: '•••• •••• •••• 4582',
                               hintStyle: TextStyle(
-                                color: (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)).withOpacity(0.5),
+                                color:
+                                    (isDark
+                                            ? const Color(0xFF9ca3af)
+                                            : const Color(0xFF6b7280))
+                                        .withOpacity(0.5),
                               ),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.numbers_rounded,
-                                color: Color(0xFF2bb961),
+                                color: Theme.of(context).colorScheme.primary,
                                 size: 20,
                               ),
                             ),
@@ -628,30 +735,38 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white : const Color(0xFF111827),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
                             ),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                              fillColor: isDark
+                                  ? const Color(0xFF25282c)
+                                  : const Color(0xFFf2f5f4),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF2bb961),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
                               contentPadding: const EdgeInsets.all(16),
                               hintText: 'e.g., SBIN0001543',
                               hintStyle: TextStyle(
-                                color: (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)).withOpacity(0.5),
+                                color:
+                                    (isDark
+                                            ? const Color(0xFF9ca3af)
+                                            : const Color(0xFF6b7280))
+                                        .withOpacity(0.5),
                               ),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.pin_rounded,
-                                color: Color(0xFF2bb961),
+                                color: Theme.of(context).colorScheme.primary,
                                 size: 20,
                               ),
                             ),
@@ -669,30 +784,38 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white : const Color(0xFF111827),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
                             ),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                              fillColor: isDark
+                                  ? const Color(0xFF25282c)
+                                  : const Color(0xFFf2f5f4),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF2bb961),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
                               contentPadding: const EdgeInsets.all(16),
                               hintText: 'e.g., user@okhdfcbank',
                               hintStyle: TextStyle(
-                                color: (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)).withOpacity(0.5),
+                                color:
+                                    (isDark
+                                            ? const Color(0xFF9ca3af)
+                                            : const Color(0xFF6b7280))
+                                        .withOpacity(0.5),
                               ),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.qr_code_scanner_rounded,
-                                color: Color(0xFF2bb961),
+                                color: Theme.of(context).colorScheme.primary,
                                 size: 20,
                               ),
                             ),
@@ -702,7 +825,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                           const SizedBox(height: 8),
                           Container(
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                              color: isDark
+                                  ? const Color(0xFF25282c)
+                                  : const Color(0xFFf2f5f4),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: DropdownButtonFormField<String>(
@@ -716,27 +841,38 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF2bb961),
+                                  borderSide: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     width: 2,
                                   ),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                prefixIcon: const Icon(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                prefixIcon: Icon(
                                   Icons.account_balance_rounded,
-                                  color: Color(0xFF2bb961),
+                                  color: Theme.of(context).colorScheme.primary,
                                   size: 20,
                                 ),
                               ),
-                              dropdownColor: isDark ? const Color(0xFF2c3035) : Colors.white,
+                              dropdownColor: isDark
+                                  ? const Color(0xFF2c3035)
+                                  : Colors.white,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: isDark ? Colors.white : const Color(0xFF111827),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF111827),
                               ),
                               icon: Icon(
                                 Icons.keyboard_arrow_down_rounded,
-                                color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                                color: isDark
+                                    ? const Color(0xFF9ca3af)
+                                    : const Color(0xFF6b7280),
                               ),
                               items: _indianBanks.map((String bank) {
                                 return DropdownMenuItem<String>(
@@ -761,7 +897,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                            color: isDark
+                                ? const Color(0xFF25282c)
+                                : const Color(0xFFf2f5f4),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -775,7 +913,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: isDark ? Colors.white : const Color(0xFF111827),
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF111827),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -783,7 +923,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                       'Default for new transactions',
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                                        color: isDark
+                                            ? const Color(0xFF9ca3af)
+                                            : const Color(0xFF6b7280),
                                       ),
                                     ),
                                   ],
@@ -796,7 +938,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     _isPrimary = value;
                                   });
                                 },
-                                activeColor: const Color(0xFF2bb961),
+                                activeColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
                               ),
                             ],
                           ),
@@ -821,9 +965,14 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7)).withOpacity(0),
-                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7)),
-                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7)),
+                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
+                        .withOpacity(0),
+                    (isDark
+                        ? const Color(0xFF131f17)
+                        : const Color(0xFFf6f8f7)),
+                    (isDark
+                        ? const Color(0xFF131f17)
+                        : const Color(0xFFf6f8f7)),
                   ],
                 ),
               ),
@@ -835,19 +984,21 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2bb961),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
-                    shadowColor: const Color(0xFF2bb961).withOpacity(0.4),
+                    shadowColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.4),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_rounded, size: 20),
+                      Icon(Icons.check_rounded, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         isEditMode ? 'Save Changes' : 'Add Payment Method',

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class ThemeSelectionScreen extends StatefulWidget {
   const ThemeSelectionScreen({super.key});
@@ -9,15 +11,56 @@ class ThemeSelectionScreen extends StatefulWidget {
 
 class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
   String _selectedTheme = 'Emerald Green';
+  String _appliedTheme = 'Emerald Green'; // Track what's actually applied
 
-  final List<ThemeOption> _themes = [
-    ThemeOption(name: 'Emerald Green', color: const Color(0xFF2bb961)),
+  @override
+  void initState() {
+    super.initState();
+    // Load the current theme from provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      setState(() {
+        _appliedTheme = themeProvider.getCurrentThemeName();
+        _selectedTheme = _appliedTheme;
+      });
+    });
+  }
+
+  List<ThemeOption> get _allThemes => [
+    ThemeOption(name: 'Emerald Green', color: const Color(0xFF14b8a6)),
     ThemeOption(name: 'Royal Blue', color: const Color(0xFF2563eb)),
     ThemeOption(name: 'Sunset Orange', color: const Color(0xFFf97316)),
     ThemeOption(name: 'Mint Green', color: const Color(0xFF10b981)),
     ThemeOption(name: 'Deep Purple', color: const Color(0xFF9333ea)),
     ThemeOption(name: 'Neon Rose', color: const Color(0xFFf43f5e)),
+    ThemeOption(name: 'Midnight Black', color: const Color(0xFF1f2937)),
+    ThemeOption(name: 'Hot Pink', color: const Color(0xFFec4899)),
+    ThemeOption(name: 'Crimson Red', color: const Color(0xFFdc2626)),
+    ThemeOption(name: 'Electric Cyan', color: const Color(0xFF06b6d4)),
+    ThemeOption(name: 'Golden Yellow', color: const Color(0xFFfbbf24)),
   ];
+
+  List<ThemeOption> get _themes {
+    // Find the applied theme (what's currently active)
+    final applied = _allThemes.firstWhere(
+      (theme) => theme.name == _appliedTheme,
+      orElse: () => _allThemes.first,
+    );
+
+    // Create applied option with current theme color
+    final appliedWithThemeColor = ThemeOption(
+      name: applied.name,
+      color: Theme.of(context).colorScheme.primary,
+    );
+
+    // Filter out the applied theme from others
+    final others = _allThemes
+        .where((theme) => theme.name != _appliedTheme)
+        .toList();
+
+    // Return applied first, then others
+    return [appliedWithThemeColor, ...others];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +150,15 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                   height: 56,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Apply theme logic here
+                      // Apply theme via ThemeProvider
+                      final themeProvider = Provider.of<ThemeProvider>(
+                        context,
+                        listen: false,
+                      );
+                      themeProvider.setThemeByName(_selectedTheme);
+                      setState(() {
+                        _appliedTheme = _selectedTheme;
+                      });
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'manage_categories_screen.dart';
 import 'manage_payment_methods_screen.dart';
 import 'liabilities_loans_screen.dart';
 import 'money_owed_screen.dart';
 import 'theme_selection_screen.dart';
+import '../providers/theme_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,8 +15,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isDarkMode = false;
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -108,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _MenuItemData(
                             icon: Icons.attach_money_rounded,
                             title: 'Money Owed to Me',
-                            color: const Color(0xFF2bb961),
+                            color: Theme.of(context).colorScheme.primary,
                             hasBottomBorder: false,
                           ),
                         ], isDark),
@@ -127,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _MenuItemData(
                             icon: Icons.analytics_rounded,
                             title: 'Monthly Comparison',
-                            color: const Color(0xFF2bb961),
+                            color: Theme.of(context).colorScheme.primary,
                             hasBottomBorder: false,
                           ),
                         ], isDark),
@@ -153,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _MenuItemData(
                             icon: Icons.palette_rounded,
                             title: 'Theme',
-                            color: const Color(0xFF8b5cf6),
+                            color: Theme.of(context).colorScheme.primary,
                             hasBottomBorder: false,
                           ),
                         ], isDark),
@@ -274,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF2bb961).withOpacity(0.1),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     Colors.transparent,
                   ],
                   begin: Alignment.topRight,
@@ -310,7 +310,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       size: 36,
                       color: isDark
                           ? const Color(0xFF34d399)
-                          : const Color(0xFF2bb961),
+                          : Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   Positioned(
@@ -325,8 +325,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       padding: const EdgeInsets.all(3),
                       child: Container(
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2bb961),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -358,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         letterSpacing: 1.2,
                         color: isDark
                             ? const Color(0xFF34d399)
-                            : const Color(0xFF2bb961),
+                            : Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ],
@@ -510,14 +510,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               if (item.isToggle)
-                Switch(
-                  value: _isDarkMode,
-                  onChanged: (value) {
-                    setState(() {
-                      _isDarkMode = value;
-                    });
+                Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, _) {
+                    return Switch(
+                      value: themeProvider.isDarkMode,
+                      onChanged: (value) {
+                        themeProvider.setDarkMode(value);
+                      },
+                      activeColor: Theme.of(context).colorScheme.primary,
+                    );
                   },
-                  activeColor: const Color(0xFF2bb961),
                 )
               else
                 Icon(
@@ -535,7 +537,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildNavItem(IconData icon, String label, int index, bool isDark) {
     final isSelected = index == 3; // Profile is always selected on this screen
-    final primaryColor = const Color(0xFF2bb961);
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return InkWell(
       onTap: () {

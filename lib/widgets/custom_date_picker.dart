@@ -10,7 +10,11 @@ class CustomDatePicker extends StatefulWidget {
     required this.onDateSelected,
   });
 
-  static void show(BuildContext context, {required DateTime initialDate, required Function(DateTime) onDateSelected}) {
+  static void show(
+    BuildContext context, {
+    required DateTime initialDate,
+    required Function(DateTime) onDateSelected,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -30,10 +34,28 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
   late DateTime _currentMonth;
   late DateTime _selectedDate;
 
-  final List<String> _weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  final List<String> _weekDays = [
+    'SUN',
+    'MON',
+    'TUE',
+    'WED',
+    'THU',
+    'FRI',
+    'SAT',
+  ];
   final List<String> _months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   @override
@@ -45,7 +67,10 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
 
   void _changeMonth(int increment) {
     setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + increment);
+      _currentMonth = DateTime(
+        _currentMonth.year,
+        _currentMonth.month + increment,
+      );
     });
   }
 
@@ -65,7 +90,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF2bb961);
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -89,7 +114,9 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
               width: 48,
               height: 6,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFe2e8f0),
+                color: isDark
+                    ? const Color(0xFF334155).withOpacity(0.5)
+                    : const Color(0xFFe2e8f0),
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -130,18 +157,22 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: _weekDays.map((day) => SizedBox(
-                width: 36,
-                child: Text(
-                  day,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF94a3b8),
-                  ),
-                ),
-              )).toList(),
+              children: _weekDays
+                  .map(
+                    (day) => SizedBox(
+                      width: 36,
+                      child: Text(
+                        day,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF94a3b8),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
 
@@ -161,7 +192,12 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
-                _buildQuickSelectButton('Today', DateTime.now(), isDark, primaryColor),
+                _buildQuickSelectButton(
+                  'Today',
+                  DateTime.now(),
+                  isDark,
+                  primaryColor,
+                ),
                 const SizedBox(width: 8),
                 _buildQuickSelectButton(
                   'Yesterday',
@@ -202,15 +238,12 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                 ),
                 child: const Text(
                   'Apply',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
           ),
-          
+
           // Bottom Safe Area
           SizedBox(height: MediaQuery.of(context).viewPadding.bottom),
         ],
@@ -218,7 +251,11 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     );
   }
 
-  Widget _buildNavButton({required IconData icon, required VoidCallback onTap, required bool isDark}) {
+  Widget _buildNavButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -229,11 +266,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
           shape: BoxShape.circle,
           color: Colors.transparent,
         ),
-        child: Icon(
-          icon,
-          size: 22,
-          color: const Color(0xFF94a3b8),
-        ),
+        child: Icon(icon, size: 22, color: const Color(0xFF94a3b8)),
       ),
     );
   }
@@ -258,7 +291,11 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                 return const SizedBox(width: 36, height: 36);
               }
 
-              final date = DateTime(_currentMonth.year, _currentMonth.month, dayNumber);
+              final date = DateTime(
+                _currentMonth.year,
+                _currentMonth.month,
+                dayNumber,
+              );
               final isSelected = _isSameDay(date, _selectedDate);
               final isToday = _isSameDay(date, DateTime.now());
 
@@ -293,10 +330,14 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                       '$dayNumber',
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
                         color: isSelected
                             ? Colors.white
-                            : (isDark ? const Color(0xFFcbd5e1) : const Color(0xFF334155)),
+                            : (isDark
+                                  ? const Color(0xFFcbd5e1)
+                                  : const Color(0xFF334155)),
                       ),
                     ),
                   ),
@@ -309,10 +350,15 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     );
   }
 
-  Widget _buildQuickSelectButton(String label, DateTime date, bool isDark, Color primaryColor) {
+  Widget _buildQuickSelectButton(
+    String label,
+    DateTime date,
+    bool isDark,
+    Color primaryColor,
+  ) {
     final isSelected = label == "Today" && _isSameDay(date, _selectedDate);
     // Simple logic for quick selects highlighting. For "Last 7 Days" it might be a range, but for now treating as single date select/shortcut
-    
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -326,7 +372,9 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         decoration: BoxDecoration(
           color: isSelected
               ? primaryColor.withOpacity(0.1)
-              : (isDark ? const Color(0xFF1e293b).withOpacity(0.5) : const Color(0xFFf1f5f9)),
+              : (isDark
+                    ? const Color(0xFF1e293b).withOpacity(0.5)
+                    : const Color(0xFFf1f5f9)),
           borderRadius: BorderRadius.circular(20),
           border: isSelected
               ? Border.all(color: primaryColor.withOpacity(0.2))

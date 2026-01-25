@@ -38,7 +38,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF2bb961).withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -136,13 +136,13 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2bb961),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 4,
-                    shadowColor: const Color(0xFF2bb961).withOpacity(0.3),
+                    shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                   ),
                   child: const Text(
                     'Confirm Update',
@@ -347,7 +347,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   color: const Color(0xFF6366f1).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.payments_rounded,
                   color: Color(0xFF6366f1),
                   size: 18,
@@ -397,8 +397,8 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF2bb961),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   contentPadding: const EdgeInsets.only(left: 40, right: 16, top: 12, bottom: 12),
@@ -452,10 +452,10 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             ),
             Text(
               '${_progressPercentage.toInt()}%',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2bb961),
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],
@@ -466,10 +466,10 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             trackHeight: 4,
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
-            activeTrackColor: const Color(0xFF2bb961),
+            activeTrackColor: Theme.of(context).colorScheme.primary,
             inactiveTrackColor: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
-            thumbColor: const Color(0xFF2bb961),
-            overlayColor: const Color(0xFF2bb961).withOpacity(0.2),
+            thumbColor: Theme.of(context).colorScheme.primary,
+            overlayColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
           ),
           child: Slider(
             value: _progressPercentage,

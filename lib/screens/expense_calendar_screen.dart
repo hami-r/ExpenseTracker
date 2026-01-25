@@ -46,12 +46,16 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     31: 200.0,
   };
 
-  Color _getHeatmapColor(double? amount) {
+  Color _getHeatmapColor(double? amount, BuildContext context) {
     if (amount == null || amount == 0) return Colors.transparent;
-    if (amount < 300) return const Color(0xFFbbf7d0); // heatmap-low
-    if (amount < 600) return const Color(0xFF4ade80); // heatmap-med
-    if (amount < 900) return const Color(0xFF16a34a); // heatmap-high
-    return const Color(0xFF15803d); // heatmap-max
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    // Create heatmap gradient based on theme's primary color
+    if (amount < 300) return primaryColor.withOpacity(0.2); // heatmap-low (20%)
+    if (amount < 600) return primaryColor.withOpacity(0.5); // heatmap-med (50%)
+    if (amount < 900)
+      return primaryColor.withOpacity(0.75); // heatmap-high (75%)
+    return primaryColor; // heatmap-max (100%)
   }
 
   bool _isDayWithDot(int day) {
@@ -64,7 +68,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: SafeArea(
         child: Column(
           children: [
@@ -82,9 +88,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                   children: [
                     _buildWeekdayHeaders(),
                     const SizedBox(height: 8),
-                    Expanded(
-                      child: _buildCalendarGrid(isDark),
-                    ),
+                    Expanded(child: _buildCalendarGrid(isDark)),
                   ],
                 ),
               ),
@@ -134,7 +138,10 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
           IconButton(
             onPressed: () {
               setState(() {
-                _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
+                _currentMonth = DateTime(
+                  _currentMonth.year,
+                  _currentMonth.month - 1,
+                );
               });
             },
             icon: Icon(
@@ -153,7 +160,10 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
           IconButton(
             onPressed: () {
               setState(() {
-                _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
+                _currentMonth = DateTime(
+                  _currentMonth.year,
+                  _currentMonth.month + 1,
+                );
               });
             },
             icon: Icon(
@@ -170,30 +180,43 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     final weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: weekdays.map((day) => Expanded(
-        child: Center(
-          child: Text(
-            day.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-              color: Color(0xFF9ca3af),
+      children: weekdays
+          .map(
+            (day) => Expanded(
+              child: Center(
+                child: Text(
+                  day.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    color: Color(0xFF9ca3af),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      )).toList(),
+          )
+          .toList(),
     );
   }
 
   Widget _buildCalendarGrid(bool isDark) {
-    final firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
-    final lastDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    final firstDayOfMonth = DateTime(
+      _currentMonth.year,
+      _currentMonth.month,
+      1,
+    );
+    final lastDayOfMonth = DateTime(
+      _currentMonth.year,
+      _currentMonth.month + 1,
+      0,
+    );
     final daysInMonth = lastDayOfMonth.day;
     final firstWeekday = firstDayOfMonth.weekday % 7;
 
     final today = DateTime.now();
-    final isCurrentMonth = _currentMonth.year == today.year && _currentMonth.month == today.month;
+    final isCurrentMonth =
+        _currentMonth.year == today.year && _currentMonth.month == today.month;
 
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -210,7 +233,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
 
         final day = index - firstWeekday + 1;
         final amount = expensesByDay[day] ?? 0;
-        final color = _getHeatmapColor(amount);
+        final color = _getHeatmapColor(amount, context);
         final hasDot = _isDayWithDot(day);
         final isToday = isCurrentMonth && day == today.day;
 
@@ -219,10 +242,16 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     );
   }
 
-  Widget _buildDayTile(int day, Color color, bool hasDot, bool isToday, bool isDark) {
+  Widget _buildDayTile(
+    int day,
+    Color color,
+    bool hasDot,
+    bool isToday,
+    bool isDark,
+  ) {
     final hasExpense = color != Colors.transparent;
-    final isLight = color == const Color(0xFFbbf7d0);
-    
+    final isLight = color.opacity < 0.3;
+
     return Material(
       color: isToday
           ? (isDark ? const Color(0xFF374151) : Colors.white)
@@ -237,7 +266,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
             borderRadius: BorderRadius.circular(8),
             border: isToday
                 ? Border.all(
-                    color: const Color(0xFF4ade80),
+                    color: Theme.of(context).colorScheme.primary,
                     width: 2,
                   )
                 : null,
@@ -249,14 +278,20 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                 '$day',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: isToday || !isLight && hasExpense ? FontWeight.bold : FontWeight.w500,
+                  fontWeight: isToday || !isLight && hasExpense
+                      ? FontWeight.bold
+                      : FontWeight.w500,
                   color: isToday
-                      ? (isDark ? const Color(0xFFf3f4f6) : const Color(0xFF111827))
+                      ? (isDark
+                            ? const Color(0xFFf3f4f6)
+                            : const Color(0xFF111827))
                       : isLight
-                          ? const Color(0xFF166534)
-                          : hasExpense
-                              ? Colors.white
-                              : (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)),
+                      ? const Color(0xFF166534)
+                      : hasExpense
+                      ? Colors.white
+                      : (isDark
+                            ? const Color(0xFF9ca3af)
+                            : const Color(0xFF6b7280)),
                 ),
               ),
               if (hasDot)
@@ -266,7 +301,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                   height: 4,
                   decoration: BoxDecoration(
                     color: isToday
-                        ? const Color(0xFF4ade80)
+                        ? Theme.of(context).colorScheme.primary
                         : Colors.white.withOpacity(0.8),
                     shape: BoxShape.circle,
                   ),
@@ -315,14 +350,19 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4ade80), Color(0xFF16a34a)],
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4ade80).withOpacity(0.4),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.4),
                       blurRadius: 20,
                     ),
                   ],
@@ -354,7 +394,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
               ),
             ),
           ),
-          
+
           Transform.translate(
             offset: const Offset(0, -32),
             child: Padding(
@@ -367,7 +407,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                          color: isDark ? const Color(0xFF1f2937) : const Color(0xFFf3f4f6),
+                          color: isDark
+                              ? const Color(0xFF1f2937)
+                              : const Color(0xFFf3f4f6),
                         ),
                       ),
                     ),
@@ -384,7 +426,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 1.2,
-                                color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF9ca3af),
+                                color: isDark
+                                    ? const Color(0xFF9ca3af)
+                                    : const Color(0xFF9ca3af),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -393,7 +437,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                               style: TextStyle(
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF111827),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF111827),
                               ),
                             ),
                           ],
@@ -407,7 +453,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 1.2,
-                                color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF9ca3af),
+                                color: isDark
+                                    ? const Color(0xFF9ca3af)
+                                    : const Color(0xFF9ca3af),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -416,7 +464,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF111827),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF111827),
                               ),
                             ),
                           ],
@@ -434,19 +484,24 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                       onTap: () {},
                       borderRadius: BorderRadius.circular(16),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         child: Row(
                           children: [
                             Container(
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10b981).withOpacity(0.1),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
                                 Icons.volunteer_activism_rounded,
-                                color: const Color(0xFF10b981),
+                                color: Theme.of(context).colorScheme.primary,
                                 size: 30,
                               ),
                             ),
@@ -460,7 +515,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : const Color(0xFF111827),
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF111827),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -472,34 +529,46 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
-                                            color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                                            color: isDark
+                                                ? const Color(0xFF9ca3af)
+                                                : const Color(0xFF6b7280),
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                       Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                        ),
                                         width: 4,
                                         height: 4,
                                         decoration: BoxDecoration(
-                                          color: isDark ? const Color(0xFF4b5563) : const Color(0xFFd1d5db),
+                                          color: isDark
+                                              ? const Color(0xFF4b5563)
+                                              : const Color(0xFFd1d5db),
                                           shape: BoxShape.circle,
                                         ),
                                       ),
-                                      const Text(
+                                      Text(
                                         'Charity',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
-                                          color: Color(0xFF10b981),
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
                                         ),
                                       ),
                                       Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                        ),
                                         width: 4,
                                         height: 4,
                                         decoration: BoxDecoration(
-                                          color: isDark ? const Color(0xFF4b5563) : const Color(0xFFd1d5db),
+                                          color: isDark
+                                              ? const Color(0xFF4b5563)
+                                              : const Color(0xFFd1d5db),
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -508,7 +577,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
-                                          color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                                          color: isDark
+                                              ? const Color(0xFF9ca3af)
+                                              : const Color(0xFF6b7280),
                                         ),
                                       ),
                                     ],
@@ -522,7 +593,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF111827),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF111827),
                               ),
                             ),
                           ],

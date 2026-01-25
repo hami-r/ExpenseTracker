@@ -57,12 +57,14 @@ class _SplashScreenState extends State<SplashScreen>
               height: MediaQuery.of(context).size.width * 0.6,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(
-                  0xFF2bb961,
-                ).withOpacity(isDark ? 0.02 : 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withOpacity(isDark ? 0.02 : 0.08),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF2bb961).withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.1),
                     blurRadius: 140,
                   ),
                 ],
@@ -77,12 +79,14 @@ class _SplashScreenState extends State<SplashScreen>
               height: MediaQuery.of(context).size.width * 0.5,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(
-                  0xFF6ee7b7,
-                ).withOpacity(isDark ? 0.02 : 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withOpacity(isDark ? 0.02 : 0.08),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6ee7b7).withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.1),
                     blurRadius: 140,
                   ),
                 ],
@@ -105,10 +109,14 @@ class _SplashScreenState extends State<SplashScreen>
                       height: 140,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF2bb961).withOpacity(0.2),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.2),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2bb961).withOpacity(0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.2),
                             blurRadius: 40,
                             spreadRadius: 10,
                           ),
@@ -129,7 +137,9 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2bb961).withOpacity(0.35),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.35),
                             blurRadius: 60,
                             spreadRadius: -10,
                           ),
@@ -138,7 +148,7 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Icon(
                         Icons.show_chart_rounded,
                         size: 64,
-                        color: Color(0xFF2bb961),
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ],
@@ -192,7 +202,9 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   child: CustomPaint(
-                    painter: _LoadingPainter(color: const Color(0xFF2bb961)),
+                    painter: _LoadingPainter(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
               ),

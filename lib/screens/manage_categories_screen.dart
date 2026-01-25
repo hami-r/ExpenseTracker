@@ -115,7 +115,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                  color: isDark
+                      ? const Color(0xFF9ca3af)
+                      : const Color(0xFF6b7280),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -132,9 +134,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
               ),
               child: const Text(
                 'Delete',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -154,7 +154,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: Stack(
         children: [
           SafeArea(
@@ -170,7 +172,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           Icons.arrow_back_rounded,
-                          color: isDark ? Colors.white : const Color(0xFF1e293b),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1e293b),
                         ),
                       ),
                       Text(
@@ -178,7 +182,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
                         ),
                       ),
                       const SizedBox(width: 40),
@@ -196,54 +202,46 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                         const SizedBox(height: 16),
 
                         // Add New Category Button
-                        Container(
+                        SizedBox(
                           width: double.infinity,
                           height: 56,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF2bb961), Color(0xFF28a355)],
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const EditCategoryScreen(),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 4,
+                              shadowColor: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.3),
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF2bb961).withOpacity(0.25),
-                                blurRadius: 15,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const EditCategoryScreen(),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_circle_rounded, size: 24),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Add New Category',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
                                   ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_circle_rounded,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Add New Category',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -259,7 +257,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.5,
-                              color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF9ca3af),
+                              color: isDark
+                                  ? const Color(0xFF94a3b8)
+                                  : const Color(0xFF9ca3af),
                             ),
                           ),
                         ),
@@ -267,9 +267,16 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                         const SizedBox(height: 12),
 
                         // Categories List
-                        ...categories.asMap().entries.map((entry) => Builder(
-                          builder: (context) => _buildCategoryCard(entry.value, entry.key, isDark, context),
-                        )),
+                        ...categories.asMap().entries.map(
+                          (entry) => Builder(
+                            builder: (context) => _buildCategoryCard(
+                              entry.value,
+                              entry.key,
+                              isDark,
+                              context,
+                            ),
+                          ),
+                        ),
 
                         const SizedBox(height: 48),
 
@@ -279,7 +286,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                             width: 48,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF334155) : const Color(0xFFd1d5db),
+                              color: isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFd1d5db),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -307,8 +316,13 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7)).withOpacity(0),
-                      (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7)),
+                      (isDark
+                              ? const Color(0xFF131f17)
+                              : const Color(0xFFf6f8f7))
+                          .withOpacity(0),
+                      (isDark
+                          ? const Color(0xFF131f17)
+                          : const Color(0xFFf6f8f7)),
                     ],
                   ),
                 ),
@@ -320,16 +334,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     );
   }
 
-  Widget _buildCategoryCard(Map<String, dynamic> category, int index, bool isDark, BuildContext context) {
+  Widget _buildCategoryCard(
+    Map<String, dynamic> category,
+    int index,
+    bool isDark,
+    BuildContext context,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF2c3035) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.transparent,
-        ),
+        border: Border.all(color: Colors.transparent),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -383,7 +400,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                   category['description'],
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF9ca3af),
+                    color: isDark
+                        ? const Color(0xFF9ca3af)
+                        : const Color(0xFF9ca3af),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -402,19 +421,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EditCategoryScreen(category: category),
+                      builder: (context) =>
+                          EditCategoryScreen(category: category),
                     ),
                   );
                 },
                 icon: Icon(
                   Icons.edit_rounded,
                   size: 20,
-                  color: isDark ? const Color(0xFF64748b) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF64748b)
+                      : const Color(0xFF64748b),
                 ),
-                constraints: const BoxConstraints(
-                  minWidth: 36,
-                  minHeight: 36,
-                ),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                 padding: EdgeInsets.zero,
                 style: IconButton.styleFrom(
                   backgroundColor: isDark
@@ -433,10 +452,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                   size: 20,
                   color: Color(0xFFef4444),
                 ),
-                constraints: const BoxConstraints(
-                  minWidth: 36,
-                  minHeight: 36,
-                ),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                 padding: EdgeInsets.zero,
                 style: IconButton.styleFrom(
                   backgroundColor: const Color(0xFFef4444).withOpacity(0.1),

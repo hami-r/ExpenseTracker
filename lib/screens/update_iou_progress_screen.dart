@@ -125,15 +125,15 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2bb961),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                       elevation: 4,
-                      shadowColor: const Color(0xFF2bb961).withOpacity(0.3),
+                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
@@ -194,7 +194,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
             color: isDark ? const Color(0xFF14b8a6).withOpacity(0.1) : const Color(0xFFccfbf1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.handshake_rounded,
             color: Color(0xFF14b8a6), // Teal color
             size: 32,
@@ -268,9 +268,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                         width: 2,
                       ),
                     ),
-                    focusedBorder: const UnderlineInputBorder(
+                    focusedBorder: UnderlineInputBorder(
                       borderSide: BorderSide(
-                        color: Color(0xFF2bb961),
+                        color: Theme.of(context).colorScheme.primary,
                         width: 2,
                       ),
                     ),
@@ -358,7 +358,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                 onChanged: (value) {
                   setState(() => _isFullyPaid = value);
                 },
-                activeColor: const Color(0xFF2bb961),
+                activeColor: Theme.of(context).colorScheme.primary,
               ),
             ],
           ),
@@ -493,12 +493,12 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                   color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
                 ),
               ),
-              const Text(
+              Text(
                 '60%',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2bb961),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],

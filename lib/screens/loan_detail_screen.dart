@@ -12,7 +12,9 @@ class LoanDetailScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: Stack(
         children: [
           // Background gradient blobs
@@ -26,7 +28,9 @@ class LoanDetailScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF2bb961).withOpacity(isDark ? 0.1 : 0.4),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -62,11 +66,14 @@ class LoanDetailScreen extends StatelessWidget {
                 Expanded(
                   child: SingleChildScrollView(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                       child: Column(
                         children: [
                           // Remaining Principal Card
-                          _buildPrincipalCard(isDark),
+                          _buildPrincipalCard(context, isDark),
 
                           const SizedBox(height: 24),
 
@@ -100,10 +107,14 @@ class LoanDetailScreen extends StatelessWidget {
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1a2c26) : Colors.white.withOpacity(0.95),
+                      color: isDark
+                          ? const Color(0xFF1a2c26)
+                          : Colors.white.withOpacity(0.95),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFe2e8f0),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -120,7 +131,8 @@ class LoanDetailScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const EditLoanDetailsScreen(),
+                              builder: (context) =>
+                                  const EditLoanDetailsScreen(),
                             ),
                           );
                         },
@@ -130,7 +142,9 @@ class LoanDetailScreen extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.edit_outlined,
-                              color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+                              color: isDark
+                                  ? const Color(0xFFcbd5e1)
+                                  : const Color(0xFF475569),
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -139,7 +153,9 @@ class LoanDetailScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF334155),
+                                color: isDark
+                                    ? const Color(0xFFcbd5e1)
+                                    : const Color(0xFF334155),
                               ),
                             ),
                           ],
@@ -148,7 +164,7 @@ class LoanDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
 
                 // Update Progress Button
@@ -156,11 +172,13 @@ class LoanDetailScreen extends StatelessWidget {
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2bb961),
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2bb961).withOpacity(0.4),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -181,7 +199,11 @@ class LoanDetailScreen extends StatelessWidget {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.trending_up_rounded, color: Colors.white, size: 24),
+                            Icon(
+                              Icons.trending_up_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Update Progress',
@@ -237,7 +259,9 @@ class LoanDetailScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
               ),
             ],
@@ -247,9 +271,7 @@ class LoanDetailScreen extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-            ),
+            decoration: const BoxDecoration(shape: BoxShape.circle),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -259,7 +281,9 @@ class LoanDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 child: Icon(
                   Icons.more_vert_rounded,
-                  color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                  color: isDark
+                      ? const Color(0xFF64748b)
+                      : const Color(0xFF94a3b8),
                   size: 20,
                 ),
               ),
@@ -270,7 +294,7 @@ class LoanDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPrincipalCard(bool isDark) {
+  Widget _buildPrincipalCard(BuildContext context, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -300,7 +324,9 @@ class LoanDetailScreen extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1,
-                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -314,7 +340,10 @@ class LoanDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFf97316).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(100),
@@ -331,7 +360,7 @@ class LoanDetailScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Text(
+                      Text(
                         'Active',
                         style: TextStyle(
                           fontSize: 11,
@@ -358,8 +387,10 @@ class LoanDetailScreen extends StatelessWidget {
                   child: CustomPaint(
                     painter: CircularProgressPainter(
                       progress: 0.58,
-                      color: const Color(0xFF2bb961),
-                      backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+                      color: Theme.of(context).colorScheme.primary,
+                      backgroundColor: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFe2e8f0),
                     ),
                   ),
                 ),
@@ -424,9 +455,7 @@ class LoanDetailScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1a2c26) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.transparent,
-            ),
+            border: Border.all(color: Colors.transparent),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -461,7 +490,9 @@ class LoanDetailScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                      color: isDark
+                          ? const Color(0xFF94a3b8)
+                          : const Color(0xFF64748b),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -519,20 +550,22 @@ class LoanDetailScreen extends StatelessWidget {
                   minimumSize: const Size(0, 0),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
+                child: Text(
                   'VIEW ALL',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1,
-                    color: Color(0xFF2bb961),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        ...payments.map((payment) => _buildPaymentItem(payment, isDark)).toList(),
+        ...payments
+            .map((payment) => _buildPaymentItem(payment, isDark))
+            .toList(),
       ],
     );
   }
@@ -561,7 +594,7 @@ class LoanDetailScreen extends StatelessWidget {
               color: const Color(0xFF10b981).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_rounded,
               color: Color(0xFF10b981),
               size: 20,
@@ -586,7 +619,9 @@ class LoanDetailScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b),
                   ),
                 ),
               ],
@@ -607,10 +642,12 @@ class LoanDetailScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10b981).withOpacity(isDark ? 0.2 : 0.1),
+                  color: const Color(
+                    0xFF10b981,
+                  ).withOpacity(isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
+                child: Text(
                   'Paid',
                   style: TextStyle(
                     fontSize: 10,

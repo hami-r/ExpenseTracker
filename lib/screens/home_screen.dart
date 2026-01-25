@@ -15,7 +15,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<double> weeklySpending = [0.75, 0.45, 0.60, 0.35, 0.85, 0.55, 0.25];
+  final List<double> weeklySpending = [
+    0.75,
+    0.45,
+    0.60,
+    0.35,
+    0.85,
+    0.55,
+    0.25,
+  ];
   final List<String> weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   @override
@@ -25,7 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final dateFormat = DateFormat('EEEE, d MMM yyyy');
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: Stack(
         children: [
           // Main content
@@ -60,7 +70,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF0f172a),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0f172a),
                               ),
                             ),
                           ],
@@ -74,7 +86,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const ExpenseCalendarScreen(),
+                                    builder: (context) =>
+                                        const ExpenseCalendarScreen(),
                                   ),
                                 );
                               },
@@ -87,7 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const DetailedSpendingAnalyticsScreen(),
+                                    builder: (context) =>
+                                        const DetailedSpendingAnalyticsScreen(),
                                   ),
                                 );
                               },
@@ -102,7 +116,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Weekly Spending Chart
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 8,
+                    ),
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -156,19 +173,37 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Stats Cards
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
-                          child: _buildStatsCard('Today', '₹ 32.0', false, isDark),
+                          child: _buildStatsCard(
+                            'Today',
+                            '₹ 32.0',
+                            false,
+                            isDark,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildStatsCard('Week', '₹ 32.0', true, isDark),
+                          child: _buildStatsCard(
+                            'Week',
+                            '₹ 32.0',
+                            true,
+                            isDark,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildStatsCard('Month', '₹ 32.0', false, isDark),
+                          child: _buildStatsCard(
+                            'Month',
+                            '₹ 32.0',
+                            false,
+                            isDark,
+                          ),
                         ),
                       ],
                     ),
@@ -232,10 +267,14 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: 112 + MediaQuery.of(context).padding.bottom,
             right: 24,
             child: Material(
-              color: const Color(0xFF2bb961), // Primary theme color
+              color: Theme.of(
+                context,
+              ).colorScheme.primary, // Primary theme color
               borderRadius: BorderRadius.circular(16),
               elevation: 8,
-              shadowColor: const Color(0xFF2bb961).withOpacity(0.4),
+              shadowColor: Theme.of(
+                context,
+              ).colorScheme.primary.withOpacity(0.4),
               child: InkWell(
                 onTap: () {
                   Navigator.push(
@@ -291,7 +330,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: SafeArea(
                 top: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -313,12 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         2,
                         isDark,
                       ),
-                      _buildNavItem(
-                        Icons.person_rounded,
-                        'Profile',
-                        3,
-                        isDark,
-                      ),
+                      _buildNavItem(Icons.person_rounded, 'Profile', 3, isDark),
                     ],
                   ),
                 ),
@@ -370,14 +407,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: isToday
-                        ? const Color(0xFF2bb961)
+                        ? Theme.of(context).colorScheme.primary
                         : isDark
-                            ? const Color(0xFF064e3b).withOpacity(0.4)
-                            : const Color(0xFFd1fae5),
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.15)
+                        : Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.2),
                     boxShadow: isToday
                         ? [
                             BoxShadow(
-                              color: const Color(0xFF2bb961).withOpacity(0.2),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.2),
                               blurRadius: 12,
                               spreadRadius: 0,
                             ),
@@ -394,10 +437,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontSize: 12,
                 fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
                 color: isToday
-                    ? const Color(0xFF059669)
+                    ? Theme.of(context).colorScheme.primary
                     : isDark
-                        ? const Color(0xFF64748b)
-                        : const Color(0xFF94a3b8),
+                    ? const Color(0xFF64748b)
+                    : const Color(0xFF94a3b8),
               ),
             ),
           ],
@@ -406,7 +449,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatsCard(String label, String value, bool isSelected, bool isDark) {
+  Widget _buildStatsCard(
+    String label,
+    String value,
+    bool isSelected,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
@@ -483,9 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Icon(
               icon,
-              color: isDark
-                  ? iconColor.withOpacity(0.8)
-                  : iconColor,
+              color: isDark ? iconColor.withOpacity(0.8) : iconColor,
               size: 24,
             ),
           ),
@@ -602,16 +648,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildNavItem(IconData icon, String label, int index, bool isDark) {
     final isSelected = _selectedIndex == index;
-    final primaryColor = const Color(0xFF2bb961);
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return InkWell(
       onTap: () {
         if (index == 3) {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ProfileScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
           );
         } else {
           setState(() {
@@ -632,8 +676,8 @@ class _HomeScreenState extends State<HomeScreen> {
               color: isSelected
                   ? primaryColor
                   : isDark
-                      ? const Color(0xFF64748b)
-                      : const Color(0xFF94a3b8),
+                  ? const Color(0xFF64748b)
+                  : const Color(0xFF94a3b8),
             ),
             const SizedBox(height: 6),
             Text(
@@ -645,8 +689,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: isSelected
                     ? primaryColor
                     : isDark
-                        ? const Color(0xFF64748b)
-                        : const Color(0xFF94a3b8),
+                    ? const Color(0xFF64748b)
+                    : const Color(0xFF94a3b8),
               ),
             ),
           ],

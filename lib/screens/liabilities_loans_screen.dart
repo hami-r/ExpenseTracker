@@ -199,7 +199,7 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                     ),
                   );
                 },
-                backgroundColor: const Color(0xFF2bb961),
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 elevation: 4,
                 shape: const CircleBorder(),
                 child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),

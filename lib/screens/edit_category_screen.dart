@@ -126,15 +126,15 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF2bb961),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
                                 width: 2,
                               ),
                             ),
                             contentPadding: const EdgeInsets.all(16),
-                            suffixIcon: const Icon(
+                            suffixIcon: Icon(
                               Icons.edit_rounded,
-                              color: Color(0xFF2bb961),
+                              color: Theme.of(context).colorScheme.primary,
                               size: 20,
                             ),
                           ),
@@ -179,7 +179,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                                       : null,
                                 ),
                                 child: isSelected
-                                    ? const Icon(
+                                    ? Icon(
                                         Icons.check,
                                         color: Colors.white,
                                         size: 24,
@@ -220,14 +220,14 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: isSelected
-                                        ? const Color(0xFF2bb961)
+                                        ? Theme.of(context).colorScheme.primary
                                         : Colors.transparent,
                                     width: 2,
                                   ),
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: const Color(0xFF2bb961).withOpacity(0.2),
+                                            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                                             blurRadius: 8,
                                           ),
                                         ]
@@ -237,7 +237,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                                   icon,
                                   size: 30,
                                   color: isSelected
-                                      ? const Color(0xFF2bb961)
+                                      ? Theme.of(context).colorScheme.primary
                                       : (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)),
                                 ),
                               ),
@@ -278,16 +278,16 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2bb961),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
-                    shadowColor: const Color(0xFF2bb961).withOpacity(0.4),
+                    shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(

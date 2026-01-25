@@ -27,7 +27,7 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: const Color(0xFF2bb961),
+              primary: Theme.of(context).colorScheme.primary,
               onPrimary: Colors.white,
               surface: isDark ? const Color(0xFF1F2937) : Colors.white,
               onSurface: isDark ? Colors.white : const Color(0xFF111827),

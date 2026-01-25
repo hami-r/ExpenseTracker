@@ -24,7 +24,7 @@ class ReceivableDetailScreen extends StatelessWidget {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2bb961).withOpacity(0.05),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
               ),
             ),
           ),
@@ -135,11 +135,11 @@ class ReceivableDetailScreen extends StatelessWidget {
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2bb961),
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2bb961).withOpacity(0.4),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

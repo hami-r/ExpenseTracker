@@ -25,7 +25,7 @@ class MoneyOwedScreen extends StatelessWidget {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2bb961).withOpacity(0.05),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
               ),
             ),
           ),
@@ -120,11 +120,11 @@ class MoneyOwedScreen extends StatelessWidget {
               height: 56,
               width: 56,
               decoration: BoxDecoration(
-                color: const Color(0xFF2bb961),
+                color: Theme.of(context).colorScheme.primary,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF2bb961).withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),

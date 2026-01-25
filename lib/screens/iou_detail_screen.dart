@@ -10,7 +10,9 @@ class IOUDetailScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: Stack(
         children: [
           // Background gradient blobs
@@ -24,7 +26,9 @@ class IOUDetailScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF2bb961).withOpacity(isDark ? 0.1 : 0.4),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -58,11 +62,14 @@ class IOUDetailScreen extends StatelessWidget {
                 // Content
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Column(
                       children: [
                         // Main Card
-                        _buildMainCard(isDark),
+                        _buildMainCard(context, isDark),
 
                         const SizedBox(height: 24),
 
@@ -95,10 +102,14 @@ class IOUDetailScreen extends StatelessWidget {
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1a2c26) : Colors.white.withOpacity(0.95),
+                      color: isDark
+                          ? const Color(0xFF1a2c26)
+                          : Colors.white.withOpacity(0.95),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFe2e8f0),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -115,7 +126,8 @@ class IOUDetailScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const EditIOUDetailsScreen(),
+                              builder: (context) =>
+                                  const EditIOUDetailsScreen(),
                             ),
                           );
                         },
@@ -125,7 +137,9 @@ class IOUDetailScreen extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.edit_outlined,
-                              color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+                              color: isDark
+                                  ? const Color(0xFFcbd5e1)
+                                  : const Color(0xFF475569),
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -134,7 +148,9 @@ class IOUDetailScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF334155),
+                                color: isDark
+                                    ? const Color(0xFFcbd5e1)
+                                    : const Color(0xFF334155),
                               ),
                             ),
                           ],
@@ -143,7 +159,7 @@ class IOUDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
 
                 // Update Progress Button
@@ -151,11 +167,13 @@ class IOUDetailScreen extends StatelessWidget {
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2bb961),
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2bb961).withOpacity(0.4),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -168,7 +186,8 @@ class IOUDetailScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const UpdateIOUProgressScreen(),
+                              builder: (context) =>
+                                  const UpdateIOUProgressScreen(),
                             ),
                           );
                         },
@@ -176,7 +195,11 @@ class IOUDetailScreen extends StatelessWidget {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.trending_up_rounded, color: Colors.white, size: 24),
+                            Icon(
+                              Icons.trending_up_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Update Progress',
@@ -233,7 +256,7 @@ class IOUDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMainCard(bool isDark) {
+  Widget _buildMainCard(BuildContext context, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -256,16 +279,20 @@ class IOUDetailScreen extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF14b8a6).withOpacity(0.1) : const Color(0xFFf0fdf9),
+              color: isDark
+                  ? const Color(0xFF14b8a6).withOpacity(0.1)
+                  : const Color(0xFFf0fdf9),
               shape: BoxShape.circle,
               border: Border.all(
-                color: isDark ? const Color(0xFF14b8a6).withOpacity(0.2) : const Color(0xFFccfbf1),
+                color: isDark
+                    ? const Color(0xFF14b8a6).withOpacity(0.2)
+                    : const Color(0xFFccfbf1),
               ),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.person_rounded,
               size: 32,
-              color: Color(0xFF2bb961),
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 12),
@@ -314,8 +341,8 @@ class IOUDetailScreen extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF2bb961),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -325,7 +352,9 @@ class IOUDetailScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                      color: isDark
+                          ? const Color(0xFF94a3b8)
+                          : const Color(0xFF64748b),
                     ),
                   ),
                 ],
@@ -335,7 +364,9 @@ class IOUDetailScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
               ),
             ],
@@ -345,7 +376,9 @@ class IOUDetailScreen extends StatelessWidget {
             height: 8,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
+              color: isDark
+                  ? const Color(0xFF334155).withOpacity(0.5)
+                  : const Color(0xFFf1f5f9),
               borderRadius: BorderRadius.circular(4),
             ),
             child: FractionallySizedBox(
@@ -353,7 +386,7 @@ class IOUDetailScreen extends StatelessWidget {
               widthFactor: 0.5,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2bb961),
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -433,7 +466,9 @@ class IOUDetailScreen extends StatelessWidget {
         children: [
           Icon(
             icon,
-            color: isPrimary ? const Color(0xFF2bb961) : const Color(0xFF94a3b8),
+            color: isPrimary
+                ? Theme.of(context).colorScheme.primary
+                : const Color(0xFF94a3b8),
             size: 20,
           ),
           const SizedBox(height: 8),
@@ -453,8 +488,8 @@ class IOUDetailScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: isPrimary 
-                  ? const Color(0xFF2bb961) 
+              color: isPrimary
+                  ? Theme.of(context).colorScheme.primary
                   : (isDark ? Colors.white : const Color(0xFF0f172a)),
             ),
           ),
@@ -462,7 +497,9 @@ class IOUDetailScreen extends StatelessWidget {
             subValue,
             style: TextStyle(
               fontSize: 10,
-              color: isPrimary ? const Color(0xFF2bb961).withOpacity(0.7) : const Color(0xFF94a3b8),
+              color: isPrimary
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.7)
+                  : const Color(0xFF94a3b8),
             ),
           ),
         ],
@@ -472,8 +509,16 @@ class IOUDetailScreen extends StatelessWidget {
 
   Widget _buildPaymentsList(bool isDark) {
     final payments = [
-      {'title': 'Partial Payment', 'date': 'Nov 15, 2023', 'amount': '+ ₹10,000'},
-      {'title': 'Partial Payment', 'date': 'Oct 28, 2023', 'amount': '+ ₹15,000'},
+      {
+        'title': 'Partial Payment',
+        'date': 'Nov 15, 2023',
+        'amount': '+ ₹10,000',
+      },
+      {
+        'title': 'Partial Payment',
+        'date': 'Oct 28, 2023',
+        'amount': '+ ₹15,000',
+      },
     ];
 
     return Column(
@@ -523,7 +568,7 @@ class IOUDetailScreen extends StatelessWidget {
                   color: const Color(0xFF10b981).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.check_rounded,
                   color: Color(0xFF10b981),
                   size: 20,

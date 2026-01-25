@@ -22,7 +22,7 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF2bb961).withOpacity(isDark ? 0.1 : 0.4),
+                    Theme.of(context).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),

@@ -61,7 +61,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2bb961).withOpacity(0.05),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
               ),
             ),
           ),
@@ -140,13 +140,13 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2bb961),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-                      shadowColor: const Color(0xFF2bb961).withOpacity(0.3),
+                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,

@@ -59,7 +59,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF2bb961).withOpacity(isDark ? 0.1 : 0.4),
+                    Theme.of(context).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -133,13 +133,13 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2bb961),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 4,
-                      shadowColor: const Color(0xFF2bb961).withOpacity(0.3),
+                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -499,7 +499,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2bb961).withOpacity(0.2),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -570,10 +570,10 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF2bb961).withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFF2bb961).withOpacity(0.2),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
               ),
             ),
             child: Row(

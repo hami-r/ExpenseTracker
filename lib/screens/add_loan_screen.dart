@@ -395,10 +395,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2bb961).withOpacity(isDark ? 0.1 : 0.05),
+                                color: Theme.of(context).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.05),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(0xFF2bb961).withOpacity(0.1),
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                                 ),
                               ),
                               child: Row(
@@ -431,7 +431,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.w900,
-                                      color: isDark ? const Color(0xFF2bb961) : const Color(0xFF15803d),
+                                      color: isDark ? Theme.of(context).colorScheme.primary : const Color(0xFF15803d),
                                     ),
                                   ),
                                 ],
@@ -597,13 +597,13 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                 child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2bb961),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 4,
-                    shadowColor: const Color(0xFF2bb961).withOpacity(0.3),
+                    shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -718,7 +718,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2bb961), width: 2),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
       ),
     );
   }
