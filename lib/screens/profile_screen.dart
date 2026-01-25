@@ -3,6 +3,7 @@ import 'manage_categories_screen.dart';
 import 'manage_payment_methods_screen.dart';
 import 'liabilities_loans_screen.dart';
 import 'money_owed_screen.dart';
+import 'theme_selection_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,7 +20,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: Stack(
         children: [
           SafeArea(
@@ -36,20 +39,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
                         ),
                       ),
                       Container(
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1e293b) : const Color(0xFFf1f5f9),
+                          color: isDark
+                              ? const Color(0xFF1e293b)
+                              : const Color(0xFFf1f5f9),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Icon(
                           Icons.notifications_none_rounded,
                           size: 24,
-                          color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF64748b),
+                          color: isDark
+                              ? const Color(0xFFcbd5e1)
+                              : const Color(0xFF64748b),
                         ),
                       ),
                     ],
@@ -70,90 +79,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Financial Assets Section
                         _buildSectionHeader('FINANCIAL ASSETS', isDark),
                         const SizedBox(height: 12),
-                        _buildMenuCard(
-                          [
-                            _MenuItemData(
-                              icon: Icons.category_rounded,
-                              title: 'Manage Categories',
-                              color: const Color(0xFF3b82f6),
-                              hasBottomBorder: true,
-                            ),
-                            _MenuItemData(
-                              icon: Icons.credit_card_rounded,
-                              title: 'Manage Payment Methods',
-                              color: const Color(0xFFf59e0b),
-                              hasBottomBorder: false,
-                            ),
-                          ],
-                          isDark,
-                        ),
+                        _buildMenuCard([
+                          _MenuItemData(
+                            icon: Icons.category_rounded,
+                            title: 'Manage Categories',
+                            color: const Color(0xFF3b82f6),
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.credit_card_rounded,
+                            title: 'Manage Payment Methods',
+                            color: const Color(0xFFf59e0b),
+                            hasBottomBorder: false,
+                          ),
+                        ], isDark),
                         const SizedBox(height: 32),
 
                         // Debt & Loans Section
                         _buildSectionHeader('DEBT & LOANS', isDark),
                         const SizedBox(height: 12),
-                        _buildMenuCard(
-                          [
-                            _MenuItemData(
-                              icon: Icons.account_balance_wallet_rounded,
-                              title: 'Liabilities & Loans',
-                              color: const Color(0xFFf59e0b),
-                              hasBottomBorder: true,
-                            ),
-                            _MenuItemData(
-                              icon: Icons.attach_money_rounded,
-                              title: 'Money Owed to Me',
-                              color: const Color(0xFF2bb961),
-                              hasBottomBorder: false,
-                            ),
-                          ],
-                          isDark,
-                        ),
+                        _buildMenuCard([
+                          _MenuItemData(
+                            icon: Icons.account_balance_wallet_rounded,
+                            title: 'Liabilities & Loans',
+                            color: const Color(0xFFf59e0b),
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.attach_money_rounded,
+                            title: 'Money Owed to Me',
+                            color: const Color(0xFF2bb961),
+                            hasBottomBorder: false,
+                          ),
+                        ], isDark),
                         const SizedBox(height: 32),
 
                         // Analysis & Reports Section
                         _buildSectionHeader('ANALYSIS & REPORTS', isDark),
                         const SizedBox(height: 12),
-                        _buildMenuCard(
-                          [
-                            _MenuItemData(
-                              icon: Icons.scatter_plot_rounded,
-                              title: 'Payment Mode Correlation',
-                              color: const Color(0xFF3b82f6),
-                              hasBottomBorder: true,
-                            ),
-                            _MenuItemData(
-                              icon: Icons.analytics_rounded,
-                              title: 'Monthly Comparison',
-                              color: const Color(0xFF2bb961),
-                              hasBottomBorder: false,
-                            ),
-                          ],
-                          isDark,
-                        ),
+                        _buildMenuCard([
+                          _MenuItemData(
+                            icon: Icons.scatter_plot_rounded,
+                            title: 'Payment Mode Correlation',
+                            color: const Color(0xFF3b82f6),
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.analytics_rounded,
+                            title: 'Monthly Comparison',
+                            color: const Color(0xFF2bb961),
+                            hasBottomBorder: false,
+                          ),
+                        ], isDark),
                         const SizedBox(height: 32),
 
                         // General Section
                         _buildSectionHeader('GENERAL', isDark),
                         const SizedBox(height: 12),
-                        _buildMenuCard(
-                          [
-                            _MenuItemData(
-                              icon: Icons.file_download_rounded,
-                              title: 'Export Data',
-                              color: const Color(0xFF64748b),
-                              hasBottomBorder: true,
-                            ),
-                            _MenuItemData(
-                              icon: Icons.dark_mode_rounded,
-                              title: 'Dark Mode',
-                              color: const Color(0xFF64748b),
-                              hasBottomBorder: false,
-                              isToggle: true,
-                            ),
-                          ],
-                          isDark,
-                        ),
+                        _buildMenuCard([
+                          _MenuItemData(
+                            icon: Icons.file_download_rounded,
+                            title: 'Export Data',
+                            color: const Color(0xFF64748b),
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.dark_mode_rounded,
+                            title: 'Dark Mode',
+                            color: const Color(0xFF64748b),
+                            hasBottomBorder: true,
+                            isToggle: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.palette_rounded,
+                            title: 'Theme',
+                            color: const Color(0xFF8b5cf6),
+                            hasBottomBorder: false,
+                          ),
+                        ], isDark),
                         const SizedBox(height: 24),
 
                         // Version
@@ -163,7 +166,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF9ca3af),
+                              color: isDark
+                                  ? const Color(0xFF9ca3af)
+                                  : const Color(0xFF9ca3af),
                             ),
                           ),
                         ),
@@ -189,7 +194,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? const Color(0xFF1e293b) : const Color(0xFFf1f5f9),
+                    color: isDark
+                        ? const Color(0xFF1e293b)
+                        : const Color(0xFFf1f5f9),
                     width: 1,
                   ),
                 ),
@@ -204,13 +211,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: SafeArea(
                 top: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildNavItem(Icons.dashboard_rounded, 'Dashboard', 0, isDark),
-                      _buildNavItem(Icons.receipt_long_rounded, 'Transactions', 1, isDark),
-                      _buildNavItem(Icons.account_balance_wallet_rounded, 'Budget', 2, isDark),
+                      _buildNavItem(
+                        Icons.dashboard_rounded,
+                        'Dashboard',
+                        0,
+                        isDark,
+                      ),
+                      _buildNavItem(
+                        Icons.receipt_long_rounded,
+                        'Transactions',
+                        1,
+                        isDark,
+                      ),
+                      _buildNavItem(
+                        Icons.account_balance_wallet_rounded,
+                        'Budget',
+                        2,
+                        isDark,
+                      ),
                       _buildNavItem(Icons.person_rounded, 'Profile', 3, isDark),
                     ],
                   ),
@@ -273,14 +298,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       gradient: LinearGradient(
                         colors: isDark
                             ? [const Color(0xFF475569), const Color(0xFF1e293b)]
-                            : [const Color(0xFFf1f5f9), const Color(0xFFe2e8f0)],
+                            : [
+                                const Color(0xFFf1f5f9),
+                                const Color(0xFFe2e8f0),
+                              ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
                       Icons.person_rounded,
                       size: 36,
-                      color: isDark ? const Color(0xFF34d399) : const Color(0xFF2bb961),
+                      color: isDark
+                          ? const Color(0xFF34d399)
+                          : const Color(0xFF2bb961),
                     ),
                   ),
                   Positioned(
@@ -326,7 +356,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.2,
-                        color: isDark ? const Color(0xFF34d399) : const Color(0xFF2bb961),
+                        color: isDark
+                            ? const Color(0xFF34d399)
+                            : const Color(0xFF2bb961),
                       ),
                     ),
                   ],
@@ -338,13 +370,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1e293b) : const Color(0xFFf8fafc),
+                  color: isDark
+                      ? const Color(0xFF1e293b)
+                      : const Color(0xFFf8fafc),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   Icons.edit_rounded,
                   size: 20,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF9ca3af),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF9ca3af),
                 ),
               ),
             ],
@@ -426,6 +462,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       builder: (context) => const MoneyOwedScreen(),
                     ),
                   );
+                } else if (item.title == 'Theme') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ThemeSelectionScreen(),
+                    ),
+                  );
                 }
               },
         borderRadius: BorderRadius.circular(24),
@@ -435,7 +478,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             border: item.hasBottomBorder
                 ? Border(
                     bottom: BorderSide(
-                      color: isDark ? const Color(0xFF1e293b).withOpacity(0.5) : const Color(0xFFf1f5f9),
+                      color: isDark
+                          ? const Color(0xFF1e293b).withOpacity(0.5)
+                          : const Color(0xFFf1f5f9),
                     ),
                   )
                 : null,
@@ -449,11 +494,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: item.color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  item.icon,
-                  size: 20,
-                  color: item.color,
-                ),
+                child: Icon(item.icon, size: 20, color: item.color),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -462,7 +503,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFFe2e8f0) : const Color(0xFF475569),
+                    color: isDark
+                        ? const Color(0xFFe2e8f0)
+                        : const Color(0xFF475569),
                   ),
                 ),
               ),
@@ -479,7 +522,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               else
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: isDark ? const Color(0xFF4b5563) : const Color(0xFFd1d5db),
+                  color: isDark
+                      ? const Color(0xFF4b5563)
+                      : const Color(0xFFd1d5db),
                 ),
             ],
           ),
@@ -513,8 +558,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: isSelected
                   ? primaryColor
                   : isDark
-                      ? const Color(0xFF64748b)
-                      : const Color(0xFF94a3b8),
+                  ? const Color(0xFF64748b)
+                  : const Color(0xFF94a3b8),
             ),
             const SizedBox(height: 6),
             Text(
@@ -526,8 +571,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: isSelected
                     ? primaryColor
                     : isDark
-                        ? const Color(0xFF64748b)
-                        : const Color(0xFF94a3b8),
+                    ? const Color(0xFF64748b)
+                    : const Color(0xFF94a3b8),
               ),
             ),
           ],

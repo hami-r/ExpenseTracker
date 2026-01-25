@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/expense_provider.dart';
 import 'theme/app_theme.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,12 +14,10 @@ void main() {
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  
+
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => ExpenseProvider())],
       child: const ExpenseTrackerApp(),
     ),
   );
@@ -35,8 +33,9 @@ class ExpenseTrackerApp extends StatelessWidget {
       title: 'Expense Tracker AI',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light, // Can be changed to ThemeMode.dark or ThemeMode.system
-      home: const HomeScreen(),
+      themeMode: ThemeMode
+          .light, // Can be changed to ThemeMode.dark or ThemeMode.system
+      home: const SplashScreen(),
     );
   }
 }
