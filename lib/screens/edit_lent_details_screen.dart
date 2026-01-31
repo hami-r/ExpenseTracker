@@ -48,12 +48,10 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background blobs
+          // Background gradient blobs
           Positioned(
             top: -100,
             left: -100,
@@ -62,19 +60,33 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
           Positioned(
-            bottom: -100,
-            right: -100,
+            bottom: -80,
+            right: -80,
             child: Container(
               width: 250,
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.blue.withValues(alpha: 0.05),
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -201,38 +213,11 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Common Arrow Button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => Navigator.pop(context),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1a2c26) : Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFe2e8f0),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.arrow_back_rounded,
-                  size: 20,
-                  color: isDark
-                      ? const Color(0xFFcbd5e1)
-                      : const Color(0xFF475569),
-                ),
-              ),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(

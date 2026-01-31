@@ -7,10 +7,12 @@ class DetailedSpendingAnalyticsScreen extends StatefulWidget {
   const DetailedSpendingAnalyticsScreen({super.key});
 
   @override
-  State<DetailedSpendingAnalyticsScreen> createState() => _DetailedSpendingAnalyticsScreenState();
+  State<DetailedSpendingAnalyticsScreen> createState() =>
+      _DetailedSpendingAnalyticsScreenState();
 }
 
-class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyticsScreen> {
+class _DetailedSpendingAnalyticsScreenState
+    extends State<DetailedSpendingAnalyticsScreen> {
   DateTimeRange _selectedDateRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 30)),
     end: DateTime.now(),
@@ -90,7 +92,9 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
     ];
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: SafeArea(
         child: Column(
           children: [
@@ -104,7 +108,9 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
                       Icons.arrow_back_rounded,
-                      color: isDark ? Colors.white : const Color(0xFF374151),
+                      color: isDark
+                          ? const Color(0xFFe5e7eb)
+                          : const Color(0xFF374151),
                     ),
                   ),
                   Text(
@@ -128,12 +134,17 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
                 borderRadius: BorderRadius.circular(50),
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 32),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1F2937) : Colors.white,
                     borderRadius: BorderRadius.circular(50),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF374151) : const Color(0xFFe5e7eb),
+                      color: isDark
+                          ? const Color(0xFF374151)
+                          : const Color(0xFFe5e7eb),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -148,7 +159,9 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
                       Icon(
                         Icons.calendar_today_rounded,
                         size: 14,
-                        color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                        color: isDark
+                            ? const Color(0xFF9ca3af)
+                            : const Color(0xFF6b7280),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -156,7 +169,9 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? const Color(0xFFd1d5db) : const Color(0xFF4b5563),
+                          color: isDark
+                              ? const Color(0xFFd1d5db)
+                              : const Color(0xFF4b5563),
                         ),
                       ),
                     ],
@@ -204,10 +219,7 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
           color: isDark ? const Color(0xFF374151) : const Color(0xFFf3f4f6),
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
         ],
       ),
       child: Row(
@@ -220,11 +232,7 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
               color: category['bgColor'],
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              category['icon'],
-              color: category['color'],
-              size: 24,
-            ),
+            child: Icon(category['icon'], color: category['color'], size: 24),
           ),
           const SizedBox(width: 16),
 
@@ -261,7 +269,9 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
                       child: Container(
                         height: 6,
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF374151) : const Color(0xFFf3f4f6),
+                          color: isDark
+                              ? const Color(0xFF374151)
+                              : const Color(0xFFf3f4f6),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: FractionallySizedBox(
@@ -282,7 +292,9 @@ class _DetailedSpendingAnalyticsScreenState extends State<DetailedSpendingAnalyt
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
+                        color: isDark
+                            ? const Color(0xFF9ca3af)
+                            : const Color(0xFF6b7280),
                       ),
                     ),
                   ],
@@ -300,10 +312,7 @@ class DonutChartPainter extends CustomPainter {
   final List<Map<String, dynamic>> categories;
   final bool isDark;
 
-  DonutChartPainter({
-    required this.categories,
-    required this.isDark,
-  });
+  DonutChartPainter({required this.categories, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -313,7 +322,8 @@ class DonutChartPainter extends CustomPainter {
 
     // Background circle
     final backgroundPaint = Paint()
-      ..color = (isDark ? const Color(0xFF374151) : const Color(0xFFe5e7eb)).withOpacity(0.5)
+      ..color = (isDark ? const Color(0xFF374151) : const Color(0xFFe5e7eb))
+          .withOpacity(0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 
@@ -343,8 +353,11 @@ class DonutChartPainter extends CustomPainter {
     }
 
     // Center text
-    final totalAmount = categories.fold<double>(0, (sum, cat) => sum + cat['amount']);
-    
+    final totalAmount = categories.fold<double>(
+      0,
+      (sum, cat) => sum + cat['amount'],
+    );
+
     // Draw "Total Amount" label
     final labelPainter = TextPainter(
       text: TextSpan(

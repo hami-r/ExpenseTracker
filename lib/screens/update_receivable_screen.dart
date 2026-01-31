@@ -40,12 +40,10 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background blobs
+          // Background gradient blobs
           Positioned(
             top: -100,
             left: -100,
@@ -54,19 +52,33 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
           Positioned(
-            bottom: -100,
-            right: -100,
+            bottom: -80,
+            right: -80,
             child: Container(
               width: 250,
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.blue.withOpacity(0.05),
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -133,7 +145,9 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      shadowColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -167,19 +181,9 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            style: IconButton.styleFrom(
-              backgroundColor: isDark ? const Color(0xFF1a2c26) : Colors.white,
-              shape: const CircleBorder(),
-              side: BorderSide(
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFe2e8f0),
-              ),
-            ),
             icon: Icon(
               Icons.arrow_back_rounded,
-              size: 20,
-              color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(
@@ -190,14 +194,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
               color: isDark ? Colors.white : const Color(0xFF0f172a),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            style: IconButton.styleFrom(shape: const CircleBorder()),
-            icon: Icon(
-              Icons.more_horiz_rounded,
-              color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
-            ),
-          ),
+          const SizedBox(width: 48),
         ],
       ),
     );
@@ -313,7 +310,9 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                   ),
                   focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                       width: 2,
                     ),
                   ),
@@ -489,7 +488,9 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                   });
                 },
                 activeColor: Theme.of(context).colorScheme.primary,
-                activeTrackColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                activeTrackColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withOpacity(0.2),
               ),
             ],
           ),

@@ -67,53 +67,9 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background blobs
-          Positioned(
-            top: -50,
-            left: -50,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(
-                  0xFF3b82f6,
-                ).withOpacity(isDark ? 0.02 : 0.06),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF3b82f6).withOpacity(0.1),
-                    blurRadius: 120,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            right: -50,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(
-                  0xFFa78bfa,
-                ).withOpacity(isDark ? 0.02 : 0.06),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFa78bfa).withOpacity(0.1),
-                    blurRadius: 120,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           SafeArea(
             child: Column(
               children: [
@@ -198,19 +154,9 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            style: IconButton.styleFrom(
-              backgroundColor: isDark ? const Color(0xFF1a2c26) : Colors.white,
-              shape: const CircleBorder(),
-              side: BorderSide(
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFe2e8f0),
-              ),
-            ),
             icon: Icon(
               Icons.arrow_back_rounded,
-              size: 20,
-              color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(

@@ -12,50 +12,9 @@ class LoanDetailScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background gradient blobs
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -100,
-            right: -100,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.blue.withOpacity(isDark ? 0.1 : 0.3),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Main content
           SafeArea(
             child: Column(
               children: [
@@ -238,7 +197,7 @@ class LoanDetailScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: Icon(
               Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
 
@@ -268,27 +227,7 @@ class LoanDetailScreen extends StatelessWidget {
           ),
 
           // More button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(shape: BoxShape.circle),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  // Show more options
-                },
-                borderRadius: BorderRadius.circular(20),
-                child: Icon(
-                  Icons.more_vert_rounded,
-                  color: isDark
-                      ? const Color(0xFF64748b)
-                      : const Color(0xFF94a3b8),
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(width: 40),
         ],
       ),
     );

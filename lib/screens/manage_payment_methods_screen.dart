@@ -145,9 +145,7 @@ class _ManagePaymentMethodsScreenState
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -161,7 +159,9 @@ class _ManagePaymentMethodsScreenState
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
                       Icons.arrow_back_rounded,
-                      color: isDark ? Colors.white : const Color(0xFF1e293b),
+                      color: isDark
+                          ? const Color(0xFFe5e7eb)
+                          : const Color(0xFF374151),
                     ),
                   ),
                   Text(

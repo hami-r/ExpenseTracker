@@ -12,23 +12,9 @@ class MoneyOwedScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              ),
-            ),
-          ),
           SafeArea(
             child: Column(
               children: [
@@ -124,7 +110,9 @@ class MoneyOwedScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -166,7 +154,7 @@ class MoneyOwedScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: Icon(
               Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(
@@ -177,13 +165,7 @@ class MoneyOwedScreen extends StatelessWidget {
               color: isDark ? Colors.white : const Color(0xFF0f172a),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.more_horiz_rounded,
-              color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
-            ),
-          ),
+          const SizedBox(width: 48),
         ],
       ),
     );

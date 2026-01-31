@@ -4,11 +4,14 @@ class UpdateIOUProgressScreen extends StatefulWidget {
   const UpdateIOUProgressScreen({super.key});
 
   @override
-  State<UpdateIOUProgressScreen> createState() => _UpdateIOUProgressScreenState();
+  State<UpdateIOUProgressScreen> createState() =>
+      _UpdateIOUProgressScreenState();
 }
 
 class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
-  final TextEditingController _amountController = TextEditingController(text: '5000');
+  final TextEditingController _amountController = TextEditingController(
+    text: '5000',
+  );
   bool _isFullyPaid = false;
 
   @override
@@ -22,21 +25,23 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Background gradient blobs
           Positioned(
-            top: 100,
-            left: 50,
+            top: -100,
+            left: -100,
             child: Container(
-              width: 250,
-              height: 250,
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF14b8a6).withOpacity(isDark ? 0.1 : 0.2), // Teal
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -44,16 +49,18 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
             ),
           ),
           Positioned(
-            bottom: 50,
-            right: -50,
+            bottom: -80,
+            right: -80,
             child: Container(
-              width: 200,
-              height: 200,
+              width: 250,
+              height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blue.withOpacity(isDark ? 0.1 : 0.2),
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -106,12 +113,14 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark 
-                    ? const Color(0xFF131f17).withOpacity(0.8) 
+                color: isDark
+                    ? const Color(0xFF131f17).withOpacity(0.8)
                     : Colors.white.withOpacity(0.8),
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                    color: isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : Colors.black.withOpacity(0.05),
                   ),
                 ),
               ),
@@ -128,7 +137,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                       elevation: 4,
-                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      shadowColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -167,7 +178,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
             onPressed: () => Navigator.pop(context),
             icon: Icon(
               Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(
@@ -191,7 +202,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF14b8a6).withOpacity(0.1) : const Color(0xFFccfbf1),
+            color: isDark
+                ? const Color(0xFF14b8a6).withOpacity(0.1)
+                : const Color(0xFFccfbf1),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -264,7 +277,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                   decoration: InputDecoration(
                     border: UnderlineInputBorder(
                       borderSide: BorderSide(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFe2e8f0),
                         width: 2,
                       ),
                     ),
@@ -274,7 +289,10 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                         width: 2,
                       ),
                     ),
-                    contentPadding: const EdgeInsets.only(bottom: 16, left: 24), // Leave space for prefix
+                    contentPadding: const EdgeInsets.only(
+                      bottom: 16,
+                      left: 24,
+                    ), // Leave space for prefix
                     isDense: true,
                   ),
                 ),
@@ -286,7 +304,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? const Color(0xFF475569) : const Color(0xFFcbd5e1),
+                    color: isDark
+                        ? const Color(0xFF475569)
+                        : const Color(0xFFcbd5e1),
                   ),
                 ),
               ),
@@ -320,12 +340,16 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
+                  color: isDark
+                      ? const Color(0xFF334155).withOpacity(0.5)
+                      : const Color(0xFFf1f5f9),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.check_circle_rounded,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF475569),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF475569),
                   size: 20,
                 ),
               ),
@@ -347,7 +371,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                       'Close this IOU completely',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF64748b),
                       ),
                     ),
                   ],
@@ -363,7 +389,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 16),
 
         // Next Payment Date (Disabled)
@@ -388,12 +414,16 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
+                    color: isDark
+                        ? const Color(0xFF334155).withOpacity(0.5)
+                        : const Color(0xFFf1f5f9),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.calendar_month_rounded,
-                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF475569),
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF475569),
                     size: 20,
                   ),
                 ),
@@ -407,7 +437,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -415,7 +447,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                         'Optional reminder',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                          color: isDark
+                              ? const Color(0xFF94a3b8)
+                              : const Color(0xFF64748b),
                         ),
                       ),
                     ],
@@ -426,7 +460,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF94a3b8),
                   ),
                 ),
               ],
@@ -441,10 +477,14 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155).withOpacity(0.3) : const Color(0xFFf8fafc),
+        color: isDark
+            ? const Color(0xFF334155).withOpacity(0.3)
+            : const Color(0xFFf8fafc),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFe2e8f0),
+          color: isDark
+              ? const Color(0xFF334155).withOpacity(0.5)
+              : const Color(0xFFe2e8f0),
         ),
       ),
       child: Column(
@@ -468,7 +508,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+                  color: isDark
+                      ? const Color(0xFFcbd5e1)
+                      : const Color(0xFF475569),
                 ),
               ),
               Text(
@@ -490,7 +532,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
               ),
               Text(
@@ -508,7 +552,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
             height: 12,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFe2e8f0),
+              color: isDark
+                  ? const Color(0xFF334155).withOpacity(0.5)
+                  : const Color(0xFFe2e8f0),
               borderRadius: BorderRadius.circular(6),
             ),
             child: FractionallySizedBox(
@@ -516,7 +562,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
               widthFactor: 0.6,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF14b8a6), // Teal color used in design for progress
+                  color: const Color(
+                    0xFF14b8a6,
+                  ), // Teal color used in design for progress
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),

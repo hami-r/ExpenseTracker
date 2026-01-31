@@ -24,21 +24,23 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Background gradient blobs
           Positioned(
             top: -100,
-            right: -100,
+            left: -100,
             child: Container(
-              width: 350,
-              height: 350,
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -47,15 +49,17 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
           ),
           Positioned(
             bottom: -80,
-            left: -120,
+            right: -80,
             child: Container(
-              width: 300,
-              height: 300,
+              width: 250,
+              height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blue.withOpacity(isDark ? 0.1 : 0.2),
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -73,7 +77,10 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 // Scrollable content
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Column(
                       children: [
                         // Loan badge
@@ -119,14 +126,20 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    (isDark ? const Color(0xFF131f17) : Colors.white).withOpacity(0),
+                    (isDark ? const Color(0xFF131f17) : Colors.white)
+                        .withOpacity(0),
                     isDark ? const Color(0xFF131f17) : Colors.white,
                     isDark ? const Color(0xFF131f17) : Colors.white,
                   ],
                   stops: const [0.0, 0.2, 1.0],
                 ),
               ),
-              padding: EdgeInsets.fromLTRB(24, 40, 24, 32 + MediaQuery.of(context).padding.bottom),
+              padding: EdgeInsets.fromLTRB(
+                24,
+                40,
+                24,
+                32 + MediaQuery.of(context).padding.bottom,
+              ),
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -142,14 +155,13 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 4,
-                    shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    shadowColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.3),
                   ),
                   child: const Text(
                     'Confirm Update',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -170,7 +182,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             onPressed: () => Navigator.pop(context),
             icon: Icon(
               Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(
@@ -260,16 +272,20 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFf8fafc),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFf8fafc),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.remove_rounded,
-                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b),
                   ),
                 ),
               ),
-              
+
               // Counter display
               SizedBox(
                 width: 100,
@@ -283,7 +299,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   ),
                 ),
               ),
-              
+
               // Increment button
               IconButton(
                 onPressed: _monthsPaid < _totalMonths
@@ -293,12 +309,16 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFf8fafc),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFf8fafc),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.add_rounded,
-                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b),
                   ),
                 ),
               ),
@@ -378,21 +398,29 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF334155) : const Color(0xFFf8fafc),
+                  fillColor: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFf8fafc),
                   hintText: '0',
                   hintStyle: TextStyle(
-                    color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                    color: isDark
+                        ? const Color(0xFF64748b)
+                        : const Color(0xFF94a3b8),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF475569) : const Color(0xFFe2e8f0),
+                      color: isDark
+                          ? const Color(0xFF475569)
+                          : const Color(0xFFe2e8f0),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF475569) : const Color(0xFFe2e8f0),
+                      color: isDark
+                          ? const Color(0xFF475569)
+                          : const Color(0xFFe2e8f0),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -401,7 +429,12 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                       color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
-                  contentPadding: const EdgeInsets.only(left: 40, right: 16, top: 12, bottom: 12),
+                  contentPadding: const EdgeInsets.only(
+                    left: 40,
+                    right: 16,
+                    top: 12,
+                    bottom: 12,
+                  ),
                 ),
               ),
               Positioned(
@@ -414,7 +447,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                      color: isDark
+                          ? const Color(0xFF94a3b8)
+                          : const Color(0xFF64748b),
                     ),
                   ),
                 ),
@@ -467,9 +502,13 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
             activeTrackColor: Theme.of(context).colorScheme.primary,
-            inactiveTrackColor: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+            inactiveTrackColor: isDark
+                ? const Color(0xFF334155)
+                : const Color(0xFFe2e8f0),
             thumbColor: Theme.of(context).colorScheme.primary,
-            overlayColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+            overlayColor: Theme.of(
+              context,
+            ).colorScheme.primary.withOpacity(0.2),
           ),
           child: Slider(
             value: _progressPercentage,
@@ -492,7 +531,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
               ),
               Text(
@@ -500,7 +541,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
               ),
               Text(
@@ -508,7 +551,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
               ),
             ],
@@ -522,7 +567,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155).withOpacity(0.3) : const Color(0xFFf8fafc),
+        color: isDark
+            ? const Color(0xFF334155).withOpacity(0.3)
+            : const Color(0xFFf8fafc),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
@@ -547,7 +594,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? const Color(0xFF475569) : const Color(0xFFe2e8f0),
+                  color: isDark
+                      ? const Color(0xFF475569)
+                      : const Color(0xFFe2e8f0),
                   style: BorderStyle.solid,
                   width: 1,
                 ),
@@ -561,7 +610,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+                    color: isDark
+                        ? const Color(0xFFcbd5e1)
+                        : const Color(0xFF475569),
                   ),
                 ),
                 Column(
@@ -598,7 +649,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+                  color: isDark
+                      ? const Color(0xFFcbd5e1)
+                      : const Color(0xFF475569),
                 ),
               ),
               Column(
@@ -616,7 +669,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                     'Total estimated',
                     style: TextStyle(
                       fontSize: 10,
-                      color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                      color: isDark
+                          ? const Color(0xFF94a3b8)
+                          : const Color(0xFF64748b),
                     ),
                   ),
                 ],

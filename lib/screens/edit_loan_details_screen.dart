@@ -10,10 +10,18 @@ class EditLoanDetailsScreen extends StatefulWidget {
 }
 
 class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
-  final TextEditingController _amountController = TextEditingController(text: '5,50,000');
-  final TextEditingController _lenderController = TextEditingController(text: 'SBI Auto Loan');
-  final TextEditingController _rateController = TextEditingController(text: '8.5');
-  final TextEditingController _tenureController = TextEditingController(text: '5');
+  final TextEditingController _amountController = TextEditingController(
+    text: '5,50,000',
+  );
+  final TextEditingController _lenderController = TextEditingController(
+    text: 'SBI Auto Loan',
+  );
+  final TextEditingController _rateController = TextEditingController(
+    text: '8.5',
+  );
+  final TextEditingController _tenureController = TextEditingController(
+    text: '5',
+  );
   String _tenureType = 'Yrs';
   DateTime _startDate = DateTime(2023, 11, 1);
 
@@ -45,7 +53,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Background gradient blobs
@@ -59,7 +67,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -67,8 +77,8 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
             ),
           ),
           Positioned(
-            bottom: -100,
-            right: -100,
+            bottom: -80,
+            right: -80,
             child: Container(
               width: 250,
               height: 250,
@@ -76,7 +86,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blue.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -139,7 +151,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 4,
-                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      shadowColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -175,7 +189,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
             onPressed: () => Navigator.pop(context),
             icon: Icon(
               Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(
@@ -214,7 +228,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
-                color: isDark ? const Color(0xFF475569) : const Color(0xFFcbd5e1),
+                color: isDark
+                    ? const Color(0xFF475569)
+                    : const Color(0xFFcbd5e1),
               ),
             ),
             const SizedBox(width: 4),
@@ -248,7 +264,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
         color: isDark ? const Color(0xFF1a2c26) : Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
+          color: isDark
+              ? const Color(0xFF334155).withOpacity(0.5)
+              : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
@@ -279,10 +297,14 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
             ),
             decoration: InputDecoration(
               filled: true,
-              fillColor: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf8fafc),
+              fillColor: isDark
+                  ? const Color(0xFF334155).withOpacity(0.5)
+                  : const Color(0xFFf8fafc),
               hintText: 'E.g. HDFC, SBI, or Name',
               hintStyle: TextStyle(
-                color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                color: isDark
+                    ? const Color(0xFF64748b)
+                    : const Color(0xFF94a3b8),
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -303,7 +325,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
         color: isDark ? const Color(0xFF1a2c26) : Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
+          color: isDark
+              ? const Color(0xFF334155).withOpacity(0.5)
+              : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
@@ -338,7 +362,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                          color: isDark
+                              ? const Color(0xFF94a3b8)
+                              : const Color(0xFF94a3b8),
                         ),
                       ),
                     ),
@@ -347,24 +373,37 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                       children: [
                         TextField(
                           controller: _rateController,
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF0f172a),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0f172a),
                           ),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf8fafc),
+                            fillColor: isDark
+                                ? const Color(0xFF334155).withOpacity(0.5)
+                                : const Color(0xFFf8fafc),
                             hintText: '0.0',
                             hintStyle: TextStyle(
-                              color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                              color: isDark
+                                  ? const Color(0xFF64748b)
+                                  : const Color(0xFF94a3b8),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.fromLTRB(16, 16, 30, 16),
+                            contentPadding: const EdgeInsets.fromLTRB(
+                              16,
+                              16,
+                              30,
+                              16,
+                            ),
                           ),
                         ),
                         Padding(
@@ -374,7 +413,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                              color: isDark
+                                  ? const Color(0xFF94a3b8)
+                                  : const Color(0xFF94a3b8),
                             ),
                           ),
                         ),
@@ -395,13 +436,17 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                          color: isDark
+                              ? const Color(0xFF94a3b8)
+                              : const Color(0xFF94a3b8),
                         ),
                       ),
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf8fafc),
+                        color: isDark
+                            ? const Color(0xFF334155).withOpacity(0.5)
+                            : const Color(0xFFf8fafc),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -413,7 +458,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : const Color(0xFF0f172a),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0f172a),
                               ),
                               decoration: const InputDecoration(
                                 border: InputBorder.none,
@@ -427,7 +474,10 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _tenureType,
-                                icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
+                                icon: const Icon(
+                                  Icons.arrow_drop_down_rounded,
+                                  size: 20,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -439,12 +489,15 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                                   }
                                 },
                                 items: <String>['Yrs', 'Mos']
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value),
-                                  );
-                                }).toList(),
+                                    .map<DropdownMenuItem<String>>((
+                                      String value,
+                                    ) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    })
+                                    .toList(),
                               ),
                             ),
                           ),
@@ -468,7 +521,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
         color: isDark ? const Color(0xFF1a2c26) : Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
+          color: isDark
+              ? const Color(0xFF334155).withOpacity(0.5)
+              : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
@@ -499,7 +554,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -517,7 +574,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -525,7 +584,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                         'First EMI Date',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                          color: isDark
+                              ? const Color(0xFF94a3b8)
+                              : const Color(0xFF94a3b8),
                         ),
                       ),
                     ],
@@ -536,12 +597,19 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                 onTap: () => _selectDate(context),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf8fafc),
+                    color: isDark
+                        ? const Color(0xFF334155).withOpacity(0.5)
+                        : const Color(0xFFf8fafc),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFe2e8f0),
                     ),
                   ),
                   child: Row(
@@ -551,14 +619,18 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF334155),
+                          color: isDark
+                              ? const Color(0xFFcbd5e1)
+                              : const Color(0xFF334155),
                         ),
                       ),
                       const SizedBox(width: 4),
                       Icon(
                         Icons.expand_more_rounded,
                         size: 16,
-                        color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF94a3b8),
                       ),
                     ],
                   ),
@@ -596,7 +668,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                       'Based on rate & tenure',
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF64748b),
                       ),
                     ),
                   ],

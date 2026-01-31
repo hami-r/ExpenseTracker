@@ -10,37 +10,9 @@ class ReimbursementDetailScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background blobs
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -100,
-            right: -100,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.blue.withOpacity(0.05),
-              ),
-            ),
-          ),
-
           SafeArea(
             child: Column(
               children: [
@@ -139,7 +111,9 @@ class ReimbursementDetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.4),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -199,7 +173,7 @@ class ReimbursementDetailScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: Icon(
               Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(
@@ -210,14 +184,7 @@ class ReimbursementDetailScreen extends StatelessWidget {
               color: isDark ? Colors.white : const Color(0xFF0f172a),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            style: IconButton.styleFrom(shape: const CircleBorder()),
-            icon: Icon(
-              Icons.more_horiz_rounded,
-              color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
-            ),
-          ),
+          const SizedBox(width: 48),
         ],
       ),
     );

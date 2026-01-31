@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class EditCategoryScreen extends StatefulWidget {
   final Map<String, dynamic>? category;
 
-  const EditCategoryScreen({
-    super.key,
-    this.category,
-  });
+  const EditCategoryScreen({super.key, this.category});
 
   @override
   State<EditCategoryScreen> createState() => _EditCategoryScreenState();
@@ -64,27 +61,67 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
+          // Background gradient blobs
+          Positioned(
+            top: -100,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -80,
+            right: -80,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
           SafeArea(
             child: Column(
               children: [
                 // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextButton(
+                      IconButton(
                         onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
-                            fontWeight: FontWeight.w500,
-                          ),
+                        icon: Icon(
+                          Icons.arrow_back_rounded,
+                          color: isDark
+                              ? const Color(0xFFe5e7eb)
+                              : const Color(0xFF374151),
                         ),
                       ),
                       Text(
@@ -92,7 +129,9 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF111827),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF111827),
                         ),
                       ),
                       const SizedBox(width: 60),
@@ -115,11 +154,15 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
                           ),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                            fillColor: isDark
+                                ? const Color(0xFF25282c)
+                                : const Color(0xFFf2f5f4),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -198,12 +241,13 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1,
+                              ),
                           itemCount: icons.length,
                           itemBuilder: (context, index) {
                             final icon = icons[index];
@@ -216,7 +260,9 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF25282c) : const Color(0xFFf2f5f4),
+                                  color: isDark
+                                      ? const Color(0xFF25282c)
+                                      : const Color(0xFFf2f5f4),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: isSelected
@@ -227,7 +273,10 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withOpacity(0.2),
                                             blurRadius: 8,
                                           ),
                                         ]
@@ -238,7 +287,9 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                                   size: 30,
                                   color: isSelected
                                       ? Theme.of(context).colorScheme.primary
-                                      : (isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280)),
+                                      : (isDark
+                                            ? const Color(0xFF9ca3af)
+                                            : const Color(0xFF6b7280)),
                                 ),
                               ),
                             );
@@ -264,9 +315,14 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7)).withOpacity(0),
-                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7)),
-                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7)),
+                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
+                        .withOpacity(0),
+                    (isDark
+                        ? const Color(0xFF131f17)
+                        : const Color(0xFFf6f8f7)),
+                    (isDark
+                        ? const Color(0xFF131f17)
+                        : const Color(0xFFf6f8f7)),
                   ],
                 ),
               ),
@@ -285,7 +341,9 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
-                    shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                    shadowColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.4),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

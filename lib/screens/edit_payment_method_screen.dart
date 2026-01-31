@@ -85,11 +85,48 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
+          // Background gradient blobs
+          Positioned(
+            top: -100,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -80,
+            right: -80,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
           SafeArea(
             child: Column(
               children: [
@@ -102,17 +139,13 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextButton(
+                      IconButton(
                         onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isDark
-                                ? const Color(0xFF9ca3af)
-                                : const Color(0xFF6b7280),
-                            fontWeight: FontWeight.w500,
-                          ),
+                        icon: Icon(
+                          Icons.arrow_back_rounded,
+                          color: isDark
+                              ? const Color(0xFFe5e7eb)
+                              : const Color(0xFF374151),
                         ),
                       ),
                       Text(

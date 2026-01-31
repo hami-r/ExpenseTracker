@@ -12,7 +12,9 @@ class LiabilitiesLoansScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: isDark
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       body: SafeArea(
         child: Stack(
           children: [
@@ -20,7 +22,10 @@ class LiabilitiesLoansScreen extends StatelessWidget {
               children: [
                 // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -28,7 +33,9 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           Icons.arrow_back_rounded,
-                          color: isDark ? Colors.white : const Color(0xFF1e293b),
+                          color: isDark
+                              ? const Color(0xFFe5e7eb)
+                              : const Color(0xFF374151),
                         ),
                       ),
                       Text(
@@ -36,7 +43,9 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
                         ),
                       ),
                       const SizedBox(width: 40),
@@ -54,7 +63,10 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                         // Total Debt Card
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 32,
+                            horizontal: 24,
+                          ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
@@ -93,7 +105,9 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                                   letterSpacing: 1.5,
                                   color: isDark
                                       ? const Color(0xFFfb923c)
-                                      : const Color(0xFFea580c).withOpacity(0.8),
+                                      : const Color(
+                                          0xFFea580c,
+                                        ).withOpacity(0.8),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -202,7 +216,11 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 elevation: 4,
                 shape: const CircleBorder(),
-                child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
             ),
           ],
@@ -210,9 +228,6 @@ class LiabilitiesLoansScreen extends StatelessWidget {
       ),
     );
   }
-
-
-
 
   Widget _buildLoanCard({
     required BuildContext context,
@@ -230,14 +245,16 @@ class LiabilitiesLoansScreen extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap ?? () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const LoanDetailScreen(),
-            ),
-          );
-        },
+        onTap:
+            onTap ??
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoanDetailScreen(),
+                ),
+              );
+            },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -255,46 +272,68 @@ class LiabilitiesLoansScreen extends StatelessWidget {
               color: Colors.transparent, // Placeholder for potential border
             ),
           ),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
             children: [
+              // Header
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      icon,
-                      color: color,
-                      size: 20,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, color: color, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF0f172a),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF94a3b8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        title,
+                        amount,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
+                      const Text(
+                        'Total',
+                        style: TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.w600,
                           color: Color(0xFF94a3b8),
                         ),
                       ),
@@ -302,132 +341,123 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+
+              const SizedBox(height: 16),
+
+              // Progress Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    amount,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : const Color(0xFF0f172a),
+                    'Repaid: $repaidAmount',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748b),
                     ),
                   ),
-                  const Text(
-                    'Total',
-                    style: TextStyle(
+                  Text(
+                    '${(progress * 100).toInt()}%',
+                    style: const TextStyle(
                       fontSize: 10,
-                      color: Color(0xFF94a3b8),
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748b),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Progress Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Repaid: $repaidAmount',
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748b),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: isDark
+                      ? const Color(0xFF334155).withOpacity(0.5)
+                      : const Color(0xFFf1f5f9),
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                  minHeight: 8,
                 ),
               ),
-              Text(
-                '${(progress * 100).toInt()}%',
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748b),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 8,
-            ),
-          ),
 
-          const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-          // Footer
-          Container(
-            padding: const EdgeInsets.only(top: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf8fafc),
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1e293b) : const Color(0xFFf8fafc),
-                    borderRadius: BorderRadius.circular(6),
+              // Footer
+              Container(
+                padding: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF334155).withOpacity(0.5)
+                          : const Color(0xFFf8fafc),
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_rounded,
-                        size: 12,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1e293b)
+                            : const Color(0xFFf8fafc),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 12,
+                            color: Color(0xFF94a3b8),
+                          ),
+                          const SizedBox(width: 6),
+                          Text.rich(
+                            TextSpan(
+                              text: 'Next Due: ',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF475569),
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: nextDue,
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF0f172a),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1e293b)
+                            : const Color(0xFFf1f5f9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 14,
                         color: Color(0xFF94a3b8),
                       ),
-                      const SizedBox(width: 6),
-                      Text.rich(
-                        TextSpan(
-                          text: 'Next Due: ',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF475569),
-                          ),
-                          children: [
-                            TextSpan(
-                              text: nextDue,
-                              style: TextStyle(
-                                color: isDark ? Colors.white : const Color(0xFF0f172a),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1e293b) : const Color(0xFFf1f5f9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.chevron_right_rounded,
-                    size: 14,
-                    color: Color(0xFF94a3b8),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
         ),
       ),
     );

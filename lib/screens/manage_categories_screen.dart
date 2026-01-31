@@ -154,9 +154,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           SafeArea(
@@ -173,8 +171,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                         icon: Icon(
                           Icons.arrow_back_rounded,
                           color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1e293b),
+                              ? const Color(0xFFe5e7eb)
+                              : const Color(0xFF374151),
                         ),
                       ),
                       Text(

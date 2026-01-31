@@ -44,12 +44,10 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF131f17)
-          : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background blobs
+          // Background gradient blobs
           Positioned(
             top: -100,
             left: -100,
@@ -58,19 +56,33 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
           Positioned(
-            bottom: -100,
-            right: -100,
+            bottom: -80,
+            right: -80,
             child: Container(
               width: 250,
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.blue.withOpacity(0.05),
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -140,7 +152,9 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      shadowColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -176,7 +190,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
             onPressed: () => Navigator.pop(context),
             icon: Icon(
               Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(
@@ -187,14 +201,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
               color: isDark ? Colors.white : const Color(0xFF0f172a),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            style: IconButton.styleFrom(shape: const CircleBorder()),
-            icon: Icon(
-              Icons.more_horiz_rounded,
-              color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
-            ),
-          ),
+          const SizedBox(width: 48),
         ],
       ),
     );
@@ -249,7 +256,9 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                   ),
                   focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                       width: 2,
                     ),
                   ),
@@ -651,7 +660,9 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
               });
             },
             activeColor: Theme.of(context).colorScheme.primary,
-            activeTrackColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+            activeTrackColor: Theme.of(
+              context,
+            ).colorScheme.primary.withOpacity(0.2),
           ),
         ],
       ),

@@ -4,6 +4,8 @@ import 'add_expense_screen.dart';
 import 'expense_calendar_screen.dart';
 import 'detailed_spending_analytics_screen.dart';
 import 'profile_screen.dart';
+import 'transaction_details_screen.dart';
+import 'split_expense_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -237,11 +239,103 @@ class _HomeScreenState extends State<HomeScreen> {
                         '18 Jan, 8:33 PM',
                         'Charity',
                         'Cash',
-                        '₹32.0',
+                        '32.0',
                         Icons.volunteer_activism_rounded,
                         Colors.blue,
                         false,
                         isDark,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TransactionDetailsScreen(
+                                    transaction: {
+                                      'title': 'test',
+                                      'date': '18 Jan, 8:33 PM',
+                                      'category': 'Charity',
+                                      'paymentMethod': 'Cash',
+                                      'amount': '32.0',
+                                      'icon': Icons.volunteer_activism_rounded,
+                                      'color': Colors.blue,
+                                      'note': 'Donation',
+                                    },
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Stack(
+                        children: [
+                          _buildTransactionCard(
+                            'Split Expense',
+                            '19 Jan, 10:00 AM',
+                            'Food',
+                            'Card',
+                            '500.0',
+                            Icons.restaurant_rounded,
+                            Colors.orange,
+                            false,
+                            isDark,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const SplitExpenseDetailScreen(
+                                        transaction: {
+                                          'title': 'Split Expense',
+                                          'date': '19 Jan, 10:00 AM',
+                                          'category': 'Food',
+                                          'paymentMethod': 'Card',
+                                          'amount': '500.0',
+                                          'icon': Icons.restaurant_rounded,
+                                          'color': Colors.orange,
+                                          'note': 'Team Lunch',
+                                        },
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: const BorderRadius.only(
+                                  topRight: Radius.circular(16),
+                                  bottomLeft: Radius.circular(16),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                'Split',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       _buildTransactionCard(
@@ -249,11 +343,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         '17 Jan',
                         'Food',
                         null,
-                        '₹150.0',
+                        '150.0',
                         Icons.lunch_dining_rounded,
                         Colors.orange,
                         true,
                         isDark,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TransactionDetailsScreen(
+                                    transaction: {
+                                      'title': 'Lunch',
+                                      'date': '17 Jan',
+                                      'category': 'Food',
+                                      'paymentMethod': 'Card',
+                                      'amount': '150.0',
+                                      'icon': Icons.lunch_dining_rounded,
+                                      'color': Colors.orange,
+                                      'note': 'Team Lunch',
+                                    },
+                                  ),
+                            ),
+                          );
+                        },
                       ),
                     ]),
                   ),
@@ -503,79 +617,59 @@ class _HomeScreenState extends State<HomeScreen> {
     IconData icon,
     Color iconColor,
     bool isOld,
-    bool isDark,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: isDark
-                  ? const Color(0xFF334155)
-                  : iconColor.withOpacity(0.1),
+    bool isDark, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-            child: Icon(
-              icon,
-              color: isDark ? iconColor.withOpacity(0.8) : iconColor,
-              size: 24,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : iconColor.withOpacity(0.1),
+              ),
+              child: Icon(
+                icon,
+                color: isDark ? iconColor.withOpacity(0.8) : iconColor,
+                size: 24,
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF0f172a),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      date,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark
-                            ? const Color(0xFF94a3b8)
-                            : const Color(0xFF64748b),
-                      ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF0f172a),
                     ),
-                    if (paymentMethod != null) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Container(
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isDark
-                                ? const Color(0xFF475569)
-                                : const Color(0xFFcbd5e1),
-                          ),
-                        ),
-                      ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
                       Text(
-                        category,
+                        date,
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark
@@ -583,65 +677,89 @@ class _HomeScreenState extends State<HomeScreen> {
                               : const Color(0xFF64748b),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Container(
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isDark
-                                ? const Color(0xFF475569)
-                                : const Color(0xFFcbd5e1),
+                      if (paymentMethod != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark
+                                  ? const Color(0xFF475569)
+                                  : const Color(0xFFcbd5e1),
+                            ),
                           ),
                         ),
-                      ),
-                      Text(
-                        paymentMethod,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? const Color(0xFF94a3b8)
-                              : const Color(0xFF64748b),
-                        ),
-                      ),
-                    ] else ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Text(
-                          '•',
+                        Text(
+                          category,
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark
-                                ? const Color(0xFF475569)
-                                : const Color(0xFFcbd5e1),
+                                ? const Color(0xFF94a3b8)
+                                : const Color(0xFF64748b),
                           ),
                         ),
-                      ),
-                      Text(
-                        category,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? const Color(0xFF94a3b8)
-                              : const Color(0xFF64748b),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark
+                                  ? const Color(0xFF475569)
+                                  : const Color(0xFFcbd5e1),
+                            ),
+                          ),
                         ),
-                      ),
+                        Text(
+                          paymentMethod,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? const Color(0xFF94a3b8)
+                                : const Color(0xFF64748b),
+                          ),
+                        ),
+                      ] else ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Text(
+                            '•',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? const Color(0xFF475569)
+                                  : const Color(0xFFcbd5e1),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          category,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? const Color(0xFF94a3b8)
+                                : const Color(0xFF64748b),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            amount,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF0f172a),
+            Text(
+              '₹$amount',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF0f172a),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

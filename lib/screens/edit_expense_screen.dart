@@ -2,43 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../widgets/payment_selection_bottom_sheet.dart';
 import '../widgets/custom_date_picker.dart';
-import 'add_split_item_screen.dart';
 
-class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+class EditExpenseScreen extends StatefulWidget {
+  final Map<String, dynamic> transaction;
+
+  const EditExpenseScreen({super.key, required this.transaction});
 
   @override
-  State<AddExpenseScreen> createState() => _AddExpenseScreenState();
+  State<EditExpenseScreen> createState() => _EditExpenseScreenState();
 }
 
-class _AddExpenseScreenState extends State<AddExpenseScreen> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '45.00',
-  );
-  final TextEditingController _noteController = TextEditingController();
+class _EditExpenseScreenState extends State<EditExpenseScreen> {
+  late TextEditingController _amountController;
+  late TextEditingController _noteController;
 
   int _selectedCategoryIndex = 0;
   int _selectedPaymentIndex = 0;
-  DateTime _selectedDate = DateTime.now();
 
-  bool _isSplitBill = false;
-
-  final List<Map<String, dynamic>> _splitItems = [
-    {
-      'name': 'Groceries',
-      'category': 'Food',
-      'amount': '3,500',
-      'icon': Icons.lunch_dining_rounded,
-      'color': Colors.orange,
-    },
-    {
-      'name': 'T-shirt',
-      'category': 'Shopping',
-      'amount': '1,500',
-      'icon': Icons.checkroom_rounded,
-      'color': Colors.purple,
-    },
-  ];
+  late DateTime _selectedDate;
+  bool _isDeleteDialogVisible = false;
 
   final List<Map<String, dynamic>> categories = [
     {
@@ -95,6 +77,49 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController(
+      text: widget.transaction['amount'] ?? '45.00',
+    );
+    _noteController = TextEditingController(
+      text: widget.transaction['note'] ?? 'Lunch with friends',
+    );
+
+    // Parse date or default to now
+    // In a real app, this would parse the date string. For now, just current date.
+    _selectedDate = DateTime.now();
+
+    // Find category index
+    final categoryName = widget.transaction['category'];
+    if (categoryName != null) {
+      final index = categories.indexWhere((c) => c['name'] == categoryName);
+      if (index != -1) _selectedCategoryIndex = index;
+    }
+
+    // Find payment method index
+    final paymentMethodName = widget.transaction['paymentMethod'];
+    if (paymentMethodName != null) {
+      // Simple substring match or exact match depending on data
+      if (paymentMethodName == 'Cash')
+        _selectedPaymentIndex = 1;
+      else if (paymentMethodName.contains('Card'))
+        _selectedPaymentIndex = 2;
+      else if (paymentMethodName == 'Bank')
+        _selectedPaymentIndex = 3;
+      else
+        _selectedPaymentIndex = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -104,7 +129,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // Background gradient blobs
+          // Background blobs
           Positioned(
             top: -100,
             left: -100,
@@ -140,52 +165,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
           ),
 
-          // Main content
           SafeArea(
             child: Column(
               children: [
-                // Header
                 _buildHeader(isDark),
-
-                // Scrollable content
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        _buildAmountSection(isDark),
+                        const SizedBox(height: 32),
+                        _buildCategorySection(isDark),
+                        const SizedBox(height: 32),
+                        _buildPaymentMethodSection(isDark),
                         const SizedBox(height: 24),
-
-                        // Toggle
-                        _buildToggle(isDark),
-
-                        const SizedBox(height: 24),
-
-                        if (_isSplitBill)
-                          _buildSplitView(isDark)
-                        else
-                          Column(
-                            children: [
-                              // Amount Input
-                              _buildAmountSection(isDark),
-
-                              const SizedBox(height: 32),
-
-                              // Categories
-                              _buildCategorySection(isDark),
-
-                              const SizedBox(height: 32),
-
-                              // Payment Methods
-                              _buildPaymentMethodSection(isDark),
-
-                              const SizedBox(height: 24),
-
-                              // Date and Note
-                              _buildDetailsSection(isDark),
-
-                              const SizedBox(height: 120),
-                            ],
-                          ),
+                        _buildDetailsSection(isDark),
+                        const SizedBox(height: 120),
                       ],
                     ),
                   ),
@@ -220,7 +215,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pop(context); // Just back for now
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
@@ -236,7 +231,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
                     Text(
-                      'Save Expense',
+                      'Save Changes',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -249,6 +244,188 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
             ),
           ),
+          if (_isDeleteDialogVisible) ...[
+            // Dimmed background
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isDeleteDialogVisible = false;
+                  });
+                },
+                child: Container(color: Colors.black.withOpacity(0.4)),
+              ),
+            ),
+
+            // Dialog
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 1.0, end: 0.0),
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, value * 200),
+                    child: child,
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(24).copyWith(bottom: 40),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Icon
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.2),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.delete_rounded,
+                          size: 40,
+                          color: Colors.red,
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      Text(
+                        'Delete Expense?',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Text(
+                        'Are you sure you want to delete this transaction?\nThis action cannot be undone.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
+                          height: 1.5,
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Perform delete action
+                                Navigator.pop(context); // Close dialog
+                                Navigator.pop(context); // Close edit screen
+                                Navigator.pop(
+                                  context,
+                                ); // Close details screen (if needed, or handle result)
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 8,
+                                shadowColor: Colors.red.withOpacity(0.3),
+                              ),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isDeleteDialogVisible = false;
+                                });
+                              },
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withOpacity(0.1),
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -268,10 +445,40 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
           ),
           Text(
-            'New Expense',
+            'Edit Expense',
             style: Theme.of(context).appBarTheme.titleTextStyle,
           ),
-          const SizedBox(width: 40),
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      setState(() {
+                        _isDeleteDialogVisible = true;
+                      });
+                    },
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 20,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const SizedBox(width: 40),
+            ],
+          ),
         ],
       ),
     );
@@ -544,7 +751,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       setState(() {
                         _selectedPaymentIndex = index;
                       });
-                      // Show bottom sheet when clicking the payment method
                       showModalBottomSheet(
                         context: context,
                         backgroundColor: Colors.transparent,
@@ -627,7 +833,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          // Date selector
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).cardTheme.color,
@@ -712,7 +917,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          // Note input
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).cardTheme.color,
@@ -756,7 +960,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
+                      filled: false,
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
                       hintText: 'Add a note...',
                       hintStyle: TextStyle(
                         color: Theme.of(
@@ -774,499 +981,5 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildToggle(bool isDark) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildToggleOption('Simple', !_isSplitBill, isDark),
-            _buildToggleOption('Split Bill', _isSplitBill, isDark),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildToggleOption(String text, bool isSelected, bool isDark) {
-    return GestureDetector(
-      onTap: () {
-        if ((text == 'Split Bill') != _isSplitBill) {
-          setState(() {
-            _isSplitBill = text == 'Split Bill';
-          });
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.secondary
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-          boxShadow: isSelected && !isDark
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
-        ),
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: isSelected
-                ? Theme.of(context).colorScheme.onSecondary
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSplitView(bool isDark) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Split Amount Section
-        Column(
-          children: [
-            Text(
-              'TOTAL AMOUNT',
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(letterSpacing: 2),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    '₹',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IntrinsicWidth(
-                  child: TextField(
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                    ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '0.00',
-                      hintStyle: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.2),
-                      ),
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_circle, size: 16, color: primaryColor),
-                  const SizedBox(width: 6),
-                  Text(
-                    '₹0.00 left to split',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 32),
-
-        // Itemized Split Header
-        // Itemized Split Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Itemized Split',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontSize: 14),
-              ),
-              TextButton.icon(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddSplitItemScreen(),
-                    ),
-                  );
-
-                  if (result != null && mounted) {
-                    setState(() {
-                      _splitItems.add(result);
-                    });
-                  }
-                },
-                icon: Icon(Icons.add, size: 16, color: primaryColor),
-                label: Text(
-                  'Add Item',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Split Items List
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          itemCount: _splitItems.length,
-          separatorBuilder: (c, i) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final item = _splitItems[index];
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: Colors.transparent),
-                boxShadow: isDark
-                    ? []
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: (item['color'] as Color).withOpacity(
-                        isDark ? 0.2 : 0.1,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      item['icon'],
-                      size: 20,
-                      color: isDark
-                          ? (item['color'] as Color).withOpacity(0.8)
-                          : item['color'],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextFormField(
-                          initialValue: item['name'],
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                          decoration: InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
-                            hintText: 'Item name',
-                            hintStyle: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.4),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          (item['category'] as String).toUpperCase(),
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.5),
-                                letterSpacing: 0.5,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '₹',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.5),
-                              ),
-                        ),
-                        const SizedBox(width: 4),
-                        SizedBox(
-                          width: 50,
-                          child: TextFormField(
-                            initialValue: item['amount'],
-                            textAlign: TextAlign.right,
-                            keyboardType: TextInputType.number,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-
-        const SizedBox(height: 24),
-
-        // Split Details (Payment, Date, Note)
-        _buildPaymentMethodSection(isDark), // Reuse
-
-        const SizedBox(height: 24),
-
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              // Date Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: isDark
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                ),
-                child: InkWell(
-                  onTap: () {
-                    // Date picker logic
-                    CustomDatePicker.show(
-                      context,
-                      initialDate: _selectedDate,
-                      onDateSelected: (date) {
-                        setState(() {
-                          _selectedDate = date;
-                        });
-                      },
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        child: Icon(
-                          Icons.calendar_today_rounded,
-                          size: 20,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'DATE',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelSmall?.copyWith(letterSpacing: 1),
-                          ),
-                          Text(
-                            DateFormat('EEEE, MMM d').format(_selectedDate),
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.4),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Note Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: isDark
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: Icon(
-                        Icons.edit_note_rounded,
-                        size: 20,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextField(
-                        controller: _noteController,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Add a note...',
-                          hintStyle: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.4),
-                          ),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 120),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    _noteController.dispose();
-    super.dispose();
   }
 }

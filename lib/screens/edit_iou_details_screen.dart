@@ -10,8 +10,12 @@ class EditIOUDetailsScreen extends StatefulWidget {
 }
 
 class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
-  final TextEditingController _amountController = TextEditingController(text: '500');
-  final TextEditingController _personController = TextEditingController(text: 'Rahul K.');
+  final TextEditingController _amountController = TextEditingController(
+    text: '500',
+  );
+  final TextEditingController _personController = TextEditingController(
+    text: 'Rahul K.',
+  );
   DateTime _repaymentDate = DateTime(2024, 11, 1);
 
   @override
@@ -40,7 +44,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Background gradient blobs
@@ -54,7 +58,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -62,8 +68,8 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
             ),
           ),
           Positioned(
-            bottom: -100,
-            right: -100,
+            bottom: -80,
+            right: -80,
             child: Container(
               width: 250,
               height: 250,
@@ -71,7 +77,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blue.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -132,7 +140,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 4,
-                      shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      shadowColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -168,7 +178,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
             onPressed: () => Navigator.pop(context),
             icon: Icon(
               Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
             ),
           ),
           Text(
@@ -207,7 +217,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
-                color: isDark ? const Color(0xFF475569) : const Color(0xFFcbd5e1),
+                color: isDark
+                    ? const Color(0xFF475569)
+                    : const Color(0xFFcbd5e1),
               ),
             ),
             const SizedBox(width: 4),
@@ -241,7 +253,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
         color: isDark ? const Color(0xFF1a2c26) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
+          color: isDark
+              ? const Color(0xFF334155).withOpacity(0.5)
+              : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
@@ -275,10 +289,14 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf8fafc),
+                  fillColor: isDark
+                      ? const Color(0xFF334155).withOpacity(0.5)
+                      : const Color(0xFFf8fafc),
                   hintText: 'Search contact or enter name',
                   hintStyle: TextStyle(
-                    color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                    color: isDark
+                        ? const Color(0xFF64748b)
+                        : const Color(0xFF94a3b8),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -291,7 +309,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                 padding: const EdgeInsets.only(right: 12),
                 child: Icon(
                   Icons.person_search_rounded,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF94a3b8),
                 ),
               ),
             ],
@@ -308,7 +328,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
         color: isDark ? const Color(0xFF1a2c26) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf1f5f9),
+          color: isDark
+              ? const Color(0xFF334155).withOpacity(0.5)
+              : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
@@ -357,7 +379,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -365,7 +389,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                         'Full payment due',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                          color: isDark
+                              ? const Color(0xFF94a3b8)
+                              : const Color(0xFF94a3b8),
                         ),
                       ),
                     ],
@@ -376,12 +402,19 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                 onTap: () => _selectDate(context),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFf8fafc),
+                    color: isDark
+                        ? const Color(0xFF334155).withOpacity(0.5)
+                        : const Color(0xFFf8fafc),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFe2e8f0),
                     ),
                   ),
                   child: Row(
@@ -391,14 +424,18 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF334155),
+                          color: isDark
+                              ? const Color(0xFFcbd5e1)
+                              : const Color(0xFF334155),
                         ),
                       ),
                       const SizedBox(width: 4),
                       Icon(
                         Icons.edit_calendar_rounded,
                         size: 16,
-                        color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF94a3b8),
                       ),
                     ],
                   ),
