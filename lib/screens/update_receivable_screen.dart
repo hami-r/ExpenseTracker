@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
 import '../widgets/custom_date_picker.dart';
@@ -318,6 +319,9 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                   ),
                 ),
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
                 textAlign: TextAlign.center,
               ),
             ),

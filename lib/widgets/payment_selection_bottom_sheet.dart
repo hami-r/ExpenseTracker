@@ -1,61 +1,52 @@
 import 'package:flutter/material.dart';
+import '../models/payment_method.dart';
+import '../utils/icon_helper.dart';
+import '../utils/color_helper.dart';
 
 class PaymentSelectionBottomSheet extends StatefulWidget {
-  final String selectedPaymentMethod;
-  final Function(String) onPaymentSelected;
+  final List<PaymentMethod> paymentMethods;
+  final int? selectedPaymentMethodId;
+  final Function(PaymentMethod) onPaymentSelected;
+  final VoidCallback onManageAccounts;
 
   const PaymentSelectionBottomSheet({
     super.key,
-    required this.selectedPaymentMethod,
+    required this.paymentMethods,
+    required this.selectedPaymentMethodId,
     required this.onPaymentSelected,
+    required this.onManageAccounts,
   });
 
   @override
-  State<PaymentSelectionBottomSheet> createState() => _PaymentSelectionBottomSheetState();
+  State<PaymentSelectionBottomSheet> createState() =>
+      _PaymentSelectionBottomSheetState();
 }
 
-class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomSheet> {
-  late String _selectedAccount;
-
-  final List<Map<String, dynamic>> upiAccounts = [
-    {
-      'name': 'GPay Personal',
-      'subtitle': '****@oksbi',
-      'icon': Icons.qr_code_scanner_rounded,
-      'color': const Color(0xFF2bb961),
-    },
-    {
-      'name': 'PhonePe',
-      'subtitle': '****@ybl',
-      'icon': Icons.account_balance_wallet_rounded,
-      'color': Colors.indigo,
-    },
-  ];
-
-  final List<Map<String, dynamic>> bankAccounts = [
-    {
-      'name': 'HDFC Bank',
-      'subtitle': '**** 1234',
-      'icon': Icons.account_balance_rounded,
-      'color': Colors.blue,
-    },
-    {
-      'name': 'SBI Savings',
-      'subtitle': '**** 5678',
-      'icon': Icons.account_balance_rounded,
-      'color': Colors.lightBlue,
-    },
-  ];
+class _PaymentSelectionBottomSheetState
+    extends State<PaymentSelectionBottomSheet> {
+  int? _selectedId;
 
   @override
   void initState() {
     super.initState();
-    _selectedAccount = widget.selectedPaymentMethod;
+    _selectedId = widget.selectedPaymentMethodId;
+  }
+
+  Map<String, List<PaymentMethod>> _groupedMethods() {
+    final Map<String, List<PaymentMethod>> grouped = {};
+    for (var method in widget.paymentMethods) {
+      if (!grouped.containsKey(method.type)) {
+        grouped[method.type] = [];
+      }
+      grouped[method.type]!.add(method);
+    }
+    return grouped;
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final groupedMethods = _groupedMethods();
 
     return Container(
       decoration: BoxDecoration(
@@ -80,7 +71,9 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
                 width: 48,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFe5e7eb),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFe5e7eb),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -107,41 +100,47 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // UPI Accounts
-                  Text(
-                    'UPI ACCOUNTS',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                      color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                  if (widget.paymentMethods.isEmpty)
+                    Center(
+                      child: Text(
+                        'No payment methods available',
+                        style: TextStyle(
+                          color: isDark
+                              ? const Color(0xFF94a3b8)
+                              : const Color(0xFF64748b),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...upiAccounts.map((account) => _buildAccountTile(
-                        account,
-                        isDark,
-                        isSelected: _selectedAccount == account['name'],
-                      )),
 
-                  const SizedBox(height: 24),
-
-                  // Bank Accounts
-                  Text(
-                    'BANK ACCOUNTS',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                      color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...bankAccounts.map((account) => _buildAccountTile(
-                        account,
-                        isDark,
-                        isSelected: _selectedAccount == account['name'],
-                      )),
+                  ...groupedMethods.entries.map((entry) {
+                    final type = entry.key;
+                    final methods = entry.value;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          type.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                            color: isDark
+                                ? const Color(0xFF64748b)
+                                : const Color(0xFF94a3b8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...methods.map(
+                          (method) => _buildMethodTile(
+                            method,
+                            isDark,
+                            isSelected: _selectedId == method.paymentMethodId,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
@@ -167,10 +166,14 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: widget.onManageAccounts,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark ? const Color(0xFF1e293b) : const Color(0xFFf1f5f9),
-                  foregroundColor: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+                  backgroundColor: isDark
+                      ? const Color(0xFF1e293b)
+                      : const Color(0xFFf1f5f9),
+                  foregroundColor: isDark
+                      ? const Color(0xFFcbd5e1)
+                      : const Color(0xFF475569),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -179,10 +182,7 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
                 ),
                 child: const Text(
                   'Manage Accounts',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -192,20 +192,28 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
     );
   }
 
-  Widget _buildAccountTile(Map<String, dynamic> account, bool isDark, {required bool isSelected}) {
+  Widget _buildMethodTile(
+    PaymentMethod method,
+    bool isDark, {
+    required bool isSelected,
+  }) {
+    final color = ColorHelper.fromHex(method.colorHex);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
         color: isSelected
-            ? (isDark ? const Color(0xFF2bb961).withOpacity(0.1) : const Color(0xFF2bb961).withOpacity(0.05))
+            ? (isDark
+                  ? const Color(0xFF2bb961).withOpacity(0.1)
+                  : const Color(0xFF2bb961).withOpacity(0.05))
             : (isDark ? const Color(0xFF1a2c26) : Colors.white),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: () {
             setState(() {
-              _selectedAccount = account['name'];
+              _selectedId = method.paymentMethodId;
             });
-            widget.onPaymentSelected(account['name']);
+            widget.onPaymentSelected(method);
             Navigator.pop(context);
           },
           borderRadius: BorderRadius.circular(16),
@@ -216,7 +224,9 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
               border: Border.all(
                 color: isSelected
                     ? const Color(0xFF2bb961)
-                    : (isDark ? const Color(0xFF1e293b) : const Color(0xFFf1f5f9)),
+                    : (isDark
+                          ? const Color(0xFF1e293b)
+                          : const Color(0xFFf1f5f9)),
                 width: isSelected ? 2 : 1,
               ),
             ),
@@ -228,7 +238,9 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.white
-                        : (isDark ? const Color(0xFF1e293b) : account['color'].withOpacity(0.1)),
+                        : (isDark
+                              ? const Color(0xFF1e293b)
+                              : color.withOpacity(0.1)),
                     shape: BoxShape.circle,
                     boxShadow: isSelected
                         ? [
@@ -240,11 +252,11 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
                         : [],
                   ),
                   child: Icon(
-                    account['icon'],
+                    IconHelper.getIcon(method.iconName),
                     size: 20,
                     color: isSelected
                         ? const Color(0xFF2bb961)
-                        : (isDark ? account['color'].withOpacity(0.8) : account['color']),
+                        : (isDark ? color.withOpacity(0.8) : color),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -253,22 +265,30 @@ class _PaymentSelectionBottomSheetState extends State<PaymentSelectionBottomShee
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        account['name'],
+                        method.name,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w600,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        account['subtitle'],
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                      if (method.accountNumber != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          method.accountNumber!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? const Color(0xFF64748b)
+                                : const Color(0xFF94a3b8),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

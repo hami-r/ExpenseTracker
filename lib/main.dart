@@ -39,7 +39,9 @@ class ExpenseTrackerApp extends StatelessWidget {
           theme: themeProvider.lightTheme,
           darkTheme: themeProvider.darkTheme,
           themeMode: themeProvider.themeMode,
-          home: const SplashScreen(),
+          // Temporarily use DatabaseTestScreen to verify database
+          // Change back to SplashScreen after testing
+          home: const SplashScreen(), // Change to DatabaseTestScreen() to test
         );
       },
     );

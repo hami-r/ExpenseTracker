@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'edit_expense_screen.dart';
+import '../../database/services/transaction_service.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -12,7 +13,24 @@ class TransactionDetailsScreen extends StatefulWidget {
 }
 
 class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
+  final TransactionService _transactionService = TransactionService();
   bool _isDeleteDialogVisible = false;
+
+  Future<void> _deleteTransaction() async {
+    try {
+      final transactionId = widget.transaction['id'] as int;
+      await _transactionService.deleteTransaction(transactionId);
+      if (mounted) {
+        Navigator.pop(context, true); // Pop screen with success result
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting transaction: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -214,8 +232,8 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => EditExpenseScreen(
@@ -223,6 +241,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                             ),
                           ),
                         );
+                        if (result == true && mounted) {
+                          Navigator.pop(context, true);
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).cardTheme.color,
@@ -399,13 +420,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () {
-                                // Perform delete action
-                                Navigator.pop(context); // Close dialog/screen
-                                Navigator.pop(
-                                  context,
-                                ); // Close details screen (if needed)
-                              },
+                              onPressed: _deleteTransaction,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                                 foregroundColor: Colors.white,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 
@@ -248,6 +249,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                   isDense: true,
                 ),
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
                 textAlign: TextAlign.center,
               ),
             ),
@@ -376,6 +380,11 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                           keyboardType: TextInputType.numberWithOptions(
                             decimal: true,
                           ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d{0,2}$'),
+                            ),
+                          ],
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -455,6 +464,9 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                             child: TextField(
                               controller: _tenureController,
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,

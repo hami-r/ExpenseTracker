@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../models/payment_method.dart';
+import '../database/services/payment_method_service.dart';
+import '../database/services/user_service.dart';
+import '../utils/icon_helper.dart';
+import '../utils/color_helper.dart';
 
 class EditPaymentMethodScreen extends StatefulWidget {
-  final Map<String, dynamic>? paymentMethod;
+  final PaymentMethod? paymentMethod;
 
   const EditPaymentMethodScreen({super.key, this.paymentMethod});
 
@@ -12,12 +19,20 @@ class EditPaymentMethodScreen extends StatefulWidget {
 
 class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
   String _selectedType = 'Card';
-  bool _isPrimary = false;
+  bool _isPrimary =
+      false; // Not persisted in current model, UI only for now or need schema update?
   String _linkedBank = 'HDFC Bank';
-  Color _selectedCardColor = const Color(0xFF14b8a6); // Default green color
+  // Model doesn't have isPrimary. I will ignore it for persistence or treat 'Cash' as default/primary implicitly or add logic later.
+  // For now, simple persistence.
+
+  Color _selectedCardColor = const Color(0xFF14b8a6);
   late TextEditingController _nameController;
   late TextEditingController _accountNumberController;
   late TextEditingController _ifscCodeController;
+
+  bool _isLoading = false;
+  final PaymentMethodService _paymentMethodService = PaymentMethodService();
+  final UserService _userService = UserService();
 
   final List<Map<String, dynamic>> methodTypes = [
     {'type': 'Card', 'icon': Icons.credit_card_rounded},
@@ -58,17 +73,36 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(
-      text: widget.paymentMethod?['name'] ?? '',
+      text: widget.paymentMethod?.name ?? '',
     );
-    _accountNumberController = TextEditingController();
-    _ifscCodeController = TextEditingController();
-    _selectedType = widget.paymentMethod?['type'] ?? 'Card';
-    _isPrimary = widget.paymentMethod?['isPrimary'] ?? false;
-    // Update card color to theme color after first frame
+    _accountNumberController = TextEditingController(
+      text: widget.paymentMethod?.accountNumber ?? '',
+    );
+    // Reuse accountNumber for ifsc/digits if appropriate, or leave empty if separate logic needed.
+    // For simplicity, let's assume accountNumber field holds the main identifier.
+    // If it's a card, it might be the last 4 digits.
+    if (widget.paymentMethod?.type == 'Card') {
+      _ifscCodeController = TextEditingController(
+        text: widget.paymentMethod?.accountNumber ?? '',
+      );
+    } else {
+      _ifscCodeController = TextEditingController();
+    }
+
+    _selectedType = widget.paymentMethod?.type ?? 'Card';
+    // _isPrimary = widget.paymentMethod?.isPrimary ?? false; // Model lacks isPrimary
+
+    _selectedCardColor =
+        ColorHelper.fromHex(widget.paymentMethod?.colorHex) == Colors.blue
+        ? const Color(0xFF14b8a6) // default green
+        : ColorHelper.fromHex(widget.paymentMethod?.colorHex);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _selectedCardColor = Theme.of(context).colorScheme.primary;
-      });
+      if (widget.paymentMethod != null) {
+        setState(() {
+          // Refresh state with loaded color if needed, but initialized above
+        });
+      }
     });
   }
 
@@ -622,6 +656,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                             controller: _ifscCodeController,
                             keyboardType: TextInputType.number,
                             maxLength: 4,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -720,6 +757,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                           TextField(
                             controller: _accountNumberController,
                             keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -1012,10 +1052,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
               child: SafeArea(
                 top: false,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Save logic here
-                    Navigator.pop(context);
-                  },
+                  onPressed: _isLoading ? null : _savePaymentMethod,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
@@ -1107,6 +1144,67 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
         return 'Linked to $_linkedBank';
       default:
         return '';
+    }
+  }
+
+  Future<void> _savePaymentMethod() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a name')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final user = await _userService.getCurrentUser();
+      if (user != null && user.userId != null) {
+        // Determine account number based on type
+        String? accountNumber;
+        if (_selectedType == 'Card') {
+          accountNumber = _ifscCodeController.text;
+        } else if (_selectedType == 'Bank') {
+          accountNumber = _accountNumberController.text;
+        } else if (_selectedType == 'UPI') {
+          accountNumber = _accountNumberController.text; // Store UPI ID
+        }
+
+        final paymentMethod = PaymentMethod(
+          paymentMethodId: widget.paymentMethod?.paymentMethodId,
+          userId: user.userId!,
+          name: _nameController.text,
+          type: _selectedType,
+          iconName: IconHelper.getIconName(
+            methodTypes.firstWhere((m) => m['type'] == _selectedType)['icon'],
+          ),
+          colorHex: ColorHelper.toHex(_selectedCardColor),
+          accountNumber: accountNumber,
+          isActive: true,
+          displayOrder: widget.paymentMethod?.displayOrder ?? 0,
+          createdAt: widget.paymentMethod?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        if (isEditMode) {
+          await _paymentMethodService.updatePaymentMethod(paymentMethod);
+        } else {
+          await _paymentMethodService.createPaymentMethod(paymentMethod);
+        }
+
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error saving payment method: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

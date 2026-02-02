@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'edit_payment_method_screen.dart';
+import '../models/payment_method.dart';
+import '../database/services/payment_method_service.dart';
+import '../database/services/user_service.dart';
+import '../utils/icon_helper.dart';
+import '../utils/color_helper.dart';
 
 class ManagePaymentMethodsScreen extends StatefulWidget {
   const ManagePaymentMethodsScreen({super.key});
@@ -11,73 +16,41 @@ class ManagePaymentMethodsScreen extends StatefulWidget {
 
 class _ManagePaymentMethodsScreenState
     extends State<ManagePaymentMethodsScreen> {
-  late List<Map<String, dynamic>> paymentMethods;
-  bool _isInitialized = false;
+  List<PaymentMethod> paymentMethods = [];
+  bool _isLoading = true;
+  final PaymentMethodService _paymentMethodService = PaymentMethodService();
+  final UserService _userService = UserService();
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInitialized) {
-      paymentMethods = [
-        {
-          'name': 'Cash',
-          'description': 'Default payment method',
-          'icon': Icons.wallet_rounded,
-          'color': Theme.of(context).colorScheme.primary,
-          'isPrimary': true,
-          'details': '',
-        },
-        {
-          'name': 'Google Pay',
-          'description': 'user@okhdfcbank',
-          'icon': Icons.account_balance_wallet_rounded,
-          'color': const Color(0xFF4285F4),
-          'isPrimary': false,
-          'details': '',
-        },
-        {
-          'name': 'HDFC Regalia',
-          'description': '•••• 1234',
-          'icon': Icons.credit_card_rounded,
-          'color': const Color(0xFF1e3a8a),
-          'isPrimary': false,
-          'details': 'Credit',
-        },
-        {
-          'name': 'SBI Global',
-          'description': '•••• 5678',
-          'icon': Icons.contactless_rounded,
-          'color': const Color(0xFF0284c7),
-          'isPrimary': false,
-          'details': 'Debit',
-        },
-        {
-          'name': 'ICICI Net Banking',
-          'description': 'Linked ••8892',
-          'icon': Icons.account_balance_rounded,
-          'color': const Color(0xFFea580c),
-          'isPrimary': false,
-          'details': '',
-        },
-      ];
-      _isInitialized = true;
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    final user = await _userService.getCurrentUser();
+    if (user != null) {
+      final loadedMethods = await _paymentMethodService.getAllPaymentMethods(
+        user.userId!,
+      );
+      if (mounted) {
+        setState(() {
+          paymentMethods = loadedMethods;
+          _isLoading = false;
+        });
+      }
+    } else {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _deletePaymentMethod(int index, BuildContext context) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final methodName = paymentMethods[index]['name'];
+    final method = paymentMethods[index];
+    final methodName = method.name;
 
-    if (paymentMethods[index]['isPrimary'] == true) {
-      // Show error for primary method
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cannot delete primary payment method'),
-          backgroundColor: isDark ? const Color(0xFFdc2626) : Colors.red,
-        ),
-      );
-      return;
-    }
+    // if (method.isPrimary) { ... } // Model logic for primary not yet fully integrated, skipping check or implementing if field exists (it doesn't in model, checking implicit rules if any)
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -133,10 +106,11 @@ class _ManagePaymentMethodsScreenState
       },
     );
 
-    if (confirmed == true) {
-      setState(() {
-        paymentMethods.removeAt(index);
-      });
+    if (confirmed == true && method.paymentMethodId != null) {
+      await _paymentMethodService.deactivatePaymentMethod(
+        method.paymentMethodId!,
+      );
+      _loadData();
     }
   }
 
@@ -191,14 +165,15 @@ class _ManagePaymentMethodsScreenState
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
+                        onPressed: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
                                   const EditPaymentMethodScreen(),
                             ),
                           );
+                          _loadData(); // Refresh on return
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(
@@ -270,9 +245,30 @@ class _ManagePaymentMethodsScreenState
                     const SizedBox(height: 16),
 
                     // Payment Methods List
-                    ...paymentMethods.asMap().entries.map((entry) {
-                      return _buildPaymentCard(entry.value, entry.key, isDark);
-                    }),
+                    if (_isLoading)
+                      const Center(child: CircularProgressIndicator())
+                    else if (paymentMethods.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Text(
+                            'No payment methods found',
+                            style: TextStyle(
+                              color: isDark
+                                  ? const Color(0xFF94a3b8)
+                                  : const Color(0xFF64748b),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      ...paymentMethods.asMap().entries.map((entry) {
+                        return _buildPaymentCard(
+                          entry.value,
+                          entry.key,
+                          isDark,
+                        );
+                      }),
 
                     const SizedBox(height: 24),
 
@@ -319,12 +315,11 @@ class _ManagePaymentMethodsScreenState
     );
   }
 
-  Widget _buildPaymentCard(
-    Map<String, dynamic> method,
-    int index,
-    bool isDark,
-  ) {
-    final isPrimary = method['isPrimary'] == true;
+  Widget _buildPaymentCard(PaymentMethod method, int index, bool isDark) {
+    // Model doesn't have isPrimary yet, assuming false or logic needed
+    final isPrimary = false;
+    final color = ColorHelper.fromHex(method.colorHex);
+    final icon = IconHelper.getIcon(method.iconName);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -349,21 +344,16 @@ class _ManagePaymentMethodsScreenState
             height: 48,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isPrimary
-                    ? [method['color'], method['color'].withOpacity(0.8)]
-                    : [method['color'], method['color']],
+                colors: [color, color],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(
-                  color: method['color'].withOpacity(0.2),
-                  blurRadius: 4,
-                ),
+                BoxShadow(color: color.withOpacity(0.2), blurRadius: 4),
               ],
             ),
-            child: Icon(method['icon'], color: Colors.white, size: 24),
+            child: Icon(icon, color: Colors.white, size: 24),
           ),
 
           const SizedBox(width: 16),
@@ -377,7 +367,7 @@ class _ManagePaymentMethodsScreenState
                   children: [
                     Flexible(
                       child: Text(
-                        method['name'],
+                        method.name,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -388,33 +378,9 @@ class _ManagePaymentMethodsScreenState
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (isPrimary) ...{
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          'PRIMARY',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
-                    },
                   ],
                 ),
-                if (method['details'].isNotEmpty) ...[
+                if (method.type == 'Card') ...[
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -426,7 +392,7 @@ class _ManagePaymentMethodsScreenState
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      method['details'].toUpperCase(),
+                      'CREDIT', // Or determine from type if possible
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
@@ -439,7 +405,7 @@ class _ManagePaymentMethodsScreenState
                 ],
                 const SizedBox(height: 4),
                 Text(
-                  method['description'],
+                  method.accountNumber ?? method.type,
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark
@@ -467,6 +433,7 @@ class _ManagePaymentMethodsScreenState
                           EditPaymentMethodScreen(paymentMethod: method),
                     ),
                   );
+                  _loadData();
                 },
                 icon: Icon(
                   Icons.edit_rounded,

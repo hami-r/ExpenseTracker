@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'manage_categories_screen.dart';
 import 'manage_payment_methods_screen.dart';
+import 'database_test_screen.dart';
 import 'liabilities_loans_screen.dart';
 import 'money_owed_screen.dart';
 import 'theme_selection_screen.dart';
@@ -141,6 +142,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             icon: Icons.file_download_rounded,
                             title: 'Export Data',
                             color: const Color(0xFF64748b),
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.bug_report_rounded,
+                            title: 'Database Tests',
+                            color: const Color(0xFFef4444),
                             hasBottomBorder: true,
                           ),
                           _MenuItemData(
@@ -467,6 +474,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ThemeSelectionScreen(),
+                    ),
+                  );
+                } else if (item.title == 'Database Tests') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DatabaseTestScreen(),
                     ),
                   );
                 }

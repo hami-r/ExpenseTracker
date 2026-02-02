@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class EditSplitExpenseScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -156,6 +157,11 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                                   isDense: true,
                                 ),
                                 keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d*\.?\d*'),
+                                  ),
+                                ],
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -522,6 +528,9 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                   child: TextField(
                     controller: item['amountController'],
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                    ],
                     textAlign: TextAlign.right,
                     style: TextStyle(
                       fontSize: 14,

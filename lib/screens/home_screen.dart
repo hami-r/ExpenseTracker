@@ -6,6 +6,15 @@ import 'detailed_spending_analytics_screen.dart';
 import 'profile_screen.dart';
 import 'transaction_details_screen.dart';
 import 'split_expense_detail_screen.dart';
+import '../database/services/analytics_service.dart';
+import '../database/services/transaction_service.dart';
+import '../database/services/user_service.dart';
+import '../database/services/category_service.dart';
+import '../database/services/payment_method_service.dart';
+import '../models/transaction.dart' as model;
+import '../models/category.dart';
+import '../models/payment_method.dart';
+import '../utils/icon_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,16 +26,103 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<double> weeklySpending = [
-    0.75,
-    0.45,
-    0.60,
-    0.35,
-    0.85,
-    0.55,
-    0.25,
-  ];
-  final List<String> weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  // Services
+  final AnalyticsService _analyticsService = AnalyticsService();
+  final TransactionService _transactionService = TransactionService();
+  final UserService _userService = UserService();
+  final CategoryService _categoryService = CategoryService();
+  final PaymentMethodService _paymentMethodService = PaymentMethodService();
+
+  // Data
+  int? _userId;
+  Map<String, double> _weeklySpending = {};
+  List<model.Transaction> _recentTransactions = [];
+  Map<int, Category> _categoriesMap = {};
+  Map<int, PaymentMethod> _paymentMethodsMap = {};
+  double _totalBalance = 0.0;
+  double _todaySpending = 0.0;
+  double _monthSpending = 0.0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final user = await _userService.getCurrentUser();
+      if (user != null && mounted) {
+        setState(() {
+          _userId = user.userId;
+        });
+
+        final now = DateTime.now();
+        final startOfMonth = DateTime(now.year, now.month, 1);
+        final endOfMonth = DateTime(now.year, now.month + 1, 0);
+
+        // Load analytics and transactions in parallel
+        final results = await Future.wait([
+          _analyticsService.getWeeklySpending(user.userId!),
+          _analyticsService.getTotalBalance(user.userId!),
+          _transactionService.getRecentTransactions(user.userId!, 10),
+          _categoryService.getAllCategories(user.userId!),
+          _paymentMethodService.getAllPaymentMethods(user.userId!),
+          _analyticsService.getTotalSpending(user.userId!, now, now), // Today
+          _analyticsService.getTotalSpending(
+            user.userId!,
+            startOfMonth,
+            endOfMonth,
+          ), // Month
+        ]);
+
+        if (mounted) {
+          // Create maps for quick lookup
+          final categories = results[3] as List<Category>;
+          final paymentMethods = results[4] as List<PaymentMethod>;
+
+          final categoriesMap = <int, Category>{};
+          for (var cat in categories) {
+            if (cat.categoryId != null) categoriesMap[cat.categoryId!] = cat;
+          }
+
+          final paymentMethodsMap = <int, PaymentMethod>{};
+          for (var pm in paymentMethods) {
+            if (pm.paymentMethodId != null)
+              paymentMethodsMap[pm.paymentMethodId!] = pm;
+          }
+
+          setState(() {
+            _weeklySpending = results[0] as Map<String, double>;
+            _totalBalance = results[1] as double;
+            _recentTransactions = results[2] as List<model.Transaction>;
+            _categoriesMap = categoriesMap;
+            _paymentMethodsMap = paymentMethodsMap;
+            _todaySpending = results[5] as double;
+            _monthSpending = results[6] as double;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading home screen data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Color _getColorFromHex(String? colorHex) {
+    if (colorHex == null || colorHex.isEmpty) return Colors.grey;
+    try {
+      return Color(int.parse(colorHex.replaceAll('#', '0xFF')));
+    } catch (e) {
+      return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,10 +252,43 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: List.generate(7, (index) {
-                                final isToday = index == 0; // Sunday is today
+                                if (_weeklySpending.isEmpty) {
+                                  return _buildBarColumn(
+                                    ['M', 'T', 'W', 'T', 'F', 'S', 'S'][index],
+                                    0.0,
+                                    index == 6,
+                                    isDark,
+                                  );
+                                }
+
+                                final keys = _weeklySpending.keys.toList();
+                                final values = _weeklySpending.values.toList();
+                                final dayName = keys[index]; // e.g. "Mon"
+                                final amount = values[index];
+                                // _weeklySpending returns last 7 days ending today.
+                                // So the last index (6) is today.
+                                final isToday = index == 6;
+
+                                // Get first letter
+                                final label = dayName.isNotEmpty
+                                    ? dayName.substring(0, 1)
+                                    : '';
+
+                                // Normalize amount for bar height (0.0 to 1.0 relative to max)
+                                // If max is 0, use 0.
+                                // Wait, _buildBarColumn likely expects 0.0-1.0 or value?
+                                // The hardcoded values were 0.75 etc.
+                                // Let's check _buildBarColumn implementation.
+                                // Assuming it takes double height factor.
+                                // We need to normalize against max spending in the week.
+                                double maxSpending = values.reduce(
+                                  (curr, next) => curr > next ? curr : next,
+                                );
+                                if (maxSpending == 0) maxSpending = 1.0;
+
                                 return _buildBarColumn(
-                                  weekDays[index],
-                                  weeklySpending[index],
+                                  label,
+                                  amount / maxSpending, // Normalize
                                   isToday,
                                   isDark,
                                 );
@@ -184,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: _buildStatsCard(
                             'Today',
-                            '₹ 32.0',
+                            '₹ ${_todaySpending.toStringAsFixed(1)}',
                             false,
                             isDark,
                           ),
@@ -193,7 +322,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: _buildStatsCard(
                             'Week',
-                            '₹ 32.0',
+                            // Calculate week total from weekly map
+                            '₹ ${_weeklySpending.values.fold(0.0, (doc, val) => doc + val).toStringAsFixed(1)}',
                             true,
                             isDark,
                           ),
@@ -202,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: _buildStatsCard(
                             'Month',
-                            '₹ 32.0',
+                            '₹ ${_monthSpending.toStringAsFixed(1)}',
                             false,
                             isDark,
                           ),
@@ -232,145 +362,120 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 140),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _buildTransactionCard(
-                        'test',
-                        '18 Jan, 8:33 PM',
-                        'Charity',
-                        'Cash',
-                        '32.0',
-                        Icons.volunteer_activism_rounded,
-                        Colors.blue,
-                        false,
-                        isDark,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TransactionDetailsScreen(
-                                    transaction: {
-                                      'title': 'test',
-                                      'date': '18 Jan, 8:33 PM',
-                                      'category': 'Charity',
-                                      'paymentMethod': 'Cash',
-                                      'amount': '32.0',
-                                      'icon': Icons.volunteer_activism_rounded,
-                                      'color': Colors.blue,
-                                      'note': 'Donation',
-                                    },
-                                  ),
+                  sliver: _isLoading
+                      ? const SliverToBoxAdapter(
+                          child: Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32.0),
+                              child: CircularProgressIndicator(),
                             ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      Stack(
-                        children: [
-                          _buildTransactionCard(
-                            'Split Expense',
-                            '19 Jan, 10:00 AM',
-                            'Food',
-                            'Card',
-                            '500.0',
-                            Icons.restaurant_rounded,
-                            Colors.orange,
-                            false,
-                            isDark,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const SplitExpenseDetailScreen(
-                                        transaction: {
-                                          'title': 'Split Expense',
-                                          'date': '19 Jan, 10:00 AM',
-                                          'category': 'Food',
-                                          'paymentMethod': 'Card',
-                                          'amount': '500.0',
-                                          'icon': Icons.restaurant_rounded,
-                                          'color': Colors.orange,
-                                          'note': 'Team Lunch',
-                                        },
-                                      ),
-                                ),
-                              );
-                            },
                           ),
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(16),
-                                  bottomLeft: Radius.circular(16),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
+                        )
+                      : _recentTransactions.isEmpty
+                      ? SliverToBoxAdapter(
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32.0),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.receipt_long_rounded,
+                                    size: 48,
+                                    color: isDark
+                                        ? Colors.grey[700]
+                                        : Colors.grey[300],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No recent transactions',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey
+                                          : Colors.grey[600],
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: Text(
-                                'Split',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimary,
-                                ),
-                              ),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTransactionCard(
-                        'Lunch',
-                        '17 Jan',
-                        'Food',
-                        null,
-                        '150.0',
-                        Icons.lunch_dining_rounded,
-                        Colors.orange,
-                        true,
-                        isDark,
-                        onTap: () {
-                          Navigator.push(
+                        )
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate((
                             context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TransactionDetailsScreen(
-                                    transaction: {
-                                      'title': 'Lunch',
-                                      'date': '17 Jan',
-                                      'category': 'Food',
-                                      'paymentMethod': 'Card',
-                                      'amount': '150.0',
-                                      'icon': Icons.lunch_dining_rounded,
-                                      'color': Colors.orange,
-                                      'note': 'Team Lunch',
-                                    },
-                                  ),
-                            ),
-                          );
-                        },
-                      ),
-                    ]),
-                  ),
+                            index,
+                          ) {
+                            if (index >= _recentTransactions.length)
+                              return null;
+
+                            final transaction = _recentTransactions[index];
+                            final category =
+                                _categoriesMap[transaction.categoryId];
+                            final paymentMethod =
+                                _paymentMethodsMap[transaction.paymentMethodId];
+                            final formattedDate = DateFormat(
+                              'd MMM, h:mm a',
+                            ).format(transaction.transactionDate);
+
+                            final icon = IconHelper.getIcon(category?.iconName);
+                            final color = _getColorFromHex(category?.colorHex);
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _buildTransactionCard(
+                                transaction.note?.isNotEmpty == true
+                                    ? transaction.note!
+                                    : (category?.name ?? 'Expense'),
+                                formattedDate,
+                                paymentMethod?.name,
+                                transaction.amount.toString(),
+                                icon,
+                                color,
+                                transaction.isSplit,
+                                isDark,
+                                onTap: () async {
+                                  final transactionMap = {
+                                    'id': transaction
+                                        .transactionId, // For edit/delete
+                                    'title': transaction.note ?? 'Expense',
+                                    'date': formattedDate,
+                                    'amount': transaction.amount.toString(),
+                                    'category':
+                                        category?.name ?? 'Uncategorized',
+                                    'paymentMethod':
+                                        paymentMethod?.name ?? 'Unknown',
+                                    'icon': icon,
+                                    'color': color,
+                                    'note': transaction.note ?? '',
+                                  };
+
+                                  if (transaction.isSplit) {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            SplitExpenseDetailScreen(
+                                              transaction: transactionMap,
+                                            ),
+                                      ),
+                                    );
+                                  } else {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            TransactionDetailsScreen(
+                                              transaction: transactionMap,
+                                            ),
+                                      ),
+                                    );
+                                  }
+                                  // Reload data in case of changes/deletion
+                                  _loadData();
+                                },
+                              ),
+                            );
+                          }, childCount: _recentTransactions.length),
+                        ),
                 ),
               ],
             ),
@@ -390,13 +495,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
               ).colorScheme.primary.withOpacity(0.4),
               child: InkWell(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const AddExpenseScreen(),
                     ),
                   );
+                  // Reload data when coming back from add screen
+                  _loadData();
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
@@ -611,7 +718,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTransactionCard(
     String title,
     String date,
-    String category,
     String? paymentMethod,
     String amount,
     IconData icon,
@@ -691,57 +797,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                        Text(
-                          category,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? const Color(0xFF94a3b8)
-                                : const Color(0xFF64748b),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark
-                                  ? const Color(0xFF475569)
-                                  : const Color(0xFFcbd5e1),
-                            ),
-                          ),
-                        ),
-                        Text(
-                          paymentMethod,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? const Color(0xFF94a3b8)
-                                : const Color(0xFF64748b),
-                          ),
-                        ),
-                      ] else ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        Flexible(
                           child: Text(
-                            '•',
+                            paymentMethod,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
                               color: isDark
-                                  ? const Color(0xFF475569)
-                                  : const Color(0xFFcbd5e1),
+                                  ? const Color(0xFF94a3b8)
+                                  : const Color(0xFF64748b),
                             ),
-                          ),
-                        ),
-                        Text(
-                          category,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? const Color(0xFF94a3b8)
-                                : const Color(0xFF64748b),
                           ),
                         ),
                       ],

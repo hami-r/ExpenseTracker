@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 
@@ -237,6 +238,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                   isDense: true,
                 ),
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
                 textAlign: TextAlign.center,
               ),
             ),

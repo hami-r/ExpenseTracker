@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AddSplitItemScreen extends StatefulWidget {
   const AddSplitItemScreen({super.key});
@@ -144,6 +145,11 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                                       const TextInputType.numberWithOptions(
                                         decimal: true,
                                       ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'^\d*\.?\d*'),
+                                    ),
+                                  ],
                                   textAlign: TextAlign.center,
                                   autofocus: true,
                                   style: Theme.of(context)

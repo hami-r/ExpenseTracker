@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
+import '../database/services/loan_service.dart';
+import '../database/services/user_service.dart';
+import '../models/loan.dart';
 
 class AddLoanScreen extends StatefulWidget {
   const AddLoanScreen({super.key});
@@ -18,6 +22,66 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   final TextEditingController _notesController = TextEditingController();
   String _tenureType = 'Yrs';
   DateTime _startDate = DateTime.now();
+
+  final LoanService _loanService = LoanService();
+  final UserService _userService = UserService();
+  bool _isLoading = false;
+
+  Future<void> _saveLoan() async {
+    if (_amountController.text.isEmpty || _lenderController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill required fields')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final user = await _userService.getCurrentUser();
+      if (user != null && user.userId != null) {
+        final loan = Loan(
+          userId: user.userId!,
+          lenderName: _lenderController.text,
+          loanType: _isInstitutional
+              ? 'Institutional'
+              : 'Personal', // Simple mapping
+          principalAmount: double.parse(_amountController.text),
+          interestRate: double.tryParse(_interestRateController.text) ?? 0.0,
+          tenureValue: int.tryParse(_tenureController.text),
+          tenureUnit: _tenureType,
+          startDate: _startDate,
+          // Calculate due date based on tenure if possible, else null or same as start
+          dueDate: _tenureController.text.isNotEmpty
+              ? _startDate.add(
+                  Duration(
+                    days:
+                        (int.tryParse(_tenureController.text) ?? 0) *
+                        (_tenureType == 'Yrs' ? 365 : 30),
+                  ),
+                )
+              : _startDate.add(const Duration(days: 365)), // Default 1 year
+          status: 'active',
+          notes: _notesController.text,
+          createdAt: DateTime.now(),
+        );
+
+        await _loanService.createLoan(loan);
+
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to indicate success
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving loan: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -183,6 +247,11 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                   child: TextField(
                                     controller: _amountController,
                                     keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r'^\d*\.?\d*'),
+                                      ),
+                                    ],
                                     style: TextStyle(
                                       fontSize: 48,
                                       fontWeight: FontWeight.w900,
@@ -266,6 +335,11 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                                 TextInputType.numberWithOptions(
                                                   decimal: true,
                                                 ),
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.allow(
+                                                RegExp(r'^\d*\.?\d*'),
+                                              ),
+                                            ],
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
@@ -340,6 +414,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                                 controller: _tenureController,
                                                 keyboardType:
                                                     TextInputType.number,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter
+                                                      .digitsOnly,
+                                                ],
                                                 style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold,
@@ -750,7 +828,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: _isLoading ? null : _saveLoan,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
@@ -762,7 +840,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                           context,
                         ).colorScheme.primary.withOpacity(0.3),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
@@ -773,7 +851,17 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                             ),
                           ),
                           SizedBox(width: 8),
-                          Icon(Icons.check_rounded, size: 20),
+                          if (_isLoading)
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          else
+                            Icon(Icons.check_rounded, size: 20),
                         ],
                       ),
                     ),

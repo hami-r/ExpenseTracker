@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../widgets/payment_selection_bottom_sheet.dart';
 import '../widgets/custom_date_picker.dart';
 import 'add_split_item_screen.dart';
+import '../database/services/category_service.dart';
+import '../database/services/payment_method_service.dart';
+import '../database/services/transaction_service.dart';
+import '../database/services/user_service.dart';
+import '../models/category.dart';
+import '../models/payment_method.dart';
+import '../models/transaction.dart' as model;
+import '../utils/icon_helper.dart';
+import '../utils/color_helper.dart';
+import 'manage_categories_screen.dart';
+import 'manage_payment_methods_screen.dart';
+import 'dart:math' show min;
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
@@ -12,10 +25,20 @@ class AddExpenseScreen extends StatefulWidget {
 }
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '45.00',
-  );
+  final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+
+  // Services
+  final CategoryService _categoryService = CategoryService();
+  final PaymentMethodService _paymentMethodService = PaymentMethodService();
+  final TransactionService _transactionService = TransactionService();
+  final UserService _userService = UserService();
+
+  // Data
+  int? _userId;
+  List<Category> _categories = [];
+  List<PaymentMethod> _paymentMethods = [];
+  bool _isLoading = true;
 
   int _selectedCategoryIndex = 0;
   int _selectedPaymentIndex = 0;
@@ -40,59 +63,93 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     },
   ];
 
-  final List<Map<String, dynamic>> categories = [
-    {
-      'name': 'Food',
-      'icon': Icons.lunch_dining_rounded,
-      'color': Colors.orange,
-    },
-    {
-      'name': 'Transport',
-      'icon': Icons.directions_car_rounded,
-      'color': Colors.blue,
-    },
-    {
-      'name': 'Shopping',
-      'icon': Icons.shopping_bag_rounded,
-      'color': Colors.purple,
-    },
-    {
-      'name': 'Charity',
-      'icon': Icons.volunteer_activism_rounded,
-      'color': Colors.red,
-    },
-    {'name': 'Housing', 'icon': Icons.cottage_rounded, 'color': Colors.teal},
-    {
-      'name': 'Fun',
-      'icon': Icons.local_activity_rounded,
-      'color': Colors.amber,
-    },
-    {'name': 'Education', 'icon': Icons.school_rounded, 'color': Colors.indigo},
-    {'name': 'More', 'icon': Icons.more_horiz_rounded, 'color': Colors.grey},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
-  final List<Map<String, dynamic>> paymentMethods = [
-    {
-      'name': 'UPI (GPay Personal)',
-      'icon': Icons.qr_code_scanner_rounded,
-      'color': Colors.white,
-    },
-    {
-      'name': 'Cash',
-      'icon': Icons.payments_rounded,
-      'color': const Color(0xFF10b981),
-    },
-    {
-      'name': 'Card (HDFC - 1234)',
-      'icon': Icons.credit_card_rounded,
-      'color': Colors.blue,
-    },
-    {
-      'name': 'Bank',
-      'icon': Icons.account_balance_rounded,
-      'color': Colors.purple,
-    },
-  ];
+  Future<void> _loadData() async {
+    try {
+      final user = await _userService.getCurrentUser();
+      if (user != null && mounted) {
+        setState(() {
+          _userId = user.userId;
+        });
+
+        final results = await Future.wait([
+          _categoryService.getAllCategories(user.userId!),
+          _paymentMethodService.getAllPaymentMethods(user.userId!),
+        ]);
+
+        if (mounted) {
+          setState(() {
+            _categories = results[0] as List<Category>;
+            _paymentMethods = results[1] as List<PaymentMethod>;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _saveExpense() async {
+    if (_userId == null) return;
+
+    try {
+      final amount =
+          double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
+      if (amount <= 0) {
+        _showError('Please enter a valid amount');
+        return;
+      }
+
+      if (_categories.isEmpty || _paymentMethods.isEmpty) {
+        _showError('Categories or payment methods not loaded');
+        return;
+      }
+
+      final transaction = model.Transaction(
+        userId: _userId!,
+        categoryId: _categories[_selectedCategoryIndex].categoryId!,
+        paymentMethodId:
+            _paymentMethods[_selectedPaymentIndex].paymentMethodId!,
+        amount: amount,
+        transactionDate: _selectedDate,
+        note: _noteController.text.isEmpty ? null : _noteController.text,
+        createdAt: DateTime.now(),
+      );
+
+      await _transactionService.createTransaction(transaction);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Expense saved successfully')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      debugPrint('Error saving expense: $e');
+      _showError('Failed to save expense');
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  // Removed _getIconFromName and _getColorFromHex to use helpers instead
 
   @override
   Widget build(BuildContext context) {
@@ -219,9 +276,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 bottom: MediaQuery.of(context).padding.bottom + 24,
               ),
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: _saveExpense,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
@@ -308,6 +363,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                    ],
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontSize: 64,
@@ -353,7 +411,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ).textTheme.titleLarge?.copyWith(fontSize: 14),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () async {
+                  final selectedCategory = await Navigator.push<Category>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ManageCategoriesScreen(isSelectionMode: true),
+                    ),
+                  );
+
+                  if (selectedCategory != null && mounted) {
+                    setState(() {
+                      final index = _categories.indexWhere(
+                        (c) => c.categoryId == selectedCategory.categoryId,
+                      );
+                      if (index != -1) {
+                        _selectedCategoryIndex = index;
+                      }
+                    });
+                  }
+                },
                 child: Text(
                   'See all',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -365,6 +442,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ],
           ),
           const SizedBox(height: 16),
+
+          // See All Button Logic update (this is inside _buildCategorySection but above GridView)
+          // Actually, I am replacing the GridView block, but I should also fix the See All logic which was in the previous block.
+          // Wait, I can only replace one contiguous block.
+          // The "See All" button is lines 413-437. GridView starts at 441.
+          // I will replacing mainly the GridView.
+          // But I need to fix the "See All" logic separately or include it if I expand the range.
+          // Let's replace 441-567 (GridView).
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -372,13 +457,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               crossAxisCount: 4,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.85,
             ),
-            itemCount: categories.length,
+            itemCount: min(_categories.length, 12),
             itemBuilder: (context, index) {
-              final category = categories[index];
+              final category = _categories[index];
               final isSelected = _selectedCategoryIndex == index;
-              final isMore = category['name'] == 'More';
+              final isMore = category.name == 'More';
 
               return GestureDetector(
                 onTap: () {
@@ -429,27 +513,31 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                   ? Theme.of(
                                       context,
                                     ).colorScheme.onSurface.withOpacity(0.05)
-                                  : category['color'].withOpacity(
-                                      isDark ? 0.2 : 0.1,
-                                    ),
+                                  : ColorHelper.fromHex(
+                                      category.colorHex,
+                                    ).withOpacity(isDark ? 0.2 : 0.1),
                               shape: BoxShape.circle,
                             ),
                             alignment: Alignment.center,
                             child: Icon(
-                              category['icon'],
+                              IconHelper.getIcon(category.iconName),
                               size: 20,
                               color: isMore
                                   ? Theme.of(
                                       context,
                                     ).colorScheme.onSurface.withOpacity(0.5)
                                   : (isDark
-                                        ? category['color'].withOpacity(0.8)
-                                        : category['color']),
+                                        ? ColorHelper.fromHex(
+                                            category.colorHex,
+                                          ).withOpacity(0.8)
+                                        : ColorHelper.fromHex(
+                                            category.colorHex,
+                                          )),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            category['name'],
+                            category.name,
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   fontSize: 10,
@@ -523,91 +611,155 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            itemCount: paymentMethods.length,
+            itemCount: _paymentMethods.length,
             itemBuilder: (context, index) {
-              final method = paymentMethods[index];
+              final method = _paymentMethods[index];
               final isSelected = _selectedPaymentIndex == index;
 
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: Material(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  elevation: isSelected ? 8 : 0,
-                  shadowColor: isSelected
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.25)
-                      : Colors.black.withOpacity(0.05),
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedPaymentIndex = index;
-                      });
-                      // Show bottom sheet when clicking the payment method
-                      showModalBottomSheet(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        isScrollControlled: true,
-                        builder: (context) => PaymentSelectionBottomSheet(
-                          selectedPaymentMethod: method['name'],
-                          onPaymentSelected: (accountName) {
-                            // Handle account selection
-                          },
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: !isSelected
-                            ? Border.all(color: Colors.transparent)
-                            : null,
-                        boxShadow: !isSelected && !isDark
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : [],
-                      ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : !isDark
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            method['icon'],
-                            size: 22,
-                            color: isSelected ? Colors.white : method['color'],
+                          // Main selection area (Icon + Name)
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedPaymentIndex = index;
+                              });
+                            },
+                            borderRadius: const BorderRadius.horizontal(
+                              left: Radius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: 16,
+                                top: 12,
+                                bottom: 12,
+                                right: 8,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    IconHelper.getIcon(method.iconName),
+                                    size: 22,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : ColorHelper.fromHex(method.colorHex),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    method.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withOpacity(0.7),
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            method['name'],
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Theme.of(context).colorScheme.onSurface
-                                            .withOpacity(0.7),
+                          // Divider (optional, visually separating if needed, but spacing is enough)
+
+                          // Modal trigger area (Arrow)
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedPaymentIndex = index;
+                              });
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                isScrollControlled: true,
+                                builder: (context) => PaymentSelectionBottomSheet(
+                                  paymentMethods: _paymentMethods,
+                                  selectedPaymentMethodId:
+                                      method.paymentMethodId,
+                                  onPaymentSelected: (selectedMethod) {
+                                    setState(() {
+                                      final index = _paymentMethods.indexWhere(
+                                        (m) =>
+                                            m.paymentMethodId ==
+                                            selectedMethod.paymentMethodId,
+                                      );
+                                      if (index != -1) {
+                                        _selectedPaymentIndex = index;
+                                      }
+                                    });
+                                  },
+                                  onManageAccounts: () async {
+                                    Navigator.pop(context); // Close sheet
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const ManagePaymentMethodsScreen(),
+                                      ),
+                                    );
+                                    // Refresh list after returning
+                                    _loadData();
+                                  },
                                 ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 20,
-                            color: isSelected
-                                ? Colors.white.withOpacity(0.9)
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.4),
+                              );
+                            },
+                            borderRadius: const BorderRadius.horizontal(
+                              right: Radius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: 4,
+                                right: 12,
+                                top: 12,
+                                bottom: 12,
+                              ),
+                              child: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                size: 20,
+                                color: isSelected
+                                    ? Colors.white.withOpacity(0.9)
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.4),
+                              ),
+                            ),
                           ),
                         ],
                       ),

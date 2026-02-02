@@ -1,10 +1,36 @@
 import 'package:flutter/material.dart';
 import 'edit_split_expense_screen.dart';
+import '../../database/services/transaction_service.dart';
 
-class SplitExpenseDetailScreen extends StatelessWidget {
+class SplitExpenseDetailScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
 
   const SplitExpenseDetailScreen({super.key, required this.transaction});
+
+  @override
+  State<SplitExpenseDetailScreen> createState() =>
+      _SplitExpenseDetailScreenState();
+}
+
+class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
+  final TransactionService _transactionService = TransactionService();
+  bool _isDeleteDialogVisible = false;
+
+  Future<void> _deleteTransaction() async {
+    try {
+      final transactionId = widget.transaction['id'] as int;
+      await _transactionService.deleteTransaction(transactionId);
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting transaction: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,15 +155,18 @@ class SplitExpenseDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => EditSplitExpenseScreen(
-                              transaction: transaction,
+                              transaction: widget.transaction,
                             ),
                           ),
                         );
+                        if (result == true && mounted) {
+                          Navigator.pop(context, true);
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: surfaceColor,
@@ -168,7 +197,11 @@ class SplitExpenseDetailScreen extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        setState(() {
+                          _isDeleteDialogVisible = true;
+                        });
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
@@ -193,6 +226,111 @@ class SplitExpenseDetailScreen extends StatelessWidget {
               ),
             ),
           ),
+          if (_isDeleteDialogVisible) ...[
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => setState(() => _isDeleteDialogVisible = false),
+                child: Container(color: Colors.black.withOpacity(0.4)),
+              ),
+            ),
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.delete_rounded,
+                        color: Colors.red.shade400,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Delete Transaction?',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Are you sure you want to delete this split expense? This action cannot be undone.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () =>
+                                setState(() => _isDeleteDialogVisible = false),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.surface,
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _deleteTransaction,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

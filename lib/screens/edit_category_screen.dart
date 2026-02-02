@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../models/category.dart';
+import '../database/services/category_service.dart';
+import '../database/services/user_service.dart';
+import '../utils/icon_helper.dart';
+import '../utils/color_helper.dart';
+
 class EditCategoryScreen extends StatefulWidget {
-  final Map<String, dynamic>? category;
+  final Category? category;
 
   const EditCategoryScreen({super.key, this.category});
 
@@ -11,8 +17,12 @@ class EditCategoryScreen extends StatefulWidget {
 
 class _EditCategoryScreenState extends State<EditCategoryScreen> {
   late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
   late Color _selectedColor;
   late IconData _selectedIcon;
+  bool _isLoading = false;
+  final CategoryService _categoryService = CategoryService();
+  final UserService _userService = UserService();
 
   final List<Color> colors = [
     const Color(0xFF28bd98),
@@ -43,16 +53,31 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.category?['name'] ?? '',
+    _nameController = TextEditingController(text: widget.category?.name ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.category?.description ?? '',
     );
-    _selectedColor = widget.category?['color'] ?? colors[0];
-    _selectedIcon = widget.category?['icon'] ?? icons[0];
+    _selectedColor =
+        ColorHelper.fromHex(widget.category?.colorHex) == Colors.blue
+        ? colors[0] // fallback if default blue returned from null
+        : ColorHelper.fromHex(widget.category?.colorHex);
+
+    _selectedIcon =
+        IconHelper.getIcon(widget.category?.iconName) == Icons.category_rounded
+        ? icons[0]
+        : IconHelper.getIcon(widget.category?.iconName);
+
+    // If not editing, use first options
+    if (!isEditMode) {
+      _selectedColor = colors[0];
+      _selectedIcon = icons[0];
+    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -180,6 +205,39 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                               color: Theme.of(context).colorScheme.primary,
                               size: 20,
                             ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Description Input
+                        _buildLabel('Description', isDark),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _descriptionController,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
+                          ),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: isDark
+                                ? const Color(0xFF25282c)
+                                : const Color(0xFFf2f5f4),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            hintText: 'Optional description',
+                            hintStyle: TextStyle(
+                              color: isDark
+                                  ? Colors.grey[600]
+                                  : Colors.grey[400],
+                            ),
+                            contentPadding: const EdgeInsets.all(16),
                           ),
                         ),
 
@@ -329,10 +387,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
               child: SafeArea(
                 top: false,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Save logic here
-                    Navigator.pop(context);
-                  },
+                  onPressed: _isLoading ? null : _saveCategory,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
@@ -356,7 +411,17 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                         ),
                       ),
                       SizedBox(width: 8),
-                      Icon(Icons.check_rounded, size: 20),
+                      if (_isLoading)
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      else
+                        Icon(Icons.check_rounded, size: 20),
                     ],
                   ),
                 ),
@@ -380,5 +445,54 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveCategory() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a category name')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final user = await _userService.getCurrentUser();
+      if (user != null && user.userId != null) {
+        final category = Category(
+          categoryId: widget.category?.categoryId, // null if new
+          userId: user.userId!,
+          name: _nameController.text,
+          description: _descriptionController.text,
+          iconName: IconHelper.getIconName(_selectedIcon),
+          colorHex: ColorHelper.toHex(_selectedColor),
+          // Default values
+          isSystem: widget.category?.isSystem ?? false,
+          isActive: true,
+          displayOrder: widget.category?.displayOrder ?? 0,
+          createdAt: widget.category?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        if (isEditMode) {
+          await _categoryService.updateCategory(category);
+        } else {
+          await _categoryService.createCategory(category);
+        }
+
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving category: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }

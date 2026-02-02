@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class UpdateIOUProgressScreen extends StatefulWidget {
   const UpdateIOUProgressScreen({super.key});
@@ -268,6 +269,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                 child: TextField(
                   controller: _amountController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 48,

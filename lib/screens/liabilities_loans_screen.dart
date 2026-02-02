@@ -4,12 +4,81 @@ import 'add_loan_screen.dart';
 import 'loan_detail_screen.dart';
 import 'iou_detail_screen.dart';
 
-class LiabilitiesLoansScreen extends StatelessWidget {
+import 'package:intl/intl.dart';
+import '../database/services/loan_service.dart';
+import '../database/services/iou_service.dart';
+import '../database/services/user_service.dart';
+import '../models/loan.dart';
+import '../models/iou.dart';
+
+class LiabilitiesLoansScreen extends StatefulWidget {
   const LiabilitiesLoansScreen({super.key});
+
+  @override
+  State<LiabilitiesLoansScreen> createState() => _LiabilitiesLoansScreenState();
+}
+
+class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
+  final LoanService _loanService = LoanService();
+  final IOUService _iouService = IOUService();
+  final UserService _userService = UserService();
+
+  List<Loan> _loans = [];
+  List<IOU> _ious = [];
+  double _totalDebt = 0.0;
+  bool _isLoading = true;
+  int? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final user = await _userService.getCurrentUser();
+    if (user != null) {
+      if (mounted) {
+        setState(() {
+          _userId = user.userId;
+        });
+
+        try {
+          final loans = await _loanService.getActiveLoans(_userId!);
+          final ious = await _iouService.getActiveIOUs(_userId!);
+
+          double totalDebt = 0;
+          for (var loan in loans) {
+            totalDebt += (loan.principalAmount - loan.totalPaid);
+          }
+
+          for (var iou in ious) {
+            totalDebt += (iou.amount - iou.totalPaid);
+          }
+
+          if (mounted) {
+            setState(() {
+              _loans = loans;
+              _ious = ious;
+              _totalDebt = totalDebt;
+              _isLoading = false;
+            });
+          }
+        } catch (e) {
+          debugPrint('Error loading liabilities data: $e');
+          if (mounted) setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currencyFormat = NumberFormat.simpleCurrency(
+      name: 'INR',
+      decimalDigits: 0,
+    );
 
     return Scaffold(
       backgroundColor: isDark
@@ -112,7 +181,7 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '₹14,25,000',
+                                currencyFormat.format(_totalDebt),
                                 style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w900,
@@ -128,71 +197,170 @@ class LiabilitiesLoansScreen extends StatelessWidget {
                         const SizedBox(height: 32),
 
                         // Active Loans Section
-                        const Text(
-                          'Active Loans',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Active Loans',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (_loans.isNotEmpty)
+                              Text(
+                                '${_loans.length}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 16),
-                        _buildLoanCard(
-                          context: context,
-                          icon: Icons.directions_car_rounded,
-                          title: 'Car Loan',
-                          subtitle: 'SBI Auto • 8.65%',
-                          amount: '₹5.5L',
-                          repaidAmount: '₹3.2L',
-                          progress: 0.58,
-                          nextDue: 'Nov 05',
-                          color: Colors.blue,
-                          isDark: isDark,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildLoanCard(
-                          context: context,
-                          icon: Icons.school_rounded,
-                          title: 'Education Loan',
-                          subtitle: 'HDFC • 9.2%',
-                          amount: '₹8.0L',
-                          repaidAmount: '₹1.2L',
-                          progress: 0.15,
-                          nextDue: 'Nov 12',
-                          color: Colors.indigo,
-                          isDark: isDark,
-                        ),
+
+                        if (_isLoading)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_loans.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              child: Text(
+                                'No active loans',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.grey[600]
+                                      : Colors.grey[400],
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          ..._loans.map((loan) {
+                            final progress = loan.principalAmount > 0
+                                ? loan.totalPaid / loan.principalAmount
+                                : 0.0;
+                            final formattedNextDue = loan.dueDate != null
+                                ? DateFormat('MMM d').format(loan.dueDate!)
+                                : 'No due date';
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildLoanCard(
+                                context: context,
+                                icon: Icons.account_balance_wallet_rounded,
+                                title: loan.lenderName,
+                                subtitle:
+                                    '${loan.loanType} • ${loan.interestRate}%',
+                                amount: currencyFormat.format(
+                                  loan.principalAmount,
+                                ),
+                                repaidAmount: currencyFormat.format(
+                                  loan.totalPaid,
+                                ),
+                                progress: progress,
+                                nextDue: formattedNextDue,
+                                color:
+                                    Colors.blue, // Dynamic color could be added
+                                isDark: isDark,
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          LoanDetailScreen(), // TODO: Pass ID
+                                    ),
+                                  );
+                                  _loadData(); // Refresh on return
+                                },
+                              ),
+                            );
+                          }).toList(),
 
                         const SizedBox(height: 32),
 
                         // Personal IOUs Section
-                        const Text(
-                          'Personal IOUs',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Personal IOUs',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (_ious.isNotEmpty)
+                              Text(
+                                '${_ious.length}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 16),
-                        _buildLoanCard(
-                          context: context,
-                          icon: Icons.handshake_rounded,
-                          title: 'Rahul K.',
-                          subtitle: 'Personal • 0% Interest',
-                          amount: '₹50,000',
-                          repaidAmount: '₹25,000',
-                          progress: 0.50,
-                          nextDue: 'Dec 01',
-                          color: Colors.teal,
-                          isDark: isDark,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const IOUDetailScreen(),
+
+                        if (_isLoading)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_ious.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              child: Text(
+                                'No personal IOUs',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.grey[600]
+                                      : Colors.grey[400],
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          ..._ious.map((iou) {
+                            final progress = iou.amount > 0
+                                ? iou.totalPaid / iou.amount
+                                : 0.0;
+                            final formattedNextDue = iou.dueDate != null
+                                ? DateFormat('MMM d').format(iou.dueDate!)
+                                : 'No due date';
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildLoanCard(
+                                context: context,
+                                icon: Icons.handshake_rounded,
+                                title: iou.creditorName,
+                                subtitle: 'Personal',
+                                amount: currencyFormat.format(iou.amount),
+                                repaidAmount: currencyFormat.format(
+                                  iou.totalPaid,
+                                ),
+                                progress: progress,
+                                nextDue: formattedNextDue,
+                                color: Colors.teal,
+                                isDark: isDark,
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const IOUDetailScreen(), // TODO: Pass ID
+                                    ),
+                                  );
+                                  _loadData();
+                                },
                               ),
                             );
-                          },
-                        ),
+                          }).toList(),
                       ],
                     ),
                   ),
@@ -205,13 +373,14 @@ class LiabilitiesLoansScreen extends StatelessWidget {
               bottom: 24,
               right: 24,
               child: FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const AddLoanScreen(),
                     ),
                   );
+                  _loadData();
                 },
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 elevation: 4,

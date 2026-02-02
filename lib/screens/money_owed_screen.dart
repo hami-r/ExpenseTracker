@@ -1,15 +1,88 @@
 import 'package:flutter/material.dart';
 
-import 'reimbursement_detail_screen.dart';
+import 'reimbursement_detail_screen.dart'; // Keep this import as it will be used now
 import 'receivable_detail_screen.dart';
 import 'add_lent_amount_screen.dart';
 
-class MoneyOwedScreen extends StatelessWidget {
+import 'package:intl/intl.dart';
+import '../database/services/receivable_service.dart';
+import '../database/services/reimbursement_service.dart';
+import '../database/services/user_service.dart';
+import '../models/receivable.dart';
+import '../models/reimbursement.dart';
+
+class MoneyOwedScreen extends StatefulWidget {
   const MoneyOwedScreen({super.key});
+
+  @override
+  State<MoneyOwedScreen> createState() => _MoneyOwedScreenState();
+}
+
+class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
+  final ReceivableService _receivableService = ReceivableService();
+  final ReimbursementService _reimbursementService = ReimbursementService();
+  final UserService _userService = UserService();
+
+  List<Receivable> _receivables = [];
+  List<Reimbursement> _reimbursements =
+      []; // Changed from _ious to _reimbursements as per screen logic
+  double _totalReceivable = 0.0;
+  bool _isLoading = true;
+  int? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final user = await _userService.getCurrentUser();
+    if (user != null) {
+      if (mounted) {
+        setState(() {
+          _userId = user.userId;
+        });
+
+        try {
+          // Fetch both receivables and reimbursements
+          final receivables = await _receivableService.getActiveReceivables(
+            _userId!,
+          );
+          final reimbursements = await _reimbursementService
+              .getActiveReimbursements(_userId!);
+
+          double totalReceivable = 0;
+          for (var rec in receivables) {
+            totalReceivable += (rec.principalAmount - rec.totalReceived);
+          }
+          for (var reim in reimbursements) {
+            totalReceivable += (reim.amount - reim.totalReimbursed);
+          }
+
+          if (mounted) {
+            setState(() {
+              _receivables = receivables;
+              _reimbursements = reimbursements;
+              _totalReceivable = totalReceivable;
+              _isLoading = false;
+            });
+          }
+        } catch (e) {
+          debugPrint('Error loading money owed data: $e');
+          if (mounted) setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currencyFormat = NumberFormat.simpleCurrency(
+      name: 'INR',
+      decimalDigits: 0,
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -25,72 +98,153 @@ class MoneyOwedScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTotalReceivableCard(isDark),
+                        _buildTotalReceivableCard(isDark, currencyFormat),
                         const SizedBox(height: 32),
-                        _buildSectionHeader('Active Lent', isDark),
+
+                        // Active Lent Section
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildSectionHeader('Active Lent', isDark),
+                            if (_receivables.isNotEmpty)
+                              Text(
+                                '${_receivables.length}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                          ],
+                        ),
                         const SizedBox(height: 12),
-                        _buildActiveLentItem(
-                          context: context,
-                          isDark: isDark,
-                          name: 'Amit S.',
-                          type: 'Personal • 0% Interest',
-                          amount: '₹25,000',
-                          received: '₹10,000',
-                          percentage: 0.4,
-                          expectedDate: 'Dec 15',
-                          color: Colors.blue,
-                          icon: Icons.person_rounded,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ReceivableDetailScreen(),
+
+                        if (_isLoading)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_receivables.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              child: Text(
+                                'No active lent amounts',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.grey[600]
+                                      : Colors.grey[400],
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildActiveLentItem(
-                          context: context,
-                          isDark: isDark,
-                          name: 'Sarah J.',
-                          type: 'Help • 0% Interest',
-                          amount: '₹5,000',
-                          received: '₹1,000',
-                          percentage: 0.2,
-                          expectedDate: 'Nov 30',
-                          color: Colors.purple,
-                          icon: Icons.person_rounded,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ReceivableDetailScreen(),
-                            ),
-                          ),
-                        ),
+                          )
+                        else
+                          ..._receivables.map((receivable) {
+                            final progress = receivable.principalAmount > 0
+                                ? receivable.totalReceived /
+                                      receivable.principalAmount
+                                : 0.0;
+                            final formattedExpectedDate =
+                                receivable.expectedDate != null
+                                ? DateFormat(
+                                    'MMM d',
+                                  ).format(receivable.expectedDate!)
+                                : 'No date';
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildActiveLentItem(
+                                context: context,
+                                isDark: isDark,
+                                name: receivable.recipientName,
+                                type:
+                                    '${receivable.receivableType} • ${receivable.interestRate}%',
+                                amount: currencyFormat.format(
+                                  receivable.principalAmount,
+                                ),
+                                received: currencyFormat.format(
+                                  receivable.totalReceived,
+                                ),
+                                percentage: progress,
+                                expectedDate: formattedExpectedDate,
+                                color: Colors.blue, // Could be dynamic
+                                icon: Icons.person_rounded,
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ReceivableDetailScreen(), // TODO: Pass ID
+                                    ),
+                                  );
+                                  _loadData();
+                                },
+                              ),
+                            );
+                          }).toList(),
+
                         const SizedBox(height: 32),
+                        // Reimbursements Section
                         _buildSectionHeader('Pending Reimbursements', isDark),
                         const SizedBox(height: 12),
-                        _buildActiveLentItem(
-                          context: context,
-                          isDark: isDark,
-                          name: 'Office Trip',
-                          type: 'Business • Travel',
-                          amount: '₹95,000',
-                          received: '₹45,000',
-                          percentage: 0.47,
-                          expectedDate: 'Next Paycheck',
-                          color: Colors.orange,
-                          icon: Icons.receipt_long_rounded,
-                          receivedLabel: 'Approved',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ReimbursementDetailScreen(),
+
+                        if (_isLoading)
+                          const SizedBox(
+                            height: 20,
+                          ) // Already showing spinner above if loading
+                        else if (_reimbursements.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              child: Text(
+                                'No pending reimbursements',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.grey[600]
+                                      : Colors.grey[400],
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
+                          )
+                        else
+                          ..._reimbursements.map((reim) {
+                            final progress = reim.amount > 0
+                                ? reim.totalReimbursed / reim.amount
+                                : 0.0;
+                            final formattedExpectedDate =
+                                reim.expectedDate != null
+                                ? DateFormat('MMM d').format(reim.expectedDate!)
+                                : 'No date';
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildActiveLentItem(
+                                context: context,
+                                isDark: isDark,
+                                name: reim.sourceName,
+                                type: '${reim.category ?? 'Reimbursement'}',
+                                amount: currencyFormat.format(reim.amount),
+                                received: currencyFormat.format(
+                                  reim.totalReimbursed,
+                                ),
+                                percentage: progress,
+                                expectedDate: formattedExpectedDate,
+                                color: Colors.orange, // Could be dynamic
+                                icon: Icons.receipt_long_rounded,
+                                receivedLabel: 'Reimbursed',
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ReimbursementDetailScreen(), // TODO: Pass ID
+                                    ),
+                                  );
+                                  _loadData();
+                                },
+                              ),
+                            );
+                          }).toList(),
                       ],
                     ),
                   ),
@@ -121,13 +275,14 @@ class MoneyOwedScreen extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AddLentAmountScreen(),
                       ),
                     );
+                    _loadData();
                   },
                   borderRadius: BorderRadius.circular(28),
                   child: const Icon(
@@ -171,7 +326,7 @@ class MoneyOwedScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTotalReceivableCard(bool isDark) {
+  Widget _buildTotalReceivableCard(bool isDark, NumberFormat currencyFormat) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -221,7 +376,7 @@ class MoneyOwedScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '₹1,25,000',
+                currencyFormat.format(_totalReceivable),
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w900,

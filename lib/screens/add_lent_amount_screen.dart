@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../widgets/custom_date_picker.dart';
 import 'package:intl/intl.dart';
+import '../database/services/receivable_service.dart';
+import '../database/services/reimbursement_service.dart';
+import '../database/services/user_service.dart';
+import '../models/receivable.dart';
+import '../models/reimbursement.dart';
 
 class AddLentAmountScreen extends StatefulWidget {
   const AddLentAmountScreen({super.key});
@@ -19,6 +25,69 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
   DateTime? _expectedDate;
   int _selectedTypeIndex = 0; // 0 for Personal Lent, 1 for Reimbursement
   String _selectedCategory = 'Office';
+
+  final ReceivableService _receivableService = ReceivableService();
+  final ReimbursementService _reimbursementService = ReimbursementService();
+  final UserService _userService = UserService();
+  bool _isLoading = false;
+
+  Future<void> _saveLentAmount() async {
+    if (_amountController.text.isEmpty || _recipientController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill required fields')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final user = await _userService.getCurrentUser();
+      if (user != null && user.userId != null) {
+        if (_selectedTypeIndex == 0) {
+          // Personal Lent -> Receivable
+          final receivable = Receivable(
+            userId: user.userId!,
+            recipientName: _recipientController.text,
+            receivableType: 'Personal',
+            principalAmount: double.parse(_amountController.text),
+            interestRate: double.tryParse(_interestController.text) ?? 0.0,
+            expectedDate: _expectedDate,
+            status: 'active',
+            notes: _noteController.text,
+            createdAt: DateTime.now(),
+          );
+          await _receivableService.createReceivable(receivable);
+        } else {
+          // Reimbursement
+          final reimbursement = Reimbursement(
+            userId: user.userId!,
+            sourceName: _recipientController.text,
+            category: _selectedCategory,
+            amount: double.parse(_amountController.text),
+            expectedDate: _expectedDate,
+            status: 'pending',
+            notes: _noteController.text,
+            createdAt: DateTime.now(),
+          );
+          await _reimbursementService.createReimbursement(reimbursement);
+        }
+
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to indicate success
+        }
+      }
+    } catch (e) {
+      debugPrint('Error saving lent amount: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -184,9 +253,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _isLoading ? null : _saveLentAmount,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -198,10 +265,20 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                         context,
                       ).colorScheme.primary.withOpacity(0.4),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle_rounded, size: 20),
+                        if (_isLoading)
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        else
+                          Icon(Icons.check_circle_rounded, size: 20),
                         SizedBox(width: 8),
                         Text(
                           'Save Reimbursement',
@@ -403,6 +480,9 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                         : const Color(0xFFe2e8f0),
                   ),
                 ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
               ),
@@ -566,6 +646,9 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
             child: TextField(
               controller: _interestController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

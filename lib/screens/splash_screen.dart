@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'home_screen.dart';
+import '../database/database_helper.dart';
+import '../database/services/user_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,15 +23,39 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     )..repeat();
 
-    // Navigate to main screen after delay
-    Timer(const Duration(seconds: 3), () {
+    // Initialize database and navigate
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      // Initialize database (creates tables and seeds data)
+      final dbHelper = DatabaseHelper.instance;
+      await dbHelper.database;
+
+      // Verify database is ready
+      final userService = UserService();
+      await userService.getCurrentUser();
+
+      // Navigate after delay
+      await Future.delayed(const Duration(seconds: 3));
+
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
-    });
+    } catch (e) {
+      // Handle error - for now just navigate anyway
+      debugPrint('Database initialization error: $e');
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    }
   }
 
   @override

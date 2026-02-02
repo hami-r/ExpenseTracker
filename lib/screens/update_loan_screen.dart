@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class UpdateLoanScreen extends StatefulWidget {
   const UpdateLoanScreen({super.key});
@@ -390,6 +391,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
               TextField(
                 controller: _extraPaymentController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
                 textAlign: TextAlign.right,
                 style: TextStyle(
                   fontSize: 16,

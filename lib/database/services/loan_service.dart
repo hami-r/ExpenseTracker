@@ -1,0 +1,102 @@
+import 'package:sqflite/sqflite.dart';
+import '../../models/loan.dart';
+import '../../models/loan_payment.dart';
+import '../database_helper.dart';
+
+class LoanService {
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+
+  // Get active loans
+  Future<List<Loan>> getActiveLoans(int userId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'loans',
+      where: 'user_id = ? AND status = ?',
+      whereArgs: [userId, 'active'],
+      orderBy: 'due_date ASC',
+    );
+    return List.generate(maps.length, (i) => Loan.fromMap(maps[i]));
+  }
+
+  // Get loan by ID
+  Future<Loan?> getLoanById(int loanId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'loans',
+      where: 'loan_id = ?',
+      whereArgs: [loanId],
+    );
+    if (maps.isEmpty) return null;
+    return Loan.fromMap(maps.first);
+  }
+
+  // Create new loan
+  Future<int> createLoan(Loan loan) async {
+    final db = await _dbHelper.database;
+    return await db.insert(
+      'loans',
+      loan.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // Update loan
+  Future<void> updateLoan(Loan loan) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'loans',
+      loan.toMap(),
+      where: 'loan_id = ?',
+      whereArgs: [loan.loanId],
+    );
+  }
+
+  // Delete loan
+  Future<void> deleteLoan(int loanId) async {
+    final db = await _dbHelper.database;
+    await db.delete('loans', where: 'loan_id = ?', whereArgs: [loanId]);
+  }
+
+  // Update total paid
+  Future<void> updateLoanTotalPaid(int loanId, double totalPaid) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'loans',
+      {'total_paid': totalPaid, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'loan_id = ?',
+      whereArgs: [loanId],
+    );
+  }
+
+  // Get loan payments
+  Future<List<LoanPayment>> getLoanPayments(int loanId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'loan_payments',
+      where: 'loan_id = ?',
+      whereArgs: [loanId],
+      orderBy: 'payment_date DESC',
+    );
+    return List.generate(maps.length, (i) => LoanPayment.fromMap(maps[i]));
+  }
+
+  // Create loan payment
+  Future<int> createLoanPayment(LoanPayment payment) async {
+    final db = await _dbHelper.database;
+    return await db.insert(
+      'loan_payments',
+      payment.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // Delete loan payment
+  Future<void> deleteLoanPayment(int paymentId) async {
+    final db = await _dbHelper.database;
+    await db.delete(
+      'loan_payments',
+      where: 'loan_payment_id = ?',
+      whereArgs: [paymentId],
+    );
+  }
+}

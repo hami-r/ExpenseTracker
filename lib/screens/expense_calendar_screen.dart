@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../database/services/analytics_service.dart';
+import '../database/services/transaction_service.dart';
+import '../database/services/user_service.dart';
+import '../database/services/category_service.dart';
+import '../models/transaction.dart';
+import '../models/category.dart';
+import 'transaction_details_screen.dart';
+import 'split_expense_detail_screen.dart';
 
 class ExpenseCalendarScreen extends StatefulWidget {
   const ExpenseCalendarScreen({super.key});
@@ -10,41 +18,137 @@ class ExpenseCalendarScreen extends StatefulWidget {
 
 class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
   DateTime _currentMonth = DateTime.now();
+  DateTime _selectedDate = DateTime.now();
 
-  // Mock expense data - amount per day
-  final Map<int, double> expensesByDay = {
-    1: 150.0,
-    2: 450.0,
-    3: 200.0,
-    4: 800.0,
-    5: 1200.0,
-    6: 400.0,
-    7: 180.0,
-    8: 160.0,
-    9: 500.0,
-    10: 850.0,
-    11: 220.0,
-    12: 190.0,
-    13: 450.0,
-    14: 1100.0,
-    15: 175.0,
-    16: 200.0,
-    17: 420.0,
-    18: 650.0,
-    19: 900.0,
-    20: 480.0,
-    21: 210.0,
-    22: 165.0,
-    23: 430.0,
-    24: 820.0,
-    25: 185.0,
-    26: 195.0,
-    27: 510.0,
-    28: 230.0,
-    29: 175.0,
-    30: 440.0,
-    31: 200.0,
-  };
+  final AnalyticsService _analyticsService = AnalyticsService();
+  final TransactionService _transactionService = TransactionService();
+  final UserService _userService = UserService();
+  final CategoryService _categoryService = CategoryService();
+
+  // Real data state
+  Map<int, double> _expensesByDay = {};
+  List<Transaction> _selectedDayTransactions = [];
+  Map<int, Category> _categoriesMap = {};
+  double _monthTotal = 0.0;
+  double _dailyAvg = 0.0;
+  bool _isLoading = true;
+  int? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final user = await _userService.getCurrentUser();
+    if (user != null) {
+      if (mounted) {
+        setState(() {
+          _userId = user.userId;
+        });
+        await _loadMonthData();
+        await _loadCategories();
+        await _loadDayTransactions(_selectedDate);
+      }
+    }
+  }
+
+  Future<void> _loadCategories() async {
+    if (_userId == null) return;
+    final categories = await _categoryService.getAllCategories(_userId!);
+    if (mounted) {
+      setState(() {
+        _categoriesMap = {for (var c in categories) c.categoryId!: c};
+      });
+    }
+  }
+
+  Future<void> _loadMonthData() async {
+    if (_userId == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final expenses = await _analyticsService.getDailySpendingByMonth(
+        _userId!,
+        _currentMonth.year,
+        _currentMonth.month,
+      );
+
+      double total = 0;
+      expenses.forEach((_, amount) => total += amount);
+
+      // Calculate days in month so far or total days in past months
+      final daysInMonth = DateUtils.getDaysInMonth(
+        _currentMonth.year,
+        _currentMonth.month,
+      );
+      final isCurrentMonth =
+          _currentMonth.year == DateTime.now().year &&
+          _currentMonth.month == DateTime.now().month;
+      final daysPassed = isCurrentMonth ? DateTime.now().day : daysInMonth;
+
+      if (mounted) {
+        setState(() {
+          _expensesByDay = expenses;
+          _monthTotal = total;
+          _dailyAvg = daysPassed > 0 ? total / daysPassed : 0;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading month data: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadDayTransactions(DateTime date) async {
+    if (_userId == null) return;
+
+    try {
+      final transactions = await _transactionService.getTransactionsByDate(
+        _userId!,
+        date,
+      );
+      if (mounted) {
+        setState(() {
+          _selectedDayTransactions = transactions;
+          _selectedDate = date;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading day transactions: $e');
+    }
+  }
+
+  IconData _getIconFromName(String? iconName) {
+    const iconMap = {
+      'food': Icons.lunch_dining_rounded,
+      'transport': Icons.directions_car_rounded,
+      'shopping': Icons.shopping_bag_rounded,
+      'charity': Icons.volunteer_activism_rounded,
+      'housing': Icons.cottage_rounded,
+      'fun': Icons.local_activity_rounded,
+      'education': Icons.school_rounded,
+      'health': Icons.local_hospital_rounded,
+      'utilities': Icons.flash_on_rounded,
+      'cash': Icons.payments_rounded,
+      'card': Icons.credit_card_rounded,
+      'bank': Icons.account_balance_rounded,
+      'upi': Icons.qr_code_scanner_rounded,
+    };
+    return iconMap[iconName?.toLowerCase()] ?? Icons.more_horiz_rounded;
+  }
+
+  Color _getColorFromHex(String? colorHex) {
+    if (colorHex == null || colorHex.isEmpty) return Colors.grey;
+    try {
+      return Color(int.parse(colorHex.replaceAll('#', '0xFF')));
+    } catch (e) {
+      return Colors.grey;
+    }
+  }
 
   Color _getHeatmapColor(double? amount, BuildContext context) {
     if (amount == null || amount == 0) return Colors.transparent;
@@ -59,7 +163,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
   }
 
   bool _isDayWithDot(int day) {
-    final amount = expensesByDay[day] ?? 0;
+    final amount = _expensesByDay[day] ?? 0;
     return amount > 700;
   }
 
@@ -140,6 +244,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                   _currentMonth.year,
                   _currentMonth.month - 1,
                 );
+                _loadMonthData();
               });
             },
             icon: Icon(
@@ -162,6 +267,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                   _currentMonth.year,
                   _currentMonth.month + 1,
                 );
+                _loadMonthData();
               });
             },
             icon: Icon(
@@ -212,10 +318,6 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     final daysInMonth = lastDayOfMonth.day;
     final firstWeekday = firstDayOfMonth.weekday % 7;
 
-    final today = DateTime.now();
-    final isCurrentMonth =
-        _currentMonth.year == today.year && _currentMonth.month == today.month;
-
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
@@ -230,84 +332,64 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
         }
 
         final day = index - firstWeekday + 1;
-        final amount = expensesByDay[day] ?? 0;
-        final color = _getHeatmapColor(amount, context);
-        final hasDot = _isDayWithDot(day);
-        final isToday = isCurrentMonth && day == today.day;
+        final isSelected =
+            day == _selectedDate.day &&
+            _currentMonth.year == _selectedDate.year &&
+            _currentMonth.month == _selectedDate.month;
 
-        return _buildDayTile(day, color, hasDot, isToday, isDark);
-      },
-    );
-  }
-
-  Widget _buildDayTile(
-    int day,
-    Color color,
-    bool hasDot,
-    bool isToday,
-    bool isDark,
-  ) {
-    final hasExpense = color != Colors.transparent;
-    final isLight = color.opacity < 0.3;
-
-    return Material(
-      color: isToday
-          ? (isDark ? const Color(0xFF374151) : Colors.white)
-          : color,
-      borderRadius: BorderRadius.circular(8),
-      elevation: hasExpense ? 1 : 0,
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: isToday
-                ? Border.all(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2,
-                  )
-                : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '$day',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isToday || !isLight && hasExpense
-                      ? FontWeight.bold
-                      : FontWeight.w500,
-                  color: isToday
-                      ? (isDark
-                            ? const Color(0xFFf3f4f6)
-                            : const Color(0xFF111827))
-                      : isLight
-                      ? const Color(0xFF166534)
-                      : hasExpense
-                      ? Colors.white
-                      : (isDark
-                            ? const Color(0xFF9ca3af)
-                            : const Color(0xFF6b7280)),
-                ),
-              ),
-              if (hasDot)
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isToday
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.white.withOpacity(0.8),
-                    shape: BoxShape.circle,
+        return GestureDetector(
+          onTap: () {
+            final selectedDate = DateTime(
+              _currentMonth.year,
+              _currentMonth.month,
+              day,
+            );
+            _loadDayTransactions(selectedDate);
+            setState(() {
+              _selectedDate = selectedDate;
+            });
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                  : _getHeatmapColor(_expensesByDay[day], context),
+              borderRadius: BorderRadius.circular(12),
+              border: isSelected
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    )
+                  : null,
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Text(
+                  day.toString(),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : const Color(0xFF4b5563),
                   ),
                 ),
-            ],
+                if (_isDayWithDot(day))
+                  Positioned(
+                    bottom: 8,
+                    child: Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white : const Color(0xFF4b5563),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -431,7 +513,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '₹38,331.0',
+                              '₹${_monthTotal.toStringAsFixed(1)}',
                               style: TextStyle(
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
@@ -458,7 +540,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '₹1,236',
+                              '₹${_dailyAvg.toStringAsFixed(0)}',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -476,131 +558,170 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                   const SizedBox(height: 16),
 
                   // Transaction Item
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {},
-                      borderRadius: BorderRadius.circular(16),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Icon(
-                                Icons.volunteer_activism_rounded,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 30,
-                              ),
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    )
+                  else if (_selectedDayTransactions.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 20),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.receipt_long_rounded,
+                            size: 48,
+                            color: isDark
+                                ? Colors.grey.shade800
+                                : Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No transactions on this day',
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.grey.shade600
+                                  : Colors.grey.shade500,
                             ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Donation',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark
-                                          ? Colors.white
-                                          : const Color(0xFF111827),
-                                    ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      height: 300,
+                      child: ListView.builder(
+                        itemCount: _selectedDayTransactions.length,
+                        padding: EdgeInsets.zero,
+                        itemBuilder: (context, index) {
+                          final transaction = _selectedDayTransactions[index];
+                          final category =
+                              _categoriesMap[transaction.categoryId];
+                          final formattedDate = DateFormat(
+                            'd MMM, h:mm a',
+                          ).format(transaction.transactionDate);
+
+                          final icon = _getIconFromName(category?.iconName);
+                          final color = _getColorFromHex(category?.colorHex);
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  final transactionMap = {
+                                    'id': transaction.transactionId,
+                                    'title': transaction.note ?? 'Expense',
+                                    'date': formattedDate,
+                                    'amount': transaction.amount.toString(),
+                                    'category':
+                                        category?.name ?? 'Uncategorized',
+                                    'paymentMethod':
+                                        'Cash', // TODO: Fetch payment method name if needed
+                                    'icon': icon,
+                                    'color': color,
+                                    'note': transaction.note ?? '',
+                                  };
+
+                                  if (transaction.isSplit) {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            SplitExpenseDetailScreen(
+                                              transaction: transactionMap,
+                                            ),
+                                      ),
+                                    );
+                                  } else {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            TransactionDetailsScreen(
+                                              transaction: transactionMap,
+                                            ),
+                                      ),
+                                    );
+                                  }
+                                  // Refresh data
+                                  _loadData();
+                                },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Row(
+                                  child: Row(
                                     children: [
-                                      Flexible(
-                                        child: Text(
-                                          '18 Jan, 8:33 PM',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: isDark
-                                                ? const Color(0xFF9ca3af)
-                                                : const Color(0xFF6b7280),
+                                      Container(
+                                        width: 56,
+                                        height: 56,
+                                        decoration: BoxDecoration(
+                                          color: color.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
                                           ),
-                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        child: Icon(
+                                          icon,
+                                          color: color,
+                                          size: 30,
                                         ),
                                       ),
-                                      Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                        ),
-                                        width: 4,
-                                        height: 4,
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? const Color(0xFF4b5563)
-                                              : const Color(0xFFd1d5db),
-                                          shape: BoxShape.circle,
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              transaction.note ?? 'Expense',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : const Color(0xFF111827),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              formattedDate,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: isDark
+                                                    ? const Color(0xFF9ca3af)
+                                                    : const Color(0xFF6b7280),
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
                                         ),
                                       ),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        'Charity',
+                                        '₹${transaction.amount}',
                                         style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                        ),
-                                        width: 4,
-                                        height: 4,
-                                        decoration: BoxDecoration(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
                                           color: isDark
-                                              ? const Color(0xFF4b5563)
-                                              : const Color(0xFFd1d5db),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      Text(
-                                        'UPI',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: isDark
-                                              ? const Color(0xFF9ca3af)
-                                              : const Color(0xFF6b7280),
+                                              ? Colors.white
+                                              : const Color(0xFF111827),
                                         ),
                                       ),
                                     ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '₹32.0',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF111827),
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ),
-                  ),
 
                   SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
                 ],
