@@ -11,6 +11,8 @@ import '../database/services/user_service.dart';
 import '../models/category.dart';
 import '../models/payment_method.dart';
 import '../models/transaction.dart' as model;
+import '../models/split_item.dart';
+import '../database/services/split_transaction_service.dart';
 import '../utils/icon_helper.dart';
 import '../utils/color_helper.dart';
 import 'manage_categories_screen.dart';
@@ -31,14 +33,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   // Services
   final CategoryService _categoryService = CategoryService();
   final PaymentMethodService _paymentMethodService = PaymentMethodService();
+
   final TransactionService _transactionService = TransactionService();
+  final SplitTransactionService _splitTransactionService =
+      SplitTransactionService();
   final UserService _userService = UserService();
 
   // Data
   int? _userId;
   List<Category> _categories = [];
   List<PaymentMethod> _paymentMethods = [];
-  bool _isLoading = true;
 
   int _selectedCategoryIndex = 0;
   int _selectedPaymentIndex = 0;
@@ -46,22 +50,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   bool _isSplitBill = false;
 
-  final List<Map<String, dynamic>> _splitItems = [
-    {
-      'name': 'Groceries',
-      'category': 'Food',
-      'amount': '3,500',
-      'icon': Icons.lunch_dining_rounded,
-      'color': Colors.orange,
-    },
-    {
-      'name': 'T-shirt',
-      'category': 'Shopping',
-      'amount': '1,500',
-      'icon': Icons.checkroom_rounded,
-      'color': Colors.purple,
-    },
-  ];
+  final List<Map<String, dynamic>> _splitItems = [];
 
   @override
   void initState() {
@@ -86,17 +75,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           setState(() {
             _categories = results[0] as List<Category>;
             _paymentMethods = results[1] as List<PaymentMethod>;
-            _isLoading = false;
           });
         }
       }
     } catch (e) {
       debugPrint('Error loading data: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -116,29 +99,78 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         return;
       }
 
+      // Determine Category ID (use selected or default for split)
+      // For split bill, we don't have a main category selector, so we default to the first one or 'Food' if found?
+      // Better to pick "Others" if exists, or just the first one.
+      int categoryId = _categories[_selectedCategoryIndex].categoryId!;
+      if (_isSplitBill) {
+        // Try to find a generic category or just use the first valid one
+        categoryId = _categories.isNotEmpty ? _categories.first.categoryId! : 1;
+      }
+
       final transaction = model.Transaction(
         userId: _userId!,
-        categoryId: _categories[_selectedCategoryIndex].categoryId!,
+        categoryId: categoryId,
         paymentMethodId:
             _paymentMethods[_selectedPaymentIndex].paymentMethodId!,
         amount: amount,
         transactionDate: _selectedDate,
         note: _noteController.text.isEmpty ? null : _noteController.text,
+        isSplit: _isSplitBill,
         createdAt: DateTime.now(),
       );
 
-      await _transactionService.createTransaction(transaction);
+      if (_isSplitBill) {
+        final splitTotal = _getSplitTotal();
+        if ((splitTotal - amount).abs() > 0.01) {
+          _showError(
+            'Split items total (₹${splitTotal.toStringAsFixed(2)}) does not match Total Amount (₹${amount.toStringAsFixed(2)})',
+          );
+          return;
+        }
+
+        final List<SplitItem> splitItems = _splitItems.map((item) {
+          final catName = item['category'] as String;
+          final cat = _categories.firstWhere(
+            (c) => c.name == catName,
+            orElse: () => _categories.first,
+          );
+
+          return SplitItem(
+            transactionId: 0, // Will be set by service
+            name: item['name'] as String,
+            categoryId: cat.categoryId,
+            amount: double.tryParse(item['amount'].replaceAll(',', '')) ?? 0.0,
+            createdAt: DateTime.now(),
+          );
+        }).toList();
+
+        await _splitTransactionService.createSplitTransaction(
+          transaction,
+          splitItems,
+        );
+      } else {
+        await _transactionService.createTransaction(transaction);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Expense saved successfully')),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true); // Return true to trigger refresh
       }
     } catch (e) {
       debugPrint('Error saving expense: $e');
       _showError('Failed to save expense');
     }
+  }
+
+  double _getSplitTotal() {
+    return _splitItems.fold(0.0, (sum, item) {
+      final amount =
+          double.tryParse(item['amount'].toString().replaceAll(',', '')) ?? 0.0;
+      return sum + amount;
+    });
   }
 
   void _showError(String message) {
@@ -1036,6 +1068,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       fontWeight: FontWeight.w900,
                       height: 1,
                     ),
+                    onChanged: (value) => setState(() {}),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: '0.00',
@@ -1052,28 +1085,65 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_circle, size: 16, color: primaryColor),
-                  const SizedBox(width: 6),
-                  Text(
-                    '₹0.00 left to split',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                      letterSpacing: 0.5,
-                    ),
+            Builder(
+              builder: (context) {
+                final totalAmount =
+                    double.tryParse(
+                      _amountController.text.replaceAll(',', ''),
+                    ) ??
+                    0.0;
+                final splitTotal = _getSplitTotal();
+                final remaining = totalAmount - splitTotal;
+                final isOver = remaining < -0.01;
+                final isComplete = remaining.abs() < 0.01;
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                ],
-              ),
+                  decoration: BoxDecoration(
+                    color: isOver
+                        ? Colors.red.withOpacity(0.1)
+                        : (isComplete
+                              ? Colors.green.withOpacity(0.1)
+                              : primaryColor.withOpacity(0.1)),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isOver
+                            ? Icons.error_rounded
+                            : (isComplete
+                                  ? Icons.check_circle
+                                  : Icons.info_outline),
+                        size: 16,
+                        color: isOver
+                            ? Colors.red
+                            : (isComplete ? Colors.green : primaryColor),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isOver
+                            ? 'Over by ₹${remaining.abs().toStringAsFixed(2)}'
+                            : (isComplete
+                                  ? 'Split Complete'
+                                  : '₹${remaining.toStringAsFixed(2)} left to split'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isOver
+                              ? Colors.red
+                              : (isComplete ? Colors.green : primaryColor),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -1184,6 +1254,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
+                          onChanged: (value) {
+                            _splitItems[index]['name'] = value;
+                          },
                           decoration: InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
@@ -1214,8 +1287,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
@@ -1236,7 +1309,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                         const SizedBox(width: 4),
                         SizedBox(
-                          width: 50,
+                          width: 40,
                           child: TextFormField(
                             initialValue: item['amount'],
                             textAlign: TextAlign.right,
@@ -1248,6 +1321,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                     context,
                                   ).colorScheme.onSurface,
                                 ),
+                            onChanged: (value) {
+                              _splitItems[index]['amount'] = value;
+                              setState(() {}); // Update total calculations
+                            },
                             decoration: const InputDecoration(
                               isDense: true,
                               contentPadding: EdgeInsets.zero,
@@ -1257,6 +1334,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _splitItems.removeAt(index);
+                      });
+                    },
+                    icon: Icon(
+                      Icons.remove_circle_outline_rounded,
+                      color: Colors.red.withOpacity(0.7),
+                      size: 20,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 20,
                   ),
                 ],
               ),

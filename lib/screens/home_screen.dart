@@ -34,12 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final PaymentMethodService _paymentMethodService = PaymentMethodService();
 
   // Data
-  int? _userId;
+
   Map<String, double> _weeklySpending = {};
   List<model.Transaction> _recentTransactions = [];
   Map<int, Category> _categoriesMap = {};
   Map<int, PaymentMethod> _paymentMethodsMap = {};
-  double _totalBalance = 0.0;
   double _todaySpending = 0.0;
   double _monthSpending = 0.0;
   bool _isLoading = true;
@@ -54,10 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final user = await _userService.getCurrentUser();
       if (user != null && mounted) {
-        setState(() {
-          _userId = user.userId;
-        });
-
         final now = DateTime.now();
         final startOfMonth = DateTime(now.year, now.month, 1);
         final endOfMonth = DateTime(now.year, now.month + 1, 0);
@@ -95,7 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
           setState(() {
             _weeklySpending = results[0] as Map<String, double>;
-            _totalBalance = results[1] as double;
             _recentTransactions = results[2] as List<model.Transaction>;
             _categoriesMap = categoriesMap;
             _paymentMethodsMap = paymentMethodsMap;
@@ -434,11 +428,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 isDark,
                                 onTap: () async {
                                   final transactionMap = {
-                                    'id': transaction
-                                        .transactionId, // For edit/delete
+                                    'id': transaction.transactionId,
+                                    'userId': transaction.userId,
                                     'title': transaction.note ?? 'Expense',
-                                    'date': formattedDate,
-                                    'amount': transaction.amount.toString(),
+                                    'date': transaction.transactionDate,
+                                    'amount': transaction.amount,
+                                    'categoryId': transaction.categoryId,
+                                    'paymentMethodId':
+                                        transaction.paymentMethodId,
                                     'category':
                                         category?.name ?? 'Uncategorized',
                                     'paymentMethod':
@@ -722,14 +719,14 @@ class _HomeScreenState extends State<HomeScreen> {
     String amount,
     IconData icon,
     Color iconColor,
-    bool isOld,
+    bool isSplit,
     bool isDark, {
     VoidCallback? onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
+
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -741,88 +738,139 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        child: Row(
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : iconColor.withOpacity(0.1),
-              ),
-              child: Icon(
-                icon,
-                color: isDark ? iconColor.withOpacity(0.8) : iconColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF0f172a),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : iconColor.withOpacity(0.1),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: isDark ? iconColor.withOpacity(0.8) : iconColor,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        date,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? const Color(0xFF94a3b8)
-                              : const Color(0xFF64748b),
-                        ),
-                      ),
-                      if (paymentMethod != null) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark
-                                  ? const Color(0xFF475569)
-                                  : const Color(0xFFcbd5e1),
-                            ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0f172a),
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        Flexible(
-                          child: Text(
-                            paymentMethod,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? const Color(0xFF94a3b8)
-                                  : const Color(0xFF64748b),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              date,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? const Color(0xFF94a3b8)
+                                    : const Color(0xFF64748b),
+                              ),
                             ),
-                          ),
+                            if (paymentMethod != null) ...[
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
+                                child: Container(
+                                  width: 4,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isDark
+                                        ? const Color(0xFF475569)
+                                        : const Color(0xFFcbd5e1),
+                                  ),
+                                ),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  paymentMethod,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? const Color(0xFF94a3b8)
+                                        : const Color(0xFF64748b),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
-                    ],
+                    ),
+                  ),
+                  Text(
+                    '₹$amount',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0f172a),
+                    ),
                   ),
                 ],
               ),
             ),
-            Text(
-              '₹$amount',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF0f172a),
+            if (isSplit)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.call_split_rounded,
+                        size: 12,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Split',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
           ],
         ),
       ),

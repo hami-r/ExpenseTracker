@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'edit_split_expense_screen.dart';
 import '../../database/services/transaction_service.dart';
+import '../../database/services/split_transaction_service.dart';
+import '../../database/services/category_service.dart';
+import '../../database/services/payment_method_service.dart';
+import '../../models/split_item.dart';
+import '../../models/category.dart';
+import '../../models/payment_method.dart';
+import '../../utils/icon_helper.dart';
+import '../../utils/color_helper.dart';
 
 class SplitExpenseDetailScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -14,7 +23,73 @@ class SplitExpenseDetailScreen extends StatefulWidget {
 
 class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
   final TransactionService _transactionService = TransactionService();
+  final SplitTransactionService _splitTransactionService =
+      SplitTransactionService();
+  final CategoryService _categoryService = CategoryService();
+  final PaymentMethodService _paymentMethodService = PaymentMethodService();
+
+  bool _isLoading = true;
   bool _isDeleteDialogVisible = false;
+  List<SplitItem> _splitItems = [];
+  Map<int, Category> _categoriesMap = {};
+  PaymentMethod? _paymentMethod;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final transactionId = widget.transaction['id'] as int;
+      final userId =
+          widget.transaction['userId']
+              as int?; // Ensure userId is passed if needed, or get from transaction
+
+      // Parallel data fetching
+      final results = await Future.wait([
+        _splitTransactionService.getSplitItemsByTransaction(transactionId),
+        if (userId != null)
+          _categoryService.getAllCategories(userId)
+        else
+          Future.value(<Category>[]),
+        _paymentMethodService.getPaymentMethodById(
+          widget.transaction['paymentMethodId'] as int,
+        ),
+      ]);
+
+      if (mounted) {
+        final splitItems = results[0] as List<SplitItem>;
+        final categories = results[1] as List<Category>;
+        final paymentMethod = results[2] as PaymentMethod?;
+
+        // Create category map for O(1) lookup
+        final categoriesMap = <int, Category>{};
+        for (var cat in categories) {
+          if (cat.categoryId != null) {
+            categoriesMap[cat.categoryId!] = cat;
+          }
+        }
+
+        setState(() {
+          _splitItems = splitItems;
+          _categoriesMap = categoriesMap;
+          _paymentMethod = paymentMethod;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading split details: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading details: $e')));
+      }
+    }
+  }
 
   Future<void> _deleteTransaction() async {
     try {
@@ -34,8 +109,11 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Map tailwind colors to Flutter colors approx
     final surfaceColor = isDark
         ? const Color(0xFF1a2c26)
         : const Color(0xFFffffff);
@@ -44,23 +122,10 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
         : const Color(0xFFf6f8f7);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    // Hardcoded breakdown items for demo as per HTML
-    final breakdownItems = [
-      {
-        'title': 'Groceries',
-        'category': 'Food',
-        'amount': '3,500',
-        'icon': Icons.lunch_dining,
-        'color': Colors.orange,
-      },
-      {
-        'title': 'T-shirt',
-        'category': 'Shopping',
-        'amount': '1,500',
-        'icon': Icons.checkroom,
-        'color': Colors.purple,
-      },
-    ];
+    final amount = widget.transaction['amount'] as double;
+    final note = widget.transaction['note'] as String?;
+    final date = widget.transaction['date'] as DateTime;
+    final formattedDate = DateFormat('MMM dd, yyyy').format(date);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -85,6 +150,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
                           isDark,
                           surfaceColor,
                           primaryColor,
+                          amount,
                         ),
 
                         const SizedBox(height: 32),
@@ -109,22 +175,33 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
                         const SizedBox(height: 16),
 
                         // Breakdown Items
-                        ...breakdownItems.map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildBreakdownItem(
-                              context,
-                              isDark,
-                              surfaceColor,
-                              item,
+                        if (_splitItems.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              'No split items found',
+                              style: TextStyle(
+                                color: isDark ? Colors.white54 : Colors.black54,
+                              ),
+                            ),
+                          )
+                        else
+                          ..._splitItems.map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildBreakdownItem(
+                                context,
+                                isDark,
+                                surfaceColor,
+                                item,
+                              ),
                             ),
                           ),
-                        ),
 
                         const SizedBox(height: 20),
 
                         // Meta Info (Date, Note)
-                        _buildMetaInfo(context, isDark),
+                        _buildMetaInfo(context, isDark, formattedDate, note),
 
                         // Bottom padding for clear view above footer
                         const SizedBox(height: 120),
@@ -165,7 +242,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
                           ),
                         );
                         if (result == true && mounted) {
-                          Navigator.pop(context, true);
+                          _loadData(); // Refresh data if edited
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -356,7 +433,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 48),
+          const SizedBox(width: 48), // Spacer to center title
         ],
       ),
     );
@@ -367,6 +444,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
     bool isDark,
     Color surfaceColor,
     Color primaryColor,
+    double amount,
   ) {
     return Container(
       width: double.infinity,
@@ -414,7 +492,12 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '5,000',
+                amount
+                    .toStringAsFixed(0)
+                    .replaceAllMapped(
+                      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                      (Match m) => '${m[1]},',
+                    ),
                 style: TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.w900,
@@ -424,39 +507,40 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : const Color(0xFFf8fafc),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
+          if (_paymentMethod != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : const Color(0xFFe2e8f0),
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFf8fafc),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : const Color(0xFFe2e8f0),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    IconHelper.getIcon(_paymentMethod!.iconName),
+                    size: 20,
+                    color: primaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _paymentMethod!.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white70 : const Color(0xFF334155),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.qr_code_scanner_rounded,
-                  size: 20,
-                  color: primaryColor,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'UPI (GPay Personal)',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white70 : const Color(0xFF334155),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -466,8 +550,12 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
     BuildContext context,
     bool isDark,
     Color surfaceColor,
-    Map<String, dynamic> item,
+    SplitItem item,
   ) {
+    final category = _categoriesMap[item.categoryId];
+    final color = ColorHelper.fromHex(category?.colorHex);
+    final icon = IconHelper.getIcon(category?.iconName);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -488,10 +576,10 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: (item['color'] as Color).withOpacity(isDark ? 0.2 : 0.1),
+              color: color.withOpacity(isDark ? 0.2 : 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(item['icon'], color: item['color'], size: 20),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -499,7 +587,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item['title'],
+                  item.name,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -508,7 +596,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  (item['category'] as String).toUpperCase(),
+                  (category?.name ?? '').toUpperCase(),
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -520,7 +608,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
             ),
           ),
           Text(
-            '₹ ${item['amount']}',
+            '₹ ${item.amount.toStringAsFixed(0)}',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -532,7 +620,12 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
     );
   }
 
-  Widget _buildMetaInfo(BuildContext context, bool isDark) {
+  Widget _buildMetaInfo(
+    BuildContext context,
+    bool isDark,
+    String formattedDate,
+    String? note,
+  ) {
     return Column(
       children: [
         Row(
@@ -573,7 +666,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Today, Oct 24',
+                  formattedDate,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -584,61 +677,63 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1a2c26) : Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.sticky_note_2_rounded,
-                size: 20,
-                color: Color(0xFF94a3b8),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'NOTE',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF94a3b8),
-                      letterSpacing: 0.5,
+        if (note != null && note.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1a2c26) : Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Weekly shopping run with friends. Split 50/50 for the shared items.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: isDark
-                          ? const Color(0xFFcbd5e1)
-                          : const Color(0xFF475569),
-                      height: 1.5,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
+                child: const Icon(
+                  Icons.sticky_note_2_rounded,
+                  size: 20,
+                  color: Color(0xFF94a3b8),
+                ),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'NOTE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF94a3b8),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      note,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? const Color(0xFFcbd5e1)
+                            : const Color(0xFF475569),
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

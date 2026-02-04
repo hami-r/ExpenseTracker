@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'edit_expense_screen.dart';
 import '../../database/services/transaction_service.dart';
+import 'package:intl/intl.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -101,6 +102,8 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           ),
                           child: Column(
                             children: [
+                              // ... (in build method)
+
                               // Amount
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -119,7 +122,19 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    widget.transaction['amount'] ?? '45.00',
+                                    (widget.transaction['amount'] is double
+                                            ? (widget.transaction['amount']
+                                                      as double)
+                                                  .toStringAsFixed(0)
+                                            : widget.transaction['amount']
+                                                      ?.toString() ??
+                                                  '0')
+                                        .replaceAllMapped(
+                                          RegExp(
+                                            r'(\d{1,3})(?=(\d{3})+(?!\d))',
+                                          ),
+                                          (Match m) => '${m[1]},',
+                                        ),
                                     style: TextStyle(
                                       fontSize: 48,
                                       fontWeight: FontWeight.w900,
@@ -184,7 +199,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         _buildDetailRow(
                           context,
                           'Date',
-                          widget.transaction['date'] ?? 'Today, Oct 24',
+                          widget.transaction['date'] is DateTime
+                              ? DateFormat(
+                                  'd MMM, yyyy',
+                                ).format(widget.transaction['date'])
+                              : widget.transaction['date']?.toString() ??
+                                    'Today',
                           Icons.calendar_today_rounded,
                         ),
 
@@ -194,7 +214,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         _buildDetailRow(
                           context,
                           'Note',
-                          widget.transaction['note'] ?? 'Whopper Meal',
+                          widget.transaction['note'] ?? '',
                           Icons.edit_note_rounded,
                         ),
                       ],

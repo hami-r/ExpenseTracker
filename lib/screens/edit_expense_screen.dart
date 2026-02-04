@@ -32,7 +32,6 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
 
   late DateTime _selectedDate;
   bool _isDeleteDialogVisible = false;
-  bool _isLoading = true;
 
   final PaymentMethodService _paymentMethodService = PaymentMethodService();
   final UserService _userService = UserService();
@@ -54,13 +53,8 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
     );
     // Parse date safely
     try {
-      if (widget.transaction['date'] != null) {
-        // Format is likely 'd MMM, h:mm a' from home screen, which is hard to parse back.
-        // Ideally we should pass the DateTime object itself in the transaction map.
-        // For now, let's try to check if we have the raw transaction date if possible,
-        // or just use current date if parsing fails.
-        // UPDATE: The user passes formatted date. This is tricky.
-        _selectedDate = DateTime.now();
+      if (widget.transaction['date'] is DateTime) {
+        _selectedDate = widget.transaction['date'];
       } else {
         _selectedDate = DateTime.now();
       }
@@ -87,20 +81,29 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
         setState(() {
           _categories = results[0] as List<Category>;
           _paymentMethods = results[1] as List<PaymentMethod>;
-          _isLoading = false;
 
-          // Set initial category selection based on name match
-          final categoryName = widget.transaction['category'];
-          if (categoryName != null) {
-            final index = _categories.indexWhere((c) => c.name == categoryName);
+          // Set initial category selection
+          if (widget.transaction['categoryId'] != null) {
+            final index = _categories.indexWhere(
+              (c) => c.categoryId == widget.transaction['categoryId'],
+            );
+            if (index != -1) _selectedCategoryIndex = index;
+          } else if (widget.transaction['category'] != null) {
+            final index = _categories.indexWhere(
+              (c) => c.name == widget.transaction['category'],
+            );
             if (index != -1) _selectedCategoryIndex = index;
           }
 
           // Set initial payment method selection
-          final paymentMethodName = widget.transaction['paymentMethod'];
-          if (paymentMethodName != null) {
+          if (widget.transaction['paymentMethodId'] != null) {
             final index = _paymentMethods.indexWhere(
-              (m) => m.name == paymentMethodName,
+              (m) => m.paymentMethodId == widget.transaction['paymentMethodId'],
+            );
+            if (index != -1) _selectedPaymentIndex = index;
+          } else if (widget.transaction['paymentMethod'] != null) {
+            final index = _paymentMethods.indexWhere(
+              (m) => m.name == widget.transaction['paymentMethod'],
             );
             if (index != -1) _selectedPaymentIndex = index;
           }

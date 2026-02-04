@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +22,73 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   final TextEditingController _tenureController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   String _tenureType = 'Yrs';
+  String _interestType = 'Diminishing';
   DateTime _startDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController.addListener(_updateEMI);
+    _interestRateController.addListener(_updateEMI);
+    _tenureController.addListener(_updateEMI);
+  }
+
+  void _updateEMI() {
+    setState(() {});
+  }
+
+  String _calculateEMI() {
+    if (_amountController.text.isEmpty || _tenureController.text.isEmpty) {
+      return '₹0';
+    }
+
+    try {
+      final principal = double.tryParse(_amountController.text) ?? 0.0;
+      final rate = double.tryParse(_interestRateController.text) ?? 0.0;
+      int tenure = int.tryParse(_tenureController.text) ?? 0;
+
+      if (principal <= 0 || tenure <= 0) return '₹0';
+
+      // Convert tenure to months if in years
+      if (_tenureType == 'Yrs') {
+        tenure *= 12;
+      }
+
+      // Handle 0% interest case
+      if (rate <= 0) {
+        final emi = principal / tenure;
+        return NumberFormat.currency(
+          locale: 'en_IN',
+          symbol: '₹',
+          decimalDigits: 0,
+        ).format(emi);
+      }
+
+      double emi = 0;
+
+      if (_interestType == 'Flat') {
+        // Flat Rate Formula: (P + (P * R * T/12)) / T_months
+        // R is annual rate in %.
+        final totalInterest = principal * (rate / 100) * (tenure / 12);
+        emi = (principal + totalInterest) / tenure;
+      } else {
+        // Diminishing Balance (Standard EMI)
+        // Monthly interest rate
+        final monthlyRate = rate / 12 / 100;
+        emi =
+            (principal * monthlyRate * pow(1 + monthlyRate, tenure)) /
+            (pow(1 + monthlyRate, tenure) - 1);
+      }
+
+      return NumberFormat.currency(
+        locale: 'en_IN',
+        symbol: '₹',
+        decimalDigits: 0,
+      ).format(emi);
+    } catch (e) {
+      return '₹0';
+    }
+  }
 
   final LoanService _loanService = LoanService();
   final UserService _userService = UserService();
@@ -633,7 +700,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                         ],
                                       ),
                                       Text(
-                                        '₹12,450',
+                                        _calculateEMI(),
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w900,
