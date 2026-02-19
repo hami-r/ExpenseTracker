@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+import '../database/services/analytics_service.dart';
+import '../utils/color_helper.dart';
+import '../utils/icon_helper.dart';
 
 class DetailedSpendingAnalyticsScreen extends StatefulWidget {
   const DetailedSpendingAnalyticsScreen({super.key});
@@ -17,6 +20,69 @@ class _DetailedSpendingAnalyticsScreenState
     start: DateTime.now().subtract(const Duration(days: 30)),
     end: DateTime.now(),
   );
+  final AnalyticsService _analyticsService = AnalyticsService();
+  List<Map<String, dynamic>> _categoriesData = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      // TODO: Get actual user ID
+      const userId = 1;
+
+      final categorySpending = await _analyticsService.getSpendingByCategory(
+        userId,
+        _selectedDateRange.start,
+        _selectedDateRange.end,
+      );
+
+      final totalSpending = categorySpending.values.fold(
+        0.0,
+        (sum, amount) => sum + amount,
+      );
+
+      final List<Map<String, dynamic>> processedData = [];
+
+      for (var entry in categorySpending.entries) {
+        final category = entry.key;
+        final amount = entry.value;
+        final percentage = totalSpending > 0
+            ? (amount / totalSpending) * 100
+            : 0.0;
+
+        // Skip tiny amounts to avoid clutter
+        if (percentage < 0.1) continue;
+
+        final color = ColorHelper.fromHex(category.colorHex);
+        final icon = IconHelper.getIcon(category.iconName);
+
+        processedData.add({
+          'name': category.name,
+          'amount': amount,
+          'percentage': percentage,
+          'color': color,
+          'icon': icon,
+          'bgColor': color.withOpacity(0.1),
+        });
+      }
+
+      if (mounted) {
+        setState(() {
+          _categoriesData = processedData;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading detailed analytics: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _selectDateRange() async {
     final DateTimeRange? picked = await showDateRangePicker(
@@ -44,6 +110,7 @@ class _DetailedSpendingAnalyticsScreenState
       setState(() {
         _selectedDateRange = picked;
       });
+      _loadData();
     }
   }
 
@@ -56,40 +123,7 @@ class _DetailedSpendingAnalyticsScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final List<Map<String, dynamic>> categories = [
-      {
-        'name': 'Travel',
-        'amount': 898.0,
-        'percentage': 62.32,
-        'color': const Color(0xFF8B5CF6),
-        'icon': Icons.flight_takeoff_rounded,
-        'bgColor': const Color(0xFF8B5CF6).withOpacity(0.1),
-      },
-      {
-        'name': 'Food',
-        'amount': 488.0,
-        'percentage': 33.87,
-        'color': const Color(0xFFF43F5E),
-        'icon': Icons.fastfood_rounded,
-        'bgColor': const Color(0xFFF43F5E).withOpacity(0.1),
-      },
-      {
-        'name': 'Charity',
-        'amount': 32.0,
-        'percentage': 2.22,
-        'color': const Color(0xFF38BDF8),
-        'icon': Icons.volunteer_activism_rounded,
-        'bgColor': const Color(0xFF38BDF8).withOpacity(0.1),
-      },
-      {
-        'name': 'Fuel',
-        'amount': 23.0,
-        'percentage': 1.60,
-        'color': const Color(0xFFEAB308),
-        'icon': Icons.local_gas_station_rounded,
-        'bgColor': const Color(0xFFEAB308).withOpacity(0.1),
-      },
-    ];
+    final List<Map<String, dynamic>> categories = _categoriesData;
 
     return Scaffold(
       backgroundColor: isDark
@@ -180,31 +214,65 @@ class _DetailedSpendingAnalyticsScreenState
               ),
             ),
 
-            // Donut Chart
-            CustomPaint(
-              size: const Size(288, 288),
-              painter: DonutChartPainter(
-                categories: categories,
-                isDark: isDark,
-              ),
+            // Content
+            Expanded(child: _buildBody(isDark, categories)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(bool isDark, List<Map<String, dynamic>> categories) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (categories.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.pie_chart_outline,
+              size: 64,
+              color: isDark ? Colors.grey[700] : Colors.grey[300],
             ),
-
-            const SizedBox(height: 40),
-
-            // Category List
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  return _buildCategoryCard(category, isDark);
-                },
+            const SizedBox(height: 16),
+            Text(
+              'No expenses found\nfor this period',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
+                fontSize: 16,
               ),
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Donut Chart
+        CustomPaint(
+          size: const Size(288, 288),
+          painter: DonutChartPainter(categories: categories, isDark: isDark),
+        ),
+
+        const SizedBox(height: 40),
+
+        // Category List
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return _buildCategoryCard(category, isDark);
+            },
+          ),
+        ),
+      ],
     );
   }
 
