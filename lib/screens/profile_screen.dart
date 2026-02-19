@@ -6,6 +6,7 @@ import 'database_test_screen.dart';
 import 'liabilities_loans_screen.dart';
 import 'money_owed_screen.dart';
 import 'theme_selection_screen.dart';
+import 'import_export_screen.dart';
 import '../providers/theme_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -139,8 +140,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 12),
                         _buildMenuCard([
                           _MenuItemData(
-                            icon: Icons.file_download_rounded,
-                            title: 'Export Data',
+                            icon: Icons.import_export_rounded,
+                            title: 'Import and Export',
                             color: const Color(0xFF64748b),
                             hasBottomBorder: true,
                           ),
@@ -481,6 +482,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const DatabaseTestScreen(),
+                    ),
+                  );
+                } else if (item.title == 'Import and Export') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ImportExportScreen(),
                     ),
                   );
                 }
