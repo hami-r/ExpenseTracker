@@ -48,7 +48,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
     try {
       await _iouService.softDeleteIOU(widget.iouId);
       if (mounted) {
-        Navigator.pop(context); // Close dialog
+        setState(() => _isDeleteDialogVisible = false);
         Navigator.pop(context, true); // Go back
       }
     } catch (e) {
@@ -142,7 +142,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  const EditIOUDetailsScreen(),
+                                  EditIOUDetailsScreen(iouId: widget.iouId),
                             ),
                           );
                         },
@@ -202,7 +202,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  const UpdateIOUProgressScreen(),
+                                  UpdateIOUProgressScreen(iouId: widget.iouId),
                             ),
                           );
                         },

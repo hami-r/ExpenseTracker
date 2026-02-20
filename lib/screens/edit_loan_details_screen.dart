@@ -1,30 +1,134 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
+import '../models/loan.dart';
+import '../database/services/loan_service.dart';
 
 class EditLoanDetailsScreen extends StatefulWidget {
-  const EditLoanDetailsScreen({super.key});
+  final int loanId;
+  const EditLoanDetailsScreen({super.key, required this.loanId});
 
   @override
   State<EditLoanDetailsScreen> createState() => _EditLoanDetailsScreenState();
 }
 
 class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '5,50,000',
-  );
-  final TextEditingController _lenderController = TextEditingController(
-    text: 'SBI Auto Loan',
-  );
-  final TextEditingController _rateController = TextEditingController(
-    text: '8.5',
-  );
-  final TextEditingController _tenureController = TextEditingController(
-    text: '5',
-  );
+  final LoanService _loanService = LoanService();
+  Loan? _loan;
+  bool _isLoading = true;
+
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _lenderController = TextEditingController();
+  final TextEditingController _rateController = TextEditingController();
+  final TextEditingController _tenureController = TextEditingController();
   String _tenureType = 'Yrs';
-  DateTime _startDate = DateTime(2023, 11, 1);
+  DateTime _startDate = DateTime.now();
+  double _calculatedEmi = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController.addListener(_calculateEmi);
+    _rateController.addListener(_calculateEmi);
+    _tenureController.addListener(_calculateEmi);
+    _loadData();
+  }
+
+  void _calculateEmi() {
+    double principal =
+        double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
+    double annualRate = double.tryParse(_rateController.text) ?? 0.0;
+    int tenureValue = int.tryParse(_tenureController.text) ?? 0;
+
+    if (principal <= 0 || tenureValue <= 0) {
+      if (mounted) {
+        setState(() => _calculatedEmi = 0.0);
+      }
+      return;
+    }
+
+    int totalMonths = _tenureType == 'Yrs' ? tenureValue * 12 : tenureValue;
+
+    if (totalMonths > 0) {
+      if (annualRate > 0) {
+        double r = annualRate / (12 * 100);
+        double emi =
+            (principal * r * pow(1 + r, totalMonths)) /
+            (pow(1 + r, totalMonths) - 1);
+        if (mounted) {
+          setState(() => _calculatedEmi = emi);
+        }
+      } else {
+        if (mounted) {
+          setState(() => _calculatedEmi = principal / totalMonths);
+        }
+      }
+    }
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final loan = await _loanService.getLoanById(widget.loanId);
+      if (loan != null) {
+        setState(() {
+          _loan = loan;
+          _amountController.text = loan.principalAmount.toStringAsFixed(0);
+          _lenderController.text = loan.lenderName;
+          _rateController.text = loan.interestRate.toStringAsFixed(1);
+          _tenureController.text = loan.tenureValue.toString();
+          _tenureType = loan.tenureUnit == 'years' ? 'Yrs' : 'Mos';
+          _startDate = loan.startDate;
+        });
+        _calculateEmi();
+      }
+    } catch (e) {
+      debugPrint('Error loading loan data: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_loan == null) return;
+
+    try {
+      final updatedLoan = Loan(
+        loanId: _loan!.loanId,
+        userId: _loan!.userId,
+        lenderName: _lenderController.text.trim(),
+        loanType: _loan!.loanType,
+        principalAmount:
+            double.tryParse(_amountController.text) ?? _loan!.principalAmount,
+        interestRate:
+            double.tryParse(_rateController.text) ?? _loan!.interestRate,
+        tenureValue: int.tryParse(_tenureController.text) ?? _loan!.tenureValue,
+        tenureUnit: _tenureType == 'Yrs' ? 'years' : 'months',
+        startDate: _startDate,
+        dueDate: _loan!.dueDate, // Ideally calculate based on new tenure/start
+        totalPaid: _loan!.totalPaid,
+        status: _loan!.status,
+        notes: _loan!.notes,
+        createdAt: _loan!.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      await _loanService.updateLoan(updatedLoan);
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('Error updating loan: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving changes: $e')));
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -98,34 +202,38 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
           ),
 
           SafeArea(
-            child: Column(
-              children: [
-                // Header
-                _buildHeader(context, isDark),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _loan == null
+                ? const Center(child: Text('Loan not found'))
+                : Column(
+                    children: [
+                      // Header
+                      _buildHeader(context, isDark),
 
-                // Main Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-                    child: Column(
-                      children: [
-                        // Amount Input
-                        _buildAmountInput(isDark),
+                      // Main Content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+                          child: Column(
+                            children: [
+                              // Amount Input
+                              _buildAmountInput(isDark),
 
-                        const SizedBox(height: 32),
+                              const SizedBox(height: 32),
 
-                        // Form Fields
-                        _buildLenderSection(isDark),
-                        const SizedBox(height: 16),
-                        _buildLoanTermsSection(isDark),
-                        const SizedBox(height: 16),
-                        _buildRepaymentSection(isDark),
-                      ],
-                    ),
+                              // Form Fields
+                              _buildLenderSection(isDark),
+                              const SizedBox(height: 16),
+                              _buildLoanTermsSection(isDark),
+                              const SizedBox(height: 16),
+                              _buildRepaymentSection(isDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Button
@@ -142,9 +250,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _isLoading ? null : _saveChanges,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -498,6 +604,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                                 onChanged: (String? newValue) {
                                   if (newValue != null) {
                                     setState(() => _tenureType = newValue);
+                                    _calculateEmi();
                                   }
                                 },
                                 items: <String>['Yrs', 'Mos']
@@ -687,9 +794,11 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                     ),
                   ],
                 ),
-                const Text(
-                  '₹11,283',
-                  style: TextStyle(
+                Text(
+                  _calculatedEmi > 0
+                      ? '₹${_calculatedEmi.toStringAsFixed(0)}'
+                      : 'Auto Calc.',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF20a080),

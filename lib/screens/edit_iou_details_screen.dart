@@ -3,21 +3,82 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 
+import '../database/services/iou_service.dart';
+import '../models/iou.dart';
+
 class EditIOUDetailsScreen extends StatefulWidget {
-  const EditIOUDetailsScreen({super.key});
+  final int iouId;
+  const EditIOUDetailsScreen({super.key, required this.iouId});
 
   @override
   State<EditIOUDetailsScreen> createState() => _EditIOUDetailsScreenState();
 }
 
 class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '500',
-  );
-  final TextEditingController _personController = TextEditingController(
-    text: 'Rahul K.',
-  );
-  DateTime _repaymentDate = DateTime(2024, 11, 1);
+  final IOUService _iouService = IOUService();
+  IOU? _iou;
+  bool _isLoading = true;
+
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _personController = TextEditingController();
+  DateTime _repaymentDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final iou = await _iouService.getIOUById(widget.iouId);
+      if (iou != null) {
+        setState(() {
+          _iou = iou;
+          _amountController.text = iou.amount.toStringAsFixed(0);
+          _personController.text = iou.creditorName;
+          _repaymentDate = iou.dueDate ?? DateTime.now();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading IOU data: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_iou == null) return;
+
+    try {
+      final updatedIOU = IOU(
+        iouId: _iou!.iouId,
+        userId: _iou!.userId,
+        creditorName: _personController.text.trim(),
+        amount: double.tryParse(_amountController.text) ?? _iou!.amount,
+        dueDate: _repaymentDate,
+        totalPaid: _iou!.totalPaid,
+        status: _iou!.status,
+        notes: _iou!.notes,
+        createdAt: _iou!.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      await _iouService.updateIOU(updatedIOU);
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('Error updating IOU: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving changes: $e')));
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -89,32 +150,34 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
           ),
 
           SafeArea(
-            child: Column(
-              children: [
-                // Header
-                _buildHeader(context, isDark),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Column(
+                    children: [
+                      // Header
+                      _buildHeader(context, isDark),
 
-                // Main Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-                    child: Column(
-                      children: [
-                        // Amount Input
-                        _buildAmountInput(isDark),
+                      // Main Content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+                          child: Column(
+                            children: [
+                              // Amount Input
+                              _buildAmountInput(isDark),
 
-                        const SizedBox(height: 32),
+                              const SizedBox(height: 32),
 
-                        // Form Fields
-                        _buildPersonSection(isDark),
-                        const SizedBox(height: 16),
-                        _buildRepaymentSection(isDark),
-                      ],
-                    ),
+                              // Form Fields
+                              _buildPersonSection(isDark),
+                              const SizedBox(height: 16),
+                              _buildRepaymentSection(isDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Button
@@ -131,9 +194,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _isLoading ? null : _saveChanges,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,

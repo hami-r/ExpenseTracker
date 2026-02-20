@@ -50,7 +50,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     try {
       await _loanService.softDeleteLoan(widget.loanId);
       if (mounted) {
-        Navigator.pop(context); // Close dialog
+        setState(() => _isDeleteDialogVisible = false);
         Navigator.pop(context, true); // Go back and indicate deletion
       }
     } catch (e) {
@@ -146,7 +146,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  const EditLoanDetailsScreen(),
+                                  EditLoanDetailsScreen(loanId: widget.loanId),
                             ),
                           );
                         },
@@ -205,7 +205,8 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const UpdateLoanScreen(),
+                              builder: (context) =>
+                                  UpdateLoanScreen(loanId: widget.loanId),
                             ),
                           );
                         },

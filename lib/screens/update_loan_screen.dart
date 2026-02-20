@@ -1,18 +1,127 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../models/loan.dart';
+import '../models/loan_payment.dart';
+import '../database/services/loan_service.dart';
 
 class UpdateLoanScreen extends StatefulWidget {
-  const UpdateLoanScreen({super.key});
+  final int loanId;
+  const UpdateLoanScreen({super.key, required this.loanId});
 
   @override
   State<UpdateLoanScreen> createState() => _UpdateLoanScreenState();
 }
 
 class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
-  int _monthsPaid = 14;
-  final int _totalMonths = 60;
+  final LoanService _loanService = LoanService();
+  Loan? _loan;
+  bool _isLoading = true;
+
+  int _monthsPaid = 0;
+  int _initialMonthsPaid = 0;
+  int _totalMonths = 60;
   final TextEditingController _extraPaymentController = TextEditingController();
-  double _progressPercentage = 23.0;
+  double _progressPercentage = 0.0;
+  double _emi = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+    _extraPaymentController.addListener(_updateCalculations);
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final loan = await _loanService.getLoanById(widget.loanId);
+      if (loan != null) {
+        final totalMonths = loan.tenureUnit == 'years'
+            ? (loan.tenureValue ?? 0) * 12
+            : (loan.tenureValue ?? 0);
+
+        // Simple EMI approximation if rate > 0, else Principal/Months
+        double emi = 0;
+        if (totalMonths > 0) {
+          if (loan.interestRate > 0) {
+            double r = loan.interestRate / (12 * 100);
+            emi =
+                (loan.principalAmount * r * pow(1 + r, totalMonths)) /
+                (pow(1 + r, totalMonths) - 1);
+          } else {
+            emi = loan.principalAmount / totalMonths;
+          }
+        }
+
+        int monthsPaid = emi > 0 ? (loan.totalPaid / emi).floor() : 0;
+
+        setState(() {
+          _loan = loan;
+          _totalMonths = totalMonths;
+          _emi = emi;
+          _initialMonthsPaid = monthsPaid;
+          _monthsPaid = monthsPaid;
+          _progressPercentage = loan.principalAmount > 0
+              ? (loan.totalPaid / loan.principalAmount * 100).clamp(0.0, 100.0)
+              : 0.0;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading loan data: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _updateCalculations() {
+    if (_loan == null) return;
+    double extraPayment = double.tryParse(_extraPaymentController.text) ?? 0;
+    double newTotalPaid =
+        _loan!.totalPaid +
+        extraPayment +
+        ((_monthsPaid - _initialMonthsPaid) * _emi);
+    setState(() {
+      _progressPercentage = _loan!.principalAmount > 0
+          ? (newTotalPaid / _loan!.principalAmount * 100).clamp(0.0, 100.0)
+          : 0.0;
+    });
+  }
+
+  Future<void> _confirmUpdate() async {
+    if (_loan == null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      double extraPayment = double.tryParse(_extraPaymentController.text) ?? 0;
+      int monthsDiff = _monthsPaid - _initialMonthsPaid;
+      double totalNewPayment =
+          extraPayment + (monthsDiff > 0 ? monthsDiff * _emi : 0);
+
+      if (totalNewPayment > 0) {
+        // Create a payment log
+        final payment = LoanPayment(
+          loanId: _loan!.loanId!,
+          paymentAmount: totalNewPayment,
+          paymentDate: DateTime.now(),
+          notes: extraPayment > 0 ? 'Extra principal + EMI' : 'EMI Payment',
+        );
+        await _loanService.createLoanPayment(payment);
+
+        // Update total paid
+        double newTotalPaid = _loan!.totalPaid + totalNewPayment;
+        await _loanService.updateLoanTotalPaid(_loan!.loanId!, newTotalPaid);
+      }
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('Error updating progress: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -70,50 +179,54 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
 
           // Main content
           SafeArea(
-            child: Column(
-              children: [
-                // Header
-                _buildHeader(context, isDark),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _loan == null
+                ? const Center(child: Text('Loan not found'))
+                : Column(
+                    children: [
+                      // Header
+                      _buildHeader(context, isDark),
 
-                // Scrollable content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    child: Column(
-                      children: [
-                        // Loan badge
-                        _buildLoanBadge(isDark),
+                      // Scrollable content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          child: Column(
+                            children: [
+                              // Loan badge
+                              _buildLoanBadge(isDark),
 
-                        const SizedBox(height: 24),
+                              const SizedBox(height: 24),
 
-                        // Months paid counter
-                        _buildMonthsCounter(isDark),
+                              // Months paid counter
+                              _buildMonthsCounter(isDark),
 
-                        const SizedBox(height: 24),
+                              const SizedBox(height: 24),
 
-                        // Extra payment
-                        _buildExtraPayment(isDark),
+                              // Extra payment
+                              _buildExtraPayment(isDark),
 
-                        const SizedBox(height: 32),
+                              const SizedBox(height: 32),
 
-                        // Progress slider
-                        _buildProgressSlider(isDark),
+                              // Progress slider
+                              _buildProgressSlider(isDark),
 
-                        const SizedBox(height: 32),
+                              const SizedBox(height: 32),
 
-                        // Impact summary
-                        _buildImpactSummary(isDark),
+                              // Impact summary
+                              _buildImpactSummary(isDark),
 
-                        const SizedBox(height: 100), // Space for button
-                      ],
-                    ),
+                              const SizedBox(height: 100), // Space for button
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom button with gradient
@@ -145,10 +258,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Confirm update logic
-                    Navigator.pop(context);
-                  },
+                  onPressed: _isLoading ? null : _confirmUpdate,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
@@ -220,7 +330,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            'Car Loan • SBI Auto',
+            '${_loan?.loanType == 'given' ? 'Given to' : 'Taken from'} • ${_loan?.lenderName}',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -266,8 +376,11 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             children: [
               // Decrement button
               IconButton(
-                onPressed: _monthsPaid > 0
-                    ? () => setState(() => _monthsPaid--)
+                onPressed: _monthsPaid > _initialMonthsPaid
+                    ? () {
+                        setState(() => _monthsPaid--);
+                        _updateCalculations();
+                      }
                     : null,
                 icon: Container(
                   width: 40,
@@ -304,7 +417,10 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
               // Increment button
               IconButton(
                 onPressed: _monthsPaid < _totalMonths
-                    ? () => setState(() => _monthsPaid++)
+                    ? () {
+                        setState(() => _monthsPaid++);
+                        _updateCalculations();
+                      }
                     : null,
                 icon: Container(
                   width: 40,
@@ -518,11 +634,8 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             value: _progressPercentage,
             min: 0,
             max: 100,
-            onChanged: (value) {
-              setState(() {
-                _progressPercentage = value;
-              });
-            },
+            onChanged:
+                null, // Makes slider read-only visually since progress shouldn't be overridden explicitly here
           ),
         ),
         Padding(
@@ -623,21 +736,23 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '46 Months',
+                      '${_totalMonths - _monthsPaid} Months',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : const Color(0xFF0f172a),
                       ),
                     ),
-                    const Text(
-                      '-2 Months Saved',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF10b981),
+                    if (_totalMonths - _monthsPaid >= 0) ...[
+                      const Text(
+                        'Based on new amount',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF10b981),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],
@@ -661,9 +776,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text(
-                    '₹12,450',
-                    style: TextStyle(
+                  Text(
+                    '₹${(_loan?.interestRate ?? 0) > 0 ? ((_loan?.principalAmount ?? 0) * (_loan?.interestRate ?? 0) / 100).toStringAsFixed(0) : "0"}',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF10b981),
