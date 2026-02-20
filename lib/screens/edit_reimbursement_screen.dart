@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 
+import '../models/reimbursement.dart';
+import '../database/services/reimbursement_service.dart';
+
 class EditReimbursementScreen extends StatefulWidget {
-  const EditReimbursementScreen({super.key});
+  final int reimbursementId;
+  const EditReimbursementScreen({super.key, required this.reimbursementId});
 
   @override
   State<EditReimbursementScreen> createState() =>
@@ -11,16 +15,109 @@ class EditReimbursementScreen extends StatefulWidget {
 }
 
 class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '1250',
-  );
-  final TextEditingController _recipientController = TextEditingController(
-    text: 'Office Lunch',
-  );
+  final ReimbursementService _reimbursementService = ReimbursementService();
+  Reimbursement? _reimbursement;
+  bool _isLoading = true;
+
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
   String _selectedCategory = 'office';
-  DateTime _selectedDate = DateTime(2026, 1, 20);
+  DateTime _selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final reimbursement = await _reimbursementService.getReimbursementById(
+        widget.reimbursementId,
+      );
+
+      if (reimbursement != null && mounted) {
+        setState(() {
+          _reimbursement = reimbursement;
+          _amountController.text = reimbursement.amount.toStringAsFixed(0);
+          _recipientController.text = reimbursement.sourceName;
+          _noteController.text = reimbursement.notes ?? '';
+          if (reimbursement.category != null &&
+              reimbursement.category!.isNotEmpty &&
+              [
+                'office',
+                'refund',
+                'medical',
+                'travel',
+              ].contains(reimbursement.category)) {
+            _selectedCategory = reimbursement.category!;
+          }
+          if (reimbursement.expectedDate != null) {
+            _selectedDate = reimbursement.expectedDate!;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading reimbursement data: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_reimbursement == null) return;
+
+    final amount = double.tryParse(_amountController.text) ?? 0.0;
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid amount')),
+      );
+      return;
+    }
+
+    if (_recipientController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a recipient/item name')),
+      );
+      return;
+    }
+
+    try {
+      final updatedReimbursement = Reimbursement(
+        reimbursementId: _reimbursement!.reimbursementId,
+        userId: _reimbursement!.userId,
+        sourceName: _recipientController.text.trim(),
+        category: _selectedCategory,
+        amount: amount,
+        expectedDate: _selectedDate,
+        totalReimbursed: _reimbursement!.totalReimbursed,
+        status: _reimbursement!.status,
+        notes: _noteController.text.trim(),
+        createdAt: _reimbursement!.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      await _reimbursementService.updateReimbursement(updatedReimbursement);
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('Error updating reimbursement: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error saving changes. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -91,34 +188,40 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
           ),
 
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, isDark),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildTotalAmountSection(isDark),
-                        const SizedBox(height: 24),
-                        _buildRecipientSection(isDark),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(child: _buildCategorySection(isDark)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildDateSection(context, isDark)),
-                          ],
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Column(
+                    children: [
+                      _buildHeader(context, isDark),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildTotalAmountSection(isDark),
+                              const SizedBox(height: 24),
+                              _buildRecipientSection(isDark),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildCategorySection(isDark),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: _buildDateSection(context, isDark),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              _buildNoteSection(isDark),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 24),
-                        _buildNoteSection(isDark),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Button
@@ -148,9 +251,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _saveChanges,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,

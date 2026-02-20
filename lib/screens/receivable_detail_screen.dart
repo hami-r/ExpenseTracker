@@ -1,9 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/receivable.dart';
+import '../models/receivable_payment.dart';
+import '../database/services/receivable_service.dart';
 import 'edit_lent_details_screen.dart';
 import 'update_receivable_screen.dart';
 
-class ReceivableDetailScreen extends StatelessWidget {
-  const ReceivableDetailScreen({super.key});
+class ReceivableDetailScreen extends StatefulWidget {
+  final int receivableId;
+  const ReceivableDetailScreen({super.key, required this.receivableId});
+
+  @override
+  State<ReceivableDetailScreen> createState() => _ReceivableDetailScreenState();
+}
+
+class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
+  final ReceivableService _receivableService = ReceivableService();
+  Receivable? _receivable;
+  List<ReceivablePayment> _payments = [];
+  bool _isLoading = true;
+  bool _isDeleteDialogVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final receivable = await _receivableService.getReceivableById(
+        widget.receivableId,
+      );
+      final payments = await _receivableService.getReceivablePayments(
+        widget.receivableId,
+      );
+
+      if (mounted) {
+        setState(() {
+          _receivable = receivable;
+          _payments = payments;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading receivable data: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteReceivable() async {
+    try {
+      await _receivableService.softDeleteReceivable(widget.receivableId);
+      if (mounted) {
+        setState(() => _isDeleteDialogVisible = false);
+        Navigator.pop(context, true); // Indicate deletion
+      }
+    } catch (e) {
+      debugPrint('Error deleting receivable: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,26 +71,30 @@ class ReceivableDetailScreen extends StatelessWidget {
       body: Stack(
         children: [
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, isDark),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildMainCard(isDark),
-                        const SizedBox(height: 24),
-                        _buildOverviewSection(isDark),
-                        const SizedBox(height: 24),
-                        _buildPreviousRepayments(isDark),
-                      ],
-                    ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _receivable == null
+                ? const Center(child: Text('Receivable not found'))
+                : Column(
+                    children: [
+                      _buildHeader(context, isDark),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildMainCard(isDark),
+                              const SizedBox(height: 24),
+                              _buildOverviewSection(isDark),
+                              const SizedBox(height: 24),
+                              _buildPreviousRepayments(isDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Actions
@@ -65,14 +126,18 @@ class ReceivableDetailScreen extends StatelessWidget {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const EditLentDetailsScreen(),
+                              builder: (context) => EditLentDetailsScreen(
+                                receivableId: widget.receivableId,
+                              ),
                             ),
                           );
+                          if (result == true) {
+                            _loadData();
+                          }
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: Row(
@@ -122,14 +187,18 @@ class ReceivableDetailScreen extends StatelessWidget {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const UpdateReceivableScreen(),
+                              builder: (context) => UpdateReceivableScreen(
+                                receivableId: widget.receivableId,
+                              ),
                             ),
                           );
+                          if (result == true) {
+                            _loadData();
+                          }
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: const Row(
@@ -158,6 +227,131 @@ class ReceivableDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+
+          // Delete Dialog Overlay
+          if (_isDeleteDialogVisible) ...[
+            Container(color: Colors.black.withOpacity(0.5)),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor.withOpacity(0.1),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 40,
+                        offset: const Offset(0, 20),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.delete_rounded,
+                          size: 40,
+                          color: Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Delete Receivable?',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Are you sure you want to delete this lent amount?\nThis action cannot be undone.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                setState(() => _isDeleteDialogVisible = false);
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                side: BorderSide(
+                                  color: Theme.of(
+                                    context,
+                                  ).dividerColor.withOpacity(0.2),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _deleteReceivable,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -184,13 +378,33 @@ class ReceivableDetailScreen extends StatelessWidget {
               color: isDark ? Colors.white : const Color(0xFF0f172a),
             ),
           ),
-          const SizedBox(width: 48),
+          IconButton(
+            onPressed: () {
+              setState(() => _isDeleteDialogVisible = true);
+            },
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildMainCard(bool isDark) {
+    if (_receivable == null) return const SizedBox.shrink();
+
+    final NumberFormat currencyFormat = NumberFormat.simpleCurrency(
+      name: 'INR',
+      decimalDigits: 0,
+    );
+    final remainingBalance =
+        _receivable!.principalAmount - _receivable!.totalReceived;
+    final progress = _receivable!.principalAmount > 0
+        ? (_receivable!.totalReceived / _receivable!.principalAmount).clamp(
+            0.0,
+            1.0,
+          )
+        : 0.0;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -235,7 +449,7 @@ class ReceivableDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Amit S.',
+            _receivable!.recipientName,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -254,7 +468,7 @@ class ReceivableDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '₹15,000',
+            currencyFormat.format(remainingBalance > 0 ? remainingBalance : 0),
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w900,
@@ -281,7 +495,9 @@ class ReceivableDetailScreen extends StatelessWidget {
                       ),
                       children: [
                         TextSpan(
-                          text: '₹10,000',
+                          text: currencyFormat.format(
+                            _receivable!.totalReceived,
+                          ),
                           style: TextStyle(
                             color: isDark
                                 ? Colors.white
@@ -292,7 +508,7 @@ class ReceivableDetailScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Total: ₹25,000',
+                    'Total: ${currencyFormat.format(_receivable!.principalAmount)}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -317,7 +533,7 @@ class ReceivableDetailScreen extends StatelessWidget {
                     ),
                   ),
                   FractionallySizedBox(
-                    widthFactor: 0.4,
+                    widthFactor: progress,
                     child: Container(
                       height: 12,
                       decoration: BoxDecoration(
@@ -332,7 +548,7 @@ class ReceivableDetailScreen extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  '40% Repaid',
+                  '${(progress * 100).toStringAsFixed(1)}% Repaid',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -350,6 +566,7 @@ class ReceivableDetailScreen extends StatelessWidget {
   }
 
   Widget _buildOverviewSection(bool isDark) {
+    if (_receivable == null) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -371,7 +588,9 @@ class ReceivableDetailScreen extends StatelessWidget {
               child: _buildInfoCard(
                 icon: Icons.calendar_month_rounded,
                 label: 'Date Lent',
-                value: 'Oct 24, 2023',
+                value: _receivable!.createdAt != null
+                    ? DateFormat('MMM dd, yyyy').format(_receivable!.createdAt!)
+                    : 'N/A',
                 isDark: isDark,
               ),
             ),
@@ -380,7 +599,11 @@ class ReceivableDetailScreen extends StatelessWidget {
               child: _buildInfoCard(
                 icon: Icons.event_available_rounded,
                 label: 'Expected By',
-                value: 'Dec 15, 2023',
+                value: _receivable!.expectedDate != null
+                    ? DateFormat(
+                        'MMM dd, yyyy',
+                      ).format(_receivable!.expectedDate!)
+                    : 'N/A',
                 isDark: isDark,
               ),
             ),
@@ -503,23 +726,38 @@ class ReceivableDetailScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        _buildRepaymentItem(
-          dateDay: '10',
-          dateMonth: 'NOV',
-          title: 'Partial Payment',
-          subtitle: 'Bank Transfer',
-          amount: '+ ₹5,000',
-          isDark: isDark,
-        ),
-        const SizedBox(height: 12),
-        _buildRepaymentItem(
-          dateDay: '01',
-          dateMonth: 'NOV',
-          title: 'Partial Payment',
-          subtitle: 'UPI',
-          amount: '+ ₹5,000',
-          isDark: isDark,
-        ),
+        if (_payments.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              'No payments received yet.',
+              style: TextStyle(
+                color: isDark
+                    ? const Color(0xFF94a3b8)
+                    : const Color(0xFF64748b),
+              ),
+            ),
+          )
+        else
+          ..._payments.map((payment) {
+            final currencyFormat = NumberFormat.simpleCurrency(
+              name: 'INR',
+              decimalDigits: 0,
+            );
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildRepaymentItem(
+                dateDay: DateFormat('dd').format(payment.paymentDate),
+                dateMonth: DateFormat(
+                  'MMM',
+                ).format(payment.paymentDate).toUpperCase(),
+                title: 'Partial Payment',
+                subtitle: payment.notes ?? 'Repayment',
+                amount: '+ ${currencyFormat.format(payment.paymentAmount)}',
+                isDark: isDark,
+              ),
+            );
+          }),
       ],
     );
   }

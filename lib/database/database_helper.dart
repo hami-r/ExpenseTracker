@@ -18,7 +18,7 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -32,6 +32,14 @@ class DatabaseHelper {
       );
       await db.execute(
         'ALTER TABLE ious ADD COLUMN is_deleted INTEGER DEFAULT 0',
+      );
+    }
+    if (oldVersion < 3) {
+      await db.execute(
+        'ALTER TABLE receivables ADD COLUMN is_deleted INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE reimbursements ADD COLUMN is_deleted INTEGER DEFAULT 0',
       );
     }
   }
@@ -251,6 +259,7 @@ class DatabaseHelper {
         total_received REAL DEFAULT 0,
         status TEXT DEFAULT 'active',
         notes TEXT,
+        is_deleted INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -344,8 +353,9 @@ class DatabaseHelper {
         amount REAL NOT NULL,
         expected_date TEXT,
         total_reimbursed REAL DEFAULT 0,
-        status TEXT DEFAULT 'pending',
+        status TEXT DEFAULT 'active',
         notes TEXT,
+        is_deleted INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE

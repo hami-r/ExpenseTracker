@@ -129,6 +129,7 @@ class AllTransactionsService {
         '#F59E0B' as color_hex, -- Amber for pending return
         status as status
       FROM receivables
+      WHERE is_deleted = 0
     ''';
 
     // 7. Receivable Payments (Money Incoming)

@@ -8,6 +8,7 @@ class Reimbursement {
   final double totalReimbursed;
   final String status;
   final String? notes;
+  final bool isDeleted;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -19,8 +20,9 @@ class Reimbursement {
     required this.amount,
     this.expectedDate,
     this.totalReimbursed = 0.0,
-    this.status = 'pending',
+    this.status = 'active',
     this.notes,
+    this.isDeleted = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -36,6 +38,7 @@ class Reimbursement {
       'total_reimbursed': totalReimbursed,
       'status': status,
       'notes': notes,
+      'is_deleted': isDeleted ? 1 : 0,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -51,9 +54,10 @@ class Reimbursement {
       expectedDate: map['expected_date'] != null
           ? DateTime.parse(map['expected_date'] as String)
           : null,
-      totalReimbursed: (map['total_reimbursed'] as num?)?.toDouble() ?? 0.0,
-      status: map['status'] as String? ?? 'pending',
+      totalReimbursed: map['total_reimbursed'] as double? ?? 0.0,
+      status: map['status'] as String? ?? 'active',
       notes: map['notes'] as String?,
+      isDeleted: (map['is_deleted'] as int? ?? 0) == 1,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : null,

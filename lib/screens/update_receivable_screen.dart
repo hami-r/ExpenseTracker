@@ -3,20 +3,53 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
 import '../widgets/custom_date_picker.dart';
+import '../models/receivable.dart';
+import '../models/receivable_payment.dart';
+import '../database/services/receivable_service.dart';
 
 class UpdateReceivableScreen extends StatefulWidget {
-  const UpdateReceivableScreen({super.key});
+  final int receivableId;
+  const UpdateReceivableScreen({super.key, required this.receivableId});
 
   @override
   State<UpdateReceivableScreen> createState() => _UpdateReceivableScreenState();
 }
 
 class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '5000',
-  );
-  DateTime _selectedDate = DateTime(2023, 11, 1);
+  final ReceivableService _receivableService = ReceivableService();
+  Receivable? _receivable;
+  bool _isLoading = true;
+
+  final TextEditingController _amountController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
   bool _isfullySettled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+    _amountController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final receivable = await _receivableService.getReceivableById(
+        widget.receivableId,
+      );
+      if (mounted) {
+        setState(() {
+          _receivable = receivable;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading receivable details: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -85,28 +118,32 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
           ),
 
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, isDark),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 8),
-                        _buildRecipientInfo(isDark),
-                        const SizedBox(height: 32),
-                        _buildAmountInput(isDark),
-                        const SizedBox(height: 32),
-                        _buildOptions(context, isDark),
-                        const SizedBox(height: 32),
-                        _buildSummaryCard(isDark),
-                      ],
-                    ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _receivable == null
+                ? const Center(child: Text('Receivable not found'))
+                : Column(
+                    children: [
+                      _buildHeader(context, isDark),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 8),
+                              _buildRecipientInfo(isDark),
+                              const SizedBox(height: 32),
+                              _buildAmountInput(isDark),
+                              const SizedBox(height: 32),
+                              _buildOptions(context, isDark),
+                              const SizedBox(height: 32),
+                              _buildSummaryCard(isDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Button
@@ -136,9 +173,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _confirmUpdate,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -238,7 +273,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Amit S.',
+                _receivable!.recipientName,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -247,7 +282,9 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Due Dec 15',
+                _receivable!.expectedDate != null
+                    ? 'Expected ${DateFormat('MMM dd').format(_receivable!.expectedDate!)}'
+                    : 'No expected date',
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark
@@ -329,7 +366,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Enter the amount repaid by Amit S.',
+          'Enter the amount repaid by ${_receivable!.recipientName}',
           style: TextStyle(
             fontSize: 12,
             color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
@@ -489,6 +526,14 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                 onChanged: (value) {
                   setState(() {
                     _isfullySettled = value;
+                    if (value && _receivable != null) {
+                      final remainingBalance =
+                          _receivable!.principalAmount -
+                          _receivable!.totalReceived;
+                      _amountController.text = remainingBalance.toStringAsFixed(
+                        0,
+                      );
+                    }
                   });
                 },
                 activeColor: Theme.of(context).colorScheme.primary,
@@ -504,6 +549,24 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
   }
 
   Widget _buildSummaryCard(bool isDark) {
+    if (_receivable == null) return const SizedBox.shrink();
+
+    final currencyFormat = NumberFormat.simpleCurrency(
+      name: 'INR',
+      decimalDigits: 0,
+    );
+    final previousBalance =
+        _receivable!.principalAmount - _receivable!.totalReceived;
+
+    double inputAmount = 0;
+    if (_amountController.text.isNotEmpty) {
+      inputAmount = double.tryParse(_amountController.text) ?? 0;
+    }
+
+    double finalAmount = _isfullySettled ? previousBalance : inputAmount;
+    double newBalance = previousBalance - finalAmount;
+    if (newBalance < 0) newBalance = 0;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -554,7 +617,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                     ),
                   ),
                   Text(
-                    '₹15,000',
+                    currencyFormat.format(previousBalance),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -587,9 +650,9 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                       ),
                     ],
                   ),
-                  const Text(
-                    '- ₹5,000',
-                    style: TextStyle(
+                  Text(
+                    '- ${currencyFormat.format(finalAmount)}',
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF10b981),
@@ -619,7 +682,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                     ),
                   ),
                   Text(
-                    '₹10,000',
+                    currencyFormat.format(newBalance),
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
@@ -633,5 +696,56 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmUpdate() async {
+    if (_receivable == null) return;
+
+    double inputAmount = 0;
+    if (_amountController.text.isNotEmpty) {
+      inputAmount = double.tryParse(_amountController.text) ?? 0;
+    }
+
+    final previousBalance =
+        _receivable!.principalAmount - _receivable!.totalReceived;
+    double finalAmount = _isfullySettled ? previousBalance : inputAmount;
+
+    if (finalAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid amount')),
+      );
+      return;
+    }
+
+    try {
+      final payment = ReceivablePayment(
+        receivableId: _receivable!.receivableId!,
+        paymentAmount: finalAmount,
+        paymentDate: _selectedDate,
+        notes: _isfullySettled
+            ? 'Marked as fully Settled'
+            : 'Partial repayment',
+        createdAt: DateTime.now(),
+      );
+
+      await _receivableService.createReceivablePayment(payment);
+
+      // Update the total received amount on the receivable itself
+      await _receivableService.updateReceivableTotalReceived(
+        _receivable!.receivableId!,
+        _receivable!.totalReceived + finalAmount,
+      );
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('Error creating receivable payment: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error saving repayment. Please try again.'),
+        ),
+      );
+    }
   }
 }

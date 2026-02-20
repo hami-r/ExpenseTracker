@@ -173,7 +173,10 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          const ReceivableDetailScreen(), // TODO: Pass ID
+                                          ReceivableDetailScreen(
+                                            receivableId:
+                                                receivable.receivableId!,
+                                          ), // Passed ID
                                     ),
                                   );
                                   _loadData();
@@ -237,7 +240,10 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          const ReimbursementDetailScreen(), // TODO: Pass ID
+                                          ReimbursementDetailScreen(
+                                            reimbursementId:
+                                                reim.reimbursementId!,
+                                          ),
                                     ),
                                   );
                                   _loadData();

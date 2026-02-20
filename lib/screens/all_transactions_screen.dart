@@ -415,7 +415,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ReceivableDetailScreen(),
+                builder: (context) =>
+                    ReceivableDetailScreen(receivableId: item.id),
               ),
             );
           } else if (item.type == TransactionType.reimbursement ||
@@ -423,7 +424,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ReimbursementDetailScreen(),
+                builder: (context) =>
+                    ReimbursementDetailScreen(reimbursementId: item.id),
               ),
             );
           }

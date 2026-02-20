@@ -11,7 +11,7 @@ class ReceivableService {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'receivables',
-      where: 'user_id = ? AND status = ?',
+      where: 'user_id = ? AND status = ? AND is_deleted = 0',
       whereArgs: [userId, 'active'],
       orderBy: 'expected_date ASC',
     );
@@ -51,7 +51,18 @@ class ReceivableService {
     );
   }
 
-  // Delete receivable
+  // Soft Delete a receivable
+  Future<void> softDeleteReceivable(int receivableId) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'receivables',
+      {'is_deleted': 1, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'receivable_id = ?',
+      whereArgs: [receivableId],
+    );
+  }
+
+  // Hard Delete a receivable
   Future<void> deleteReceivable(int receivableId) async {
     final db = await _dbHelper.database;
     await db.delete(

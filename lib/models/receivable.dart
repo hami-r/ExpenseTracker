@@ -9,6 +9,7 @@ class Receivable {
   final double totalReceived;
   final String status;
   final String? notes;
+  final bool isDeleted;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -23,6 +24,7 @@ class Receivable {
     this.totalReceived = 0.0,
     this.status = 'active',
     this.notes,
+    this.isDeleted = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -39,6 +41,7 @@ class Receivable {
       'total_received': totalReceived,
       'status': status,
       'notes': notes,
+      'is_deleted': isDeleted ? 1 : 0,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -55,9 +58,10 @@ class Receivable {
       expectedDate: map['expected_date'] != null
           ? DateTime.parse(map['expected_date'] as String)
           : null,
-      totalReceived: (map['total_received'] as num?)?.toDouble() ?? 0.0,
+      totalReceived: map['total_received'] as double? ?? 0.0,
       status: map['status'] as String? ?? 'active',
       notes: map['notes'] as String?,
+      isDeleted: (map['is_deleted'] as int? ?? 0) == 1,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : null,

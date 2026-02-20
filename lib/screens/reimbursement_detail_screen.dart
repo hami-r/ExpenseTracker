@@ -1,9 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'edit_reimbursement_screen.dart';
 import 'update_reimbursement_screen.dart';
+import '../models/reimbursement.dart';
+import '../models/reimbursement_payment.dart';
+import '../database/services/reimbursement_service.dart';
 
-class ReimbursementDetailScreen extends StatelessWidget {
-  const ReimbursementDetailScreen({super.key});
+class ReimbursementDetailScreen extends StatefulWidget {
+  final int reimbursementId;
+  const ReimbursementDetailScreen({super.key, required this.reimbursementId});
+
+  @override
+  State<ReimbursementDetailScreen> createState() =>
+      _ReimbursementDetailScreenState();
+}
+
+class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
+  final ReimbursementService _reimbursementService = ReimbursementService();
+  Reimbursement? _reimbursement;
+  List<ReimbursementPayment> _payments = [];
+  bool _isLoading = true;
+  bool _isDeleteDialogVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final reimbursement = await _reimbursementService.getReimbursementById(
+        widget.reimbursementId,
+      );
+      final payments = await _reimbursementService.getReimbursementPayments(
+        widget.reimbursementId,
+      );
+
+      if (mounted) {
+        setState(() {
+          _reimbursement = reimbursement;
+          _payments = payments;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading reimbursement data: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteReimbursement() async {
+    try {
+      await _reimbursementService.softDeleteReimbursement(
+        widget.reimbursementId,
+      );
+      if (mounted) {
+        setState(() => _isDeleteDialogVisible = false);
+        Navigator.pop(context, true); // Indicate deletion
+      }
+    } catch (e) {
+      debugPrint('Error deleting reimbursement: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,26 +75,30 @@ class ReimbursementDetailScreen extends StatelessWidget {
       body: Stack(
         children: [
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, isDark),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildMainCard(isDark),
-                        const SizedBox(height: 12),
-                        _buildGridInfo(isDark),
-                        const SizedBox(height: 24),
-                        _buildReceivedPayments(isDark),
-                      ],
-                    ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _reimbursement == null
+                ? const Center(child: Text('Reimbursement not found'))
+                : Column(
+                    children: [
+                      _buildHeader(context, isDark),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildMainCard(isDark),
+                              const SizedBox(height: 12),
+                              _buildGridInfo(isDark),
+                              const SizedBox(height: 24),
+                              _buildReceivedPayments(isDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Actions
@@ -69,8 +134,9 @@ class ReimbursementDetailScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const EditReimbursementScreen(),
+                              builder: (context) => EditReimbursementScreen(
+                                reimbursementId: widget.reimbursementId,
+                              ),
                             ),
                           );
                         },
@@ -126,8 +192,9 @@ class ReimbursementDetailScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const UpdateReimbursementScreen(),
+                              builder: (context) => UpdateReimbursementScreen(
+                                reimbursementId: widget.reimbursementId,
+                              ),
                             ),
                           );
                         },
@@ -158,8 +225,133 @@ class ReimbursementDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+
+          if (_isDeleteDialogVisible) _buildDeleteDialogOverlay(context),
         ],
       ),
+    );
+  }
+
+  // Delete Dialog Overlay (added to the stack before it ends)
+  Widget _buildDeleteDialogOverlay(BuildContext context) {
+    if (!_isDeleteDialogVisible) return const SizedBox.shrink();
+    return Stack(
+      children: [
+        Container(color: Colors.black.withOpacity(0.5)),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor.withOpacity(0.1),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 40,
+                    offset: const Offset(0, 20),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.delete_rounded,
+                      size: 40,
+                      color: Colors.red,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Delete Reimbursement?',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Are you sure you want to delete this expected reimbursement?\nThis action cannot be undone.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() => _isDeleteDialogVisible = false);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _deleteReimbursement,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -184,13 +376,30 @@ class ReimbursementDetailScreen extends StatelessWidget {
               color: isDark ? Colors.white : const Color(0xFF0f172a),
             ),
           ),
-          const SizedBox(width: 48),
+          IconButton(
+            onPressed: () {
+              setState(() => _isDeleteDialogVisible = true);
+            },
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildMainCard(bool isDark) {
+    if (_reimbursement == null) return const SizedBox.shrink();
+
+    final currencyFormat = NumberFormat.simpleCurrency(
+      name: 'INR',
+      decimalDigits: 0,
+    );
+    final remainingBalance =
+        _reimbursement!.amount - _reimbursement!.totalReimbursed;
+    final progress = _reimbursement!.amount > 0
+        ? (_reimbursement!.totalReimbursed / _reimbursement!.amount)
+        : 0.0;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -232,29 +441,33 @@ class ReimbursementDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Office Trip',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : const Color(0xFF0f172a),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _reimbursement!.sourceName,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF0f172a),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Claim #TR-2023-89',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: isDark
-                          ? const Color(0xFF94a3b8)
-                          : const Color(0xFF64748b),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Reimbursement ID #${_reimbursement!.reimbursementId}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF64748b),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -270,7 +483,7 @@ class ReimbursementDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '₹50,000',
+            currencyFormat.format(remainingBalance > 0 ? remainingBalance : 0),
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w900,
@@ -312,9 +525,11 @@ class ReimbursementDetailScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          '₹45,000',
-                          style: TextStyle(
+                        Text(
+                          currencyFormat.format(
+                            _reimbursement!.totalReimbursed,
+                          ),
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF10b981),
@@ -338,7 +553,7 @@ class ReimbursementDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '₹95,000',
+                          currencyFormat.format(_reimbursement!.amount),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -365,7 +580,7 @@ class ReimbursementDetailScreen extends StatelessWidget {
                       ),
                     ),
                     FractionallySizedBox(
-                      widthFactor: 0.47,
+                      widthFactor: progress > 1.0 ? 1.0 : progress,
                       child: Container(
                         height: 12,
                         decoration: BoxDecoration(
@@ -386,7 +601,7 @@ class ReimbursementDetailScreen extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    '47% Complete',
+                    '${(progress * 100).toStringAsFixed(0)}% Complete',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -405,6 +620,8 @@ class ReimbursementDetailScreen extends StatelessWidget {
   }
 
   Widget _buildGridInfo(bool isDark) {
+    if (_reimbursement == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         Row(
@@ -413,7 +630,11 @@ class ReimbursementDetailScreen extends StatelessWidget {
               child: _buildInfoBox(
                 icon: Icons.calendar_today_rounded,
                 label: 'SUBMISSION',
-                value: 'Oct 24, 2023',
+                value: _reimbursement!.createdAt != null
+                    ? DateFormat(
+                        'MMM dd, yyyy',
+                      ).format(_reimbursement!.createdAt!)
+                    : 'Unknown',
                 isDark: isDark,
               ),
             ),
@@ -422,7 +643,11 @@ class ReimbursementDetailScreen extends StatelessWidget {
               child: _buildInfoBox(
                 icon: Icons.schedule_rounded,
                 label: 'EXPECTED BY',
-                value: 'Nov 01, 2023',
+                value: _reimbursement!.expectedDate != null
+                    ? DateFormat(
+                        'MMM dd, yyyy',
+                      ).format(_reimbursement!.expectedDate!)
+                    : 'Not set',
                 isDark: isDark,
               ),
             ),
@@ -471,7 +696,9 @@ class ReimbursementDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Business • Travel',
+                    _reimbursement!.category?.isNotEmpty == true
+                        ? _reimbursement!.category!
+                        : 'Uncategorized',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -565,6 +792,26 @@ class ReimbursementDetailScreen extends StatelessWidget {
   }
 
   Widget _buildReceivedPayments(bool isDark) {
+    if (_payments.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Text(
+            'No payments received yet.',
+            style: TextStyle(
+              color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final currencyFormat = NumberFormat.simpleCurrency(
+      name: 'INR',
+      decimalDigits: 0,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -580,19 +827,19 @@ class ReimbursementDetailScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _buildPaymentItem(
-          title: 'Advance Transfer',
-          date: 'Oct 15 • Bank Transfer',
-          amount: '+ ₹20,000',
-          isDark: isDark,
-        ),
-        const SizedBox(height: 12),
-        _buildPaymentItem(
-          title: 'Expense Part 1',
-          date: 'Oct 28 • Bank Transfer',
-          amount: '+ ₹25,000',
-          isDark: isDark,
-        ),
+        ..._payments.map((payment) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildPaymentItem(
+              title: payment.notes?.isNotEmpty == true
+                  ? payment.notes!
+                  : 'Payment Received',
+              date: '${DateFormat('MMM dd').format(payment.paymentDate)}',
+              amount: '+ ${currencyFormat.format(payment.paymentAmount)}',
+              isDark: isDark,
+            ),
+          );
+        }),
       ],
     );
   }

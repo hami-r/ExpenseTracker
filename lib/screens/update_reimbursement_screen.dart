@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 
+import '../models/reimbursement.dart';
+import '../models/reimbursement_payment.dart';
+import '../database/services/reimbursement_service.dart';
+
 class UpdateReimbursementScreen extends StatefulWidget {
-  const UpdateReimbursementScreen({super.key});
+  final int reimbursementId;
+  const UpdateReimbursementScreen({super.key, required this.reimbursementId});
 
   @override
   State<UpdateReimbursementScreen> createState() =>
@@ -11,17 +16,100 @@ class UpdateReimbursementScreen extends StatefulWidget {
 }
 
 class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '4500',
-  );
+  final ReimbursementService _reimbursementService = ReimbursementService();
+  Reimbursement? _reimbursement;
+  bool _isLoading = true;
+
+  final TextEditingController _amountController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
 
-  DateTime _selectedDate = DateTime(2023, 11, 14);
+  DateTime _selectedDate = DateTime.now();
   bool _isFullyReimbursed = false;
   String _paymentMethod = 'Bank Transfer - HDFC';
 
   @override
+  void initState() {
+    super.initState();
+    _loadData();
+    _amountController.addListener(_onAmountChanged);
+  }
+
+  void _onAmountChanged() {
+    setState(() {}); // Rebuild to update summary card
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final reimbursement = await _reimbursementService.getReimbursementById(
+        widget.reimbursementId,
+      );
+      if (reimbursement != null && mounted) {
+        setState(() {
+          _reimbursement = reimbursement;
+          final remaining =
+              reimbursement.amount - reimbursement.totalReimbursed;
+          _amountController.text = remaining > 0
+              ? remaining.toStringAsFixed(0)
+              : '';
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading reimbursement data: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _confirmUpdate() async {
+    if (_reimbursement == null) return;
+
+    final amount = double.tryParse(_amountController.text) ?? 0.0;
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid amount')),
+      );
+      return;
+    }
+
+    final remaining = _reimbursement!.amount - _reimbursement!.totalReimbursed;
+    final finalAmount = _isFullyReimbursed ? remaining : amount;
+
+    try {
+      final payment = ReimbursementPayment(
+        reimbursementId: _reimbursement!.reimbursementId!,
+        paymentAmount: finalAmount,
+        paymentDate: _selectedDate,
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+      );
+
+      await _reimbursementService.createReimbursementPayment(payment);
+
+      await _reimbursementService.updateReimbursementTotalReimbursed(
+        _reimbursement!.reimbursementId!,
+        _reimbursement!.totalReimbursed + finalAmount,
+      );
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      debugPrint('Error creating reimbursement payment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error saving repayment. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    _amountController.removeListener(_onAmountChanged);
     _amountController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -88,31 +176,35 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
           ),
 
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, isDark),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
-                    child: Column(
-                      children: [
-                        _buildAmountInput(isDark),
-                        const SizedBox(height: 32),
-                        _buildPaymentMethod(isDark),
-                        const SizedBox(height: 16),
-                        _buildDateReceived(context, isDark),
-                        const SizedBox(height: 16),
-                        _buildNotesInput(isDark),
-                        const SizedBox(height: 32),
-                        _buildSummaryCard(isDark),
-                        const SizedBox(height: 24),
-                        _buildFullyReimbursedToggle(isDark),
-                      ],
-                    ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _reimbursement == null
+                ? const Center(child: Text('Reimbursement not found'))
+                : Column(
+                    children: [
+                      _buildHeader(context, isDark),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+                          child: Column(
+                            children: [
+                              _buildAmountInput(isDark),
+                              const SizedBox(height: 32),
+                              _buildPaymentMethod(isDark),
+                              const SizedBox(height: 16),
+                              _buildDateReceived(context, isDark),
+                              const SizedBox(height: 16),
+                              _buildNotesInput(isDark),
+                              const SizedBox(height: 32),
+                              _buildSummaryCard(isDark),
+                              const SizedBox(height: 24),
+                              _buildFullyReimbursedToggle(isDark),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Button
@@ -142,9 +234,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _confirmUpdate,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -498,6 +588,22 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
   }
 
   Widget _buildSummaryCard(bool isDark) {
+    if (_reimbursement == null) return const SizedBox.shrink();
+
+    final currencyFormat = NumberFormat.simpleCurrency(
+      name: 'INR',
+      decimalDigits: 0,
+    );
+    final remainingBalance =
+        _reimbursement!.amount - _reimbursement!.totalReimbursed;
+
+    double inputAmount = double.tryParse(_amountController.text) ?? 0.0;
+    if (_isFullyReimbursed) {
+      inputAmount = remainingBalance;
+    }
+
+    final newBalance = remainingBalance - inputAmount;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -543,7 +649,9 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                 ),
               ),
               Text(
-                '₹12,500',
+                currencyFormat.format(
+                  remainingBalance > 0 ? remainingBalance : 0,
+                ),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -576,9 +684,9 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                   ),
                 ],
               ),
-              const Text(
-                '- ₹4,500',
-                style: TextStyle(
+              Text(
+                '- ${currencyFormat.format(inputAmount)}',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF10b981),
@@ -608,7 +716,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                 ),
               ),
               Text(
-                '₹8,000',
+                currencyFormat.format(newBalance > 0 ? newBalance : 0),
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,

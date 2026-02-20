@@ -1,26 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
+import '../models/receivable.dart';
+import '../database/services/receivable_service.dart';
 
 class EditLentDetailsScreen extends StatefulWidget {
-  const EditLentDetailsScreen({super.key});
+  final int receivableId;
+  const EditLentDetailsScreen({super.key, required this.receivableId});
 
   @override
   State<EditLentDetailsScreen> createState() => _EditLentDetailsScreenState();
 }
 
 class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
-  final TextEditingController _amountController = TextEditingController(
-    text: '2500',
-  );
-  final TextEditingController _recipientController = TextEditingController(
-    text: 'Amit S.',
-  );
-  final TextEditingController _interestController = TextEditingController(
-    text: '0',
-  );
+  final ReceivableService _receivableService = ReceivableService();
+  Receivable? _receivable;
+  bool _isLoading = true;
+
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _recipientController = TextEditingController();
+  final TextEditingController _interestController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  DateTime? _expectedDate = DateTime(2025, 12, 25);
+  DateTime? _expectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final receivable = await _receivableService.getReceivableById(
+        widget.receivableId,
+      );
+      if (receivable != null) {
+        if (mounted) {
+          setState(() {
+            _receivable = receivable;
+            _amountController.text = receivable.principalAmount.toStringAsFixed(
+              0,
+            );
+            _recipientController.text = receivable.recipientName;
+            _interestController.text = receivable.interestRate.toStringAsFixed(
+              2,
+            );
+            _noteController.text = receivable.notes ?? '';
+            _expectedDate = receivable.expectedDate;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading receivable: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -92,53 +128,62 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
           ),
 
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, isDark),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 16),
-                        _buildAmountSection(isDark),
-                        const SizedBox(height: 32),
-                        _buildInputLabel('Recipient / Item Name', isDark),
-                        _buildRecipientInput(isDark),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _receivable == null
+                ? const Center(child: Text('Receivable not found'))
+                : Column(
+                    children: [
+                      _buildHeader(context, isDark),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 16),
+                              _buildAmountSection(isDark),
+                              const SizedBox(height: 32),
+                              _buildInputLabel('Recipient / Item Name', isDark),
+                              _buildRecipientInput(isDark),
+                              const SizedBox(height: 16),
+                              Row(
                                 children: [
-                                  _buildInputLabel('Interest Rate', isDark),
-                                  _buildInterestInput(isDark),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildInputLabel(
+                                          'Interest Rate',
+                                          isDark,
+                                        ),
+                                        _buildInterestInput(isDark),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildInputLabel('Expected By', isDark),
+                                        _buildDateInput(context, isDark),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildInputLabel('Expected By', isDark),
-                                  _buildDateInput(context, isDark),
-                                ],
-                              ),
-                            ),
-                          ],
+                              const SizedBox(height: 16),
+                              _buildInputLabel('Add Note', isDark),
+                              _buildNoteInput(isDark),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        _buildInputLabel('Add Note', isDark),
-                        _buildNoteInput(isDark),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Button
@@ -168,9 +213,7 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _saveChanges,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -488,5 +531,38 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveChanges() async {
+    if (_receivable == null) return;
+
+    try {
+      final updatedReceivable = Receivable(
+        receivableId: _receivable!.receivableId,
+        userId: _receivable!.userId,
+        recipientName: _recipientController.text.trim(),
+        receivableType: _receivable!.receivableType,
+        principalAmount:
+            double.tryParse(_amountController.text) ??
+            _receivable!.principalAmount,
+        interestRate:
+            double.tryParse(_interestController.text) ??
+            _receivable!.interestRate,
+        expectedDate: _expectedDate,
+        totalReceived: _receivable!.totalReceived,
+        status: _receivable!.status,
+        notes: _noteController.text.trim(),
+        createdAt: _receivable!.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      await _receivableService.updateReceivable(updatedReceivable);
+
+      if (mounted) {
+        Navigator.pop(context, true); // Return true to indicate change
+      }
+    } catch (e) {
+      debugPrint('Error saving receivable: $e');
+    }
   }
 }

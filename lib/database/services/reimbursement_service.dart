@@ -11,11 +11,8 @@ class ReimbursementService {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'reimbursements',
-      where: 'user_id = ? AND status = ?',
-      whereArgs: [
-        userId,
-        'pending',
-      ], // Assuming 'pending' is what we want for active
+      where: 'user_id = ? AND status IN (?, ?) AND is_deleted = 0',
+      whereArgs: [userId, 'active', 'pending'],
       orderBy: 'expected_date ASC',
     );
     return List.generate(maps.length, (i) => Reimbursement.fromMap(maps[i]));
@@ -54,7 +51,18 @@ class ReimbursementService {
     );
   }
 
-  // Delete reimbursement
+  // Soft Delete a reimbursement
+  Future<void> softDeleteReimbursement(int reimbursementId) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'reimbursements',
+      {'is_deleted': 1, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'reimbursement_id = ?',
+      whereArgs: [reimbursementId],
+    );
+  }
+
+  // Hard Delete a reimbursement
   Future<void> deleteReimbursement(int reimbursementId) async {
     final db = await _dbHelper.database;
     await db.delete(
