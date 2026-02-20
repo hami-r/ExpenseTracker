@@ -11,7 +11,7 @@ class LoanService {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'loans',
-      where: 'user_id = ? AND status = ?',
+      where: 'user_id = ? AND status = ? AND is_deleted = 0',
       whereArgs: [userId, 'active'],
       orderBy: 'due_date ASC',
     );
@@ -23,7 +23,7 @@ class LoanService {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'loans',
-      where: 'loan_id = ?',
+      where: 'loan_id = ? AND is_deleted = 0',
       whereArgs: [loanId],
     );
     if (maps.isEmpty) return null;
@@ -55,6 +55,17 @@ class LoanService {
   Future<void> deleteLoan(int loanId) async {
     final db = await _dbHelper.database;
     await db.delete('loans', where: 'loan_id = ?', whereArgs: [loanId]);
+  }
+
+  // Soft delete loan
+  Future<void> softDeleteLoan(int loanId) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'loans',
+      {'is_deleted': 1, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'loan_id = ?',
+      whereArgs: [loanId],
+    );
   }
 
   // Update total paid

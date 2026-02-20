@@ -1,11 +1,62 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:intl/intl.dart';
+import '../database/services/loan_service.dart';
+import '../models/loan.dart';
+import '../models/loan_payment.dart';
 import 'update_loan_screen.dart';
 import 'loan_payment_history_screen.dart';
 import 'edit_loan_details_screen.dart';
 
-class LoanDetailScreen extends StatelessWidget {
-  const LoanDetailScreen({super.key});
+class LoanDetailScreen extends StatefulWidget {
+  final int loanId;
+
+  const LoanDetailScreen({super.key, required this.loanId});
+
+  @override
+  State<LoanDetailScreen> createState() => _LoanDetailScreenState();
+}
+
+class _LoanDetailScreenState extends State<LoanDetailScreen> {
+  bool _isDeleteDialogVisible = false;
+  final LoanService _loanService = LoanService();
+  Loan? _loan;
+  List<LoanPayment> _payments = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final loan = await _loanService.getLoanById(widget.loanId);
+      final payments = await _loanService.getLoanPayments(widget.loanId);
+      setState(() {
+        _loan = loan;
+        _payments = payments;
+      });
+    } catch (e) {
+      debugPrint('Error loading loan details: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteLoan() async {
+    try {
+      await _loanService.softDeleteLoan(widget.loanId);
+      if (mounted) {
+        Navigator.pop(context); // Close dialog
+        Navigator.pop(context, true); // Go back and indicate deletion
+      }
+    } catch (e) {
+      debugPrint('Error deleting loan: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,42 +67,46 @@ class LoanDetailScreen extends StatelessWidget {
       body: Stack(
         children: [
           SafeArea(
-            child: Column(
-              children: [
-                // Header
-                _buildHeader(context, isDark),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _loan == null
+                ? const Center(child: Text('Loan not found'))
+                : Column(
+                    children: [
+                      // Header
+                      _buildHeader(context, isDark),
 
-                // Scrollable content
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
+                      // Scrollable content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            child: Column(
+                              children: [
+                                // Remaining Principal Card
+                                _buildPrincipalCard(context, isDark),
+
+                                const SizedBox(height: 24),
+
+                                // Stats Grid
+                                _buildStatsGrid(isDark),
+
+                                const SizedBox(height: 32),
+
+                                // Recent EMI Payments
+                                _buildEMIPayments(context, isDark),
+
+                                const SizedBox(height: 100), // Space for FAB
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Column(
-                        children: [
-                          // Remaining Principal Card
-                          _buildPrincipalCard(context, isDark),
-
-                          const SizedBox(height: 24),
-
-                          // Stats Grid
-                          _buildStatsGrid(isDark),
-
-                          const SizedBox(height: 32),
-
-                          // Recent EMI Payments
-                          _buildEMIPayments(context, isDark),
-
-                          const SizedBox(height: 100), // Space for FAB
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Action Buttons
@@ -181,6 +236,139 @@ class LoanDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+
+          // Delete Dialog Overlay
+          if (_isDeleteDialogVisible) ...[
+            Container(color: Colors.black.withOpacity(0.5)),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor.withOpacity(0.1),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 40,
+                        offset: const Offset(0, 20),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.delete_rounded,
+                          size: 40,
+                          color: Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Delete Loan?',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Are you sure you want to delete this loan?\nThis action cannot be undone.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _deleteLoan,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 8,
+                                shadowColor: Colors.red.withOpacity(0.3),
+                              ),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton(
+                              onPressed: () => setState(
+                                () => _isDeleteDialogVisible = false,
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withOpacity(0.1),
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -205,7 +393,7 @@ class LoanDetailScreen extends StatelessWidget {
           Column(
             children: [
               Text(
-                'Car Loan',
+                _loan?.loanType ?? 'Loan',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -214,7 +402,7 @@ class LoanDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'SBI Auto • 8839',
+                _loan?.lenderName ?? '',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
@@ -226,8 +414,18 @@ class LoanDetailScreen extends StatelessWidget {
             ],
           ),
 
-          // More button
-          const SizedBox(width: 40),
+          // More button / Delete button
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isDeleteDialogVisible = true;
+              });
+            },
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
+            ),
+          ),
         ],
       ),
     );
@@ -270,7 +468,7 @@ class LoanDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '₹2,31,000',
+                  '₹${_loan != null ? NumberFormat.currency(locale: 'en_IN', symbol: '').format(_loan!.principalAmount - _loan!.totalPaid) : '0'}',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
@@ -300,7 +498,7 @@ class LoanDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Active',
+                        _loan?.status == 'active' ? 'Active' : 'Completed',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -325,7 +523,9 @@ class LoanDetailScreen extends StatelessWidget {
                   height: 96,
                   child: CustomPaint(
                     painter: CircularProgressPainter(
-                      progress: 0.58,
+                      progress: _loan != null && _loan!.principalAmount > 0
+                          ? _loan!.totalPaid / _loan!.principalAmount
+                          : 0,
                       color: Theme.of(context).colorScheme.primary,
                       backgroundColor: isDark
                           ? const Color(0xFF334155)
@@ -334,7 +534,7 @@ class LoanDetailScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '58%',
+                  '${_loan != null && _loan!.principalAmount > 0 ? ((_loan!.totalPaid / _loan!.principalAmount) * 100).toStringAsFixed(0) : '0'}%',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -350,30 +550,43 @@ class LoanDetailScreen extends StatelessWidget {
   }
 
   Widget _buildStatsGrid(bool isDark) {
+    if (_loan == null) return const SizedBox.shrink();
+
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+    );
+
     final stats = [
       {
         'icon': Icons.account_balance_wallet_rounded,
         'color': const Color(0xFF6366f1),
         'label': 'Total Loan',
-        'value': '₹5.5L',
+        'value': currencyFormatter
+            .format(_loan!.principalAmount)
+            .replaceAll(RegExp(r'\.00$'), ''),
       },
       {
         'icon': Icons.percent_rounded,
         'color': const Color(0xFF9333ea),
         'label': 'Interest Rate',
-        'value': '8.65%',
+        'value': '${_loan!.interestRate}%',
       },
       {
         'icon': Icons.calendar_month_rounded,
         'color': const Color(0xFF14b8a6),
         'label': 'Tenure Remaining',
-        'value': '24 of 60',
+        'value': _loan!.tenureValue != null
+            ? '${_loan!.tenureValue} ${_loan!.tenureUnit}'
+            : 'N/A',
       },
       {
         'icon': Icons.payments_rounded,
         'color': const Color(0xFFf43f5e),
-        'label': 'Interest Paid',
-        'value': '₹45.2k',
+        'label': 'Total Paid',
+        'value': currencyFormatter
+            .format(_loan!.totalPaid)
+            .replaceAll(RegExp(r'\.00$'), ''),
       },
     ];
 
@@ -453,11 +666,14 @@ class LoanDetailScreen extends StatelessWidget {
   }
 
   Widget _buildEMIPayments(BuildContext context, bool isDark) {
-    final payments = [
-      {'date': 'Nov 05, 2023', 'method': 'Auto-debit', 'amount': '₹12,500'},
-      {'date': 'Oct 05, 2023', 'method': 'Auto-debit', 'amount': '₹12,500'},
-      {'date': 'Sep 05, 2023', 'method': 'UPI Transfer', 'amount': '₹12,500'},
-    ];
+    if (_payments.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Text('No payments recorded yet.'),
+      );
+    }
+
+    final recentPayments = _payments.take(3).toList(); // Show top 3
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,48 +684,54 @@ class LoanDetailScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Recent EMI Payments',
+                'Recent Payments',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : const Color(0xFF0f172a),
                 ),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoanPaymentHistoryScreen(),
+              if (_payments.length > 3)
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoanPaymentHistoryScreen(),
+                      ),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'VIEW ALL',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  'VIEW ALL',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-              ),
             ],
           ),
         ),
-        ...payments
+        ...recentPayments
             .map((payment) => _buildPaymentItem(payment, isDark))
             .toList(),
       ],
     );
   }
 
-  Widget _buildPaymentItem(Map<String, String> payment, bool isDark) {
+  Widget _buildPaymentItem(LoanPayment payment, bool isDark) {
+    final dateFormatter = DateFormat('MMM dd, yyyy');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+    );
     return Container(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
@@ -545,7 +767,7 @@ class LoanDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  payment['date']!,
+                  dateFormatter.format(payment.paymentDate),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -554,7 +776,9 @@ class LoanDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  payment['method']!,
+                  payment.notes?.isNotEmpty == true
+                      ? payment.notes!
+                      : 'Payment',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -570,7 +794,9 @@ class LoanDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                payment['amount']!,
+                currencyFormatter
+                    .format(payment.paymentAmount)
+                    .replaceAll(RegExp(r'\.00$'), ''),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,

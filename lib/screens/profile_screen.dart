@@ -563,11 +563,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return InkWell(
       onTap: () {
-        if (index == 0) {
-          // Navigate back to home when Dashboard is tapped
-          Navigator.pop(context);
+        if (index != 3) {
+          // Navigate back to home and pass the selected index
+          Navigator.pop(context, index);
         }
-        // Other navigation items can be implemented later
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

@@ -1,9 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../database/services/iou_service.dart';
+import '../models/iou.dart';
+import '../models/iou_payment.dart';
 import 'edit_iou_details_screen.dart';
 import 'update_iou_progress_screen.dart';
 
-class IOUDetailScreen extends StatelessWidget {
-  const IOUDetailScreen({super.key});
+class IOUDetailScreen extends StatefulWidget {
+  final int iouId;
+
+  const IOUDetailScreen({super.key, required this.iouId});
+
+  @override
+  State<IOUDetailScreen> createState() => _IOUDetailScreenState();
+}
+
+class _IOUDetailScreenState extends State<IOUDetailScreen> {
+  bool _isDeleteDialogVisible = false;
+  final IOUService _iouService = IOUService();
+  IOU? _iou;
+  List<IOUPayment> _payments = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final iou = await _iouService.getIOUById(widget.iouId);
+      final payments = await _iouService.getIOUPayments(widget.iouId);
+      setState(() {
+        _iou = iou;
+        _payments = payments;
+      });
+    } catch (e) {
+      debugPrint('Error loading IOU details: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteIOU() async {
+    try {
+      await _iouService.softDeleteIOU(widget.iouId);
+      if (mounted) {
+        Navigator.pop(context); // Close dialog
+        Navigator.pop(context, true); // Go back
+      }
+    } catch (e) {
+      debugPrint('Error deleting IOU: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,40 +65,44 @@ class IOUDetailScreen extends StatelessWidget {
       body: Stack(
         children: [
           SafeArea(
-            child: Column(
-              children: [
-                // Header
-                _buildHeader(context, isDark),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _iou == null
+                ? const Center(child: Text('IOU not found'))
+                : Column(
+                    children: [
+                      // Header
+                      _buildHeader(context, isDark),
 
-                // Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    child: Column(
-                      children: [
-                        // Main Card
-                        _buildMainCard(context, isDark),
+                      // Content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          child: Column(
+                            children: [
+                              // Main Card
+                              _buildMainCard(context, isDark),
 
-                        const SizedBox(height: 24),
+                              const SizedBox(height: 24),
 
-                        // Info Grid
-                        _buildInfoGrid(context, isDark),
+                              // Info Grid
+                              _buildInfoGrid(context, isDark),
 
-                        const SizedBox(height: 32),
+                              const SizedBox(height: 32),
 
-                        // Payments List
-                        _buildPaymentsList(isDark),
+                              // Payments List
+                              _buildPaymentsList(isDark),
 
-                        const SizedBox(height: 100), // Space for FAB
-                      ],
-                    ),
+                              const SizedBox(height: 100), // Space for FAB
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // Bottom Action Buttons
@@ -178,6 +233,139 @@ class IOUDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+
+          // Delete Dialog Overlay
+          if (_isDeleteDialogVisible) ...[
+            Container(color: Colors.black.withOpacity(0.5)),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor.withOpacity(0.1),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 40,
+                        offset: const Offset(0, 20),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.delete_rounded,
+                          size: 40,
+                          color: Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Delete IOU?',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Are you sure you want to delete this IOU?\nThis action cannot be undone.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _deleteIOU,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 8,
+                                shadowColor: Colors.red.withOpacity(0.3),
+                              ),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton(
+                              onPressed: () => setState(
+                                () => _isDeleteDialogVisible = false,
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withOpacity(0.1),
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -204,7 +392,17 @@ class IOUDetailScreen extends StatelessWidget {
               color: isDark ? Colors.white : const Color(0xFF0f172a),
             ),
           ),
-          const SizedBox(width: 48),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isDeleteDialogVisible = true;
+              });
+            },
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
+            ),
+          ),
         ],
       ),
     );
@@ -251,7 +449,7 @@ class IOUDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Rahul K.',
+            _iou?.creditorName ?? 'Unknown',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -260,7 +458,7 @@ class IOUDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Personal IOU',
+            _iou?.reason ?? 'Personal IOU',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -279,7 +477,7 @@ class IOUDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '₹25,000',
+            '₹${_iou != null ? NumberFormat.currency(locale: 'en_IN', symbol: '').format(_iou!.amount - _iou!.totalPaid).replaceAll(RegExp(r'\.00$'), '') : '0'}',
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w900,
@@ -302,7 +500,7 @@ class IOUDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Repaid: ₹25,000',
+                    'Repaid: ${NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(_iou?.totalPaid ?? 0).replaceAll(RegExp(r'\.00$'), '')}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -314,7 +512,7 @@ class IOUDetailScreen extends StatelessWidget {
                 ],
               ),
               Text(
-                'Total: ₹50,000',
+                'Total: ${NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(_iou?.amount ?? 0).replaceAll(RegExp(r'\.00$'), '')}',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -337,7 +535,9 @@ class IOUDetailScreen extends StatelessWidget {
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
-              widthFactor: 0.5,
+              widthFactor: _iou != null && _iou!.amount > 0
+                  ? (_iou!.totalPaid / _iou!.amount).clamp(0.0, 1.0)
+                  : 0.0,
               child: Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary,
@@ -352,6 +552,14 @@ class IOUDetailScreen extends StatelessWidget {
   }
 
   Widget _buildInfoGrid(BuildContext context, bool isDark) {
+    if (_iou == null) return const SizedBox.shrink();
+
+    final dateFormatter = DateFormat('MMM dd');
+    final yearFormatter = DateFormat('yyyy');
+
+    DateTime startDateTime = _iou!.createdAt ?? DateTime.now();
+    DateTime? dueDateTime = _iou!.dueDate;
+
     return Row(
       children: [
         Expanded(
@@ -359,8 +567,8 @@ class IOUDetailScreen extends StatelessWidget {
             context,
             icon: Icons.calendar_month_rounded,
             label: 'Lending Date',
-            value: 'Oct 10',
-            subValue: '2023',
+            value: dateFormatter.format(startDateTime),
+            subValue: yearFormatter.format(startDateTime),
             isDark: isDark,
           ),
         ),
@@ -370,8 +578,12 @@ class IOUDetailScreen extends StatelessWidget {
             context,
             icon: Icons.event_available_rounded,
             label: 'Expected Repayment',
-            value: 'Dec 01',
-            subValue: '2023',
+            value: dueDateTime != null
+                ? dateFormatter.format(dueDateTime)
+                : 'N/A',
+            subValue: dueDateTime != null
+                ? yearFormatter.format(dueDateTime)
+                : '',
             isPrimary: true,
             isDark: isDark,
           ),
@@ -462,18 +674,12 @@ class IOUDetailScreen extends StatelessWidget {
   }
 
   Widget _buildPaymentsList(bool isDark) {
-    final payments = [
-      {
-        'title': 'Partial Payment',
-        'date': 'Nov 15, 2023',
-        'amount': '+ ₹10,000',
-      },
-      {
-        'title': 'Partial Payment',
-        'date': 'Oct 28, 2023',
-        'amount': '+ ₹15,000',
-      },
-    ];
+    if (_payments.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Text('No payments recorded yet.'),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -490,12 +696,20 @@ class IOUDetailScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        ...payments.map((payment) => _buildPaymentItem(payment, isDark)),
+        ..._payments
+            .map((payment) => _buildPaymentItem(payment, isDark))
+            .toList(),
       ],
     );
   }
 
-  Widget _buildPaymentItem(Map<String, String> payment, bool isDark) {
+  Widget _buildPaymentItem(IOUPayment payment, bool isDark) {
+    final dateFormatter = DateFormat('MMM dd, yyyy');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -533,7 +747,9 @@ class IOUDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    payment['title']!,
+                    payment.notes?.isNotEmpty == true
+                        ? payment.notes!
+                        : 'Partial Payment',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -542,7 +758,7 @@ class IOUDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    payment['date']!,
+                    dateFormatter.format(payment.paymentDate),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -554,7 +770,7 @@ class IOUDetailScreen extends StatelessWidget {
             ],
           ),
           Text(
-            payment['amount']!,
+            '+ ${currencyFormatter.format(payment.paymentAmount).replaceAll(RegExp(r'\.00$'), '')}',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,

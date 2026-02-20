@@ -12,6 +12,7 @@ class Loan {
   final double totalPaid;
   final String status;
   final String? notes;
+  final bool isDeleted;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -29,6 +30,7 @@ class Loan {
     this.totalPaid = 0.0,
     this.status = 'active',
     this.notes,
+    this.isDeleted = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -48,6 +50,7 @@ class Loan {
       'total_paid': totalPaid,
       'status': status,
       'notes': notes,
+      'is_deleted': isDeleted ? 1 : 0,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -70,6 +73,7 @@ class Loan {
       totalPaid: (map['total_paid'] as num?)?.toDouble() ?? 0.0,
       status: map['status'] as String? ?? 'active',
       notes: map['notes'] as String?,
+      isDeleted: (map['is_deleted'] as int?) == 1,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : null,

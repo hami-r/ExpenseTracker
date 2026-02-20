@@ -16,8 +16,24 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
+  }
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add soft delete columns
+      await db.execute(
+        'ALTER TABLE loans ADD COLUMN is_deleted INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE ious ADD COLUMN is_deleted INTEGER DEFAULT 0',
+      );
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -185,6 +201,7 @@ class DatabaseHelper {
         total_paid REAL DEFAULT 0,
         status TEXT DEFAULT 'active',
         notes TEXT,
+        is_deleted INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -284,6 +301,7 @@ class DatabaseHelper {
         total_paid REAL DEFAULT 0,
         status TEXT DEFAULT 'active',
         notes TEXT,
+        is_deleted INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE

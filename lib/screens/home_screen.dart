@@ -908,12 +908,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
         if (index == 3) {
-          Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ProfileScreen()),
           );
+          if (result != null && result is int) {
+            setState(() {
+              _selectedIndex = result;
+            });
+          }
         } else {
           setState(() {
             _selectedIndex = index;

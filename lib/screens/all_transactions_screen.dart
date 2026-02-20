@@ -398,13 +398,17 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
               item.type == TransactionType.loanPayment) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const LoanDetailScreen()),
+              MaterialPageRoute(
+                builder: (context) => LoanDetailScreen(loanId: item.id),
+              ),
             );
           } else if (item.type == TransactionType.iou ||
               item.type == TransactionType.iouPayment) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const IOUDetailScreen()),
+              MaterialPageRoute(
+                builder: (context) => IOUDetailScreen(iouId: item.id),
+              ),
             );
           } else if (item.type == TransactionType.receivable ||
               item.type == TransactionType.receivablePayment) {

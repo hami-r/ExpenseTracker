@@ -4,8 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 import '../database/services/loan_service.dart';
+import '../database/services/iou_service.dart';
 import '../database/services/user_service.dart';
 import '../models/loan.dart';
+import '../models/iou.dart';
 
 class AddLoanScreen extends StatefulWidget {
   const AddLoanScreen({super.key});
@@ -91,6 +93,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   }
 
   final LoanService _loanService = LoanService();
+  final IOUService _iouService = IOUService();
   final UserService _userService = UserService();
   bool _isLoading = false;
 
@@ -107,33 +110,44 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     try {
       final user = await _userService.getCurrentUser();
       if (user != null && user.userId != null) {
-        final loan = Loan(
-          userId: user.userId!,
-          lenderName: _lenderController.text,
-          loanType: _isInstitutional
-              ? 'Institutional'
-              : 'Personal', // Simple mapping
-          principalAmount: double.parse(_amountController.text),
-          interestRate: double.tryParse(_interestRateController.text) ?? 0.0,
-          tenureValue: int.tryParse(_tenureController.text),
-          tenureUnit: _tenureType,
-          startDate: _startDate,
-          // Calculate due date based on tenure if possible, else null or same as start
-          dueDate: _tenureController.text.isNotEmpty
-              ? _startDate.add(
-                  Duration(
-                    days:
-                        (int.tryParse(_tenureController.text) ?? 0) *
-                        (_tenureType == 'Yrs' ? 365 : 30),
-                  ),
-                )
-              : _startDate.add(const Duration(days: 365)), // Default 1 year
-          status: 'active',
-          notes: _notesController.text,
-          createdAt: DateTime.now(),
-        );
+        if (_isInstitutional) {
+          final loan = Loan(
+            userId: user.userId!,
+            lenderName: _lenderController.text,
+            loanType: 'Institutional',
+            principalAmount: double.parse(_amountController.text),
+            interestRate: double.tryParse(_interestRateController.text) ?? 0.0,
+            tenureValue: int.tryParse(_tenureController.text),
+            tenureUnit: _tenureType,
+            startDate: _startDate,
+            dueDate: _tenureController.text.isNotEmpty
+                ? _startDate.add(
+                    Duration(
+                      days:
+                          (int.tryParse(_tenureController.text) ?? 0) *
+                          (_tenureType == 'Yrs' ? 365 : 30),
+                    ),
+                  )
+                : _startDate.add(const Duration(days: 365)),
+            status: 'active',
+            notes: _notesController.text,
+            createdAt: DateTime.now(),
+          );
 
-        await _loanService.createLoan(loan);
+          await _loanService.createLoan(loan);
+        } else {
+          final iou = IOU(
+            userId: user.userId!,
+            creditorName: _lenderController.text,
+            amount: double.parse(_amountController.text),
+            dueDate: _startDate, // Used as due date in UI
+            status: 'active',
+            notes: _notesController.text,
+            createdAt: DateTime.now(),
+          );
+
+          await _iouService.createIOU(iou);
+        }
 
         if (mounted) {
           Navigator.pop(context, true); // Return true to indicate success
@@ -143,7 +157,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error saving loan: $e')));
+        ).showSnackBar(SnackBar(content: Text('Error saving: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

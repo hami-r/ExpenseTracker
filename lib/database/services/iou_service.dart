@@ -11,7 +11,7 @@ class IOUService {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'ious',
-      where: 'user_id = ? AND status = ?',
+      where: 'user_id = ? AND status = ? AND is_deleted = 0',
       whereArgs: [userId, 'active'],
       orderBy: 'due_date ASC',
     );
@@ -23,7 +23,7 @@ class IOUService {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'ious',
-      where: 'iou_id = ?',
+      where: 'iou_id = ? AND is_deleted = 0',
       whereArgs: [iouId],
     );
     if (maps.isEmpty) return null;
@@ -55,6 +55,17 @@ class IOUService {
   Future<void> deleteIOU(int iouId) async {
     final db = await _dbHelper.database;
     await db.delete('ious', where: 'iou_id = ?', whereArgs: [iouId]);
+  }
+
+  // Soft delete IOU
+  Future<void> softDeleteIOU(int iouId) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'ious',
+      {'is_deleted': 1, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'iou_id = ?',
+      whereArgs: [iouId],
+    );
   }
 
   // Update total paid

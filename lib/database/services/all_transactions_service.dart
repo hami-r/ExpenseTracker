@@ -63,6 +63,7 @@ class AllTransactionsService {
         '#F43F5E' as color_hex, -- Redish for debt
         status as status
       FROM loans
+      WHERE is_deleted = 0
     ''';
 
     // 3. Loan Payments (Outgoing money/Repayment)
@@ -96,6 +97,7 @@ class AllTransactionsService {
         '#F43F5E' as color_hex,
         status as status
       FROM ious
+      WHERE is_deleted = 0
     ''';
 
     // 5. IOU Payments

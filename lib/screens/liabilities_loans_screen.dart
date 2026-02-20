@@ -270,8 +270,9 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                                   await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          LoanDetailScreen(), // TODO: Pass ID
+                                      builder: (context) => LoanDetailScreen(
+                                        loanId: loan.loanId!,
+                                      ),
                                     ),
                                   );
                                   _loadData(); // Refresh on return
@@ -353,7 +354,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          const IOUDetailScreen(), // TODO: Pass ID
+                                          IOUDetailScreen(iouId: iou.iouId!),
                                     ),
                                   );
                                   _loadData();
@@ -414,16 +415,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap:
-            onTap ??
-            () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LoanDetailScreen(),
-                ),
-              );
-            },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
