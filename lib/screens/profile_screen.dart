@@ -7,7 +7,10 @@ import 'liabilities_loans_screen.dart';
 import 'money_owed_screen.dart';
 import 'theme_selection_screen.dart';
 import 'import_export_screen.dart';
+import 'edit_profile_screen.dart';
 import '../providers/theme_provider.dart';
+import '../models/user.dart';
+import '../database/services/user_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -17,6 +20,31 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final UserService _userService = UserService();
+  User? _currentUser;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    try {
+      final user = await _userService.getCurrentUser();
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -349,46 +377,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'John Doe',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF0f172a),
+                    if (_isLoading)
+                      const CircularProgressIndicator()
+                    else ...[
+                      Text(
+                        _currentUser?.name ?? 'Loading...',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0f172a),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'PERSONAL ACCOUNTANT',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.2,
-                        color: isDark
-                            ? const Color(0xFF34d399)
-                            : Theme.of(context).colorScheme.primary,
+                      const SizedBox(height: 4),
+                      Text(
+                        (_currentUser?.email?.isNotEmpty == true
+                            ? _currentUser!.email!.toUpperCase()
+                            : 'MEMBER'),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
+                          color: isDark
+                              ? const Color(0xFF34d399)
+                              : Theme.of(context).colorScheme.primary,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
 
               // Edit button
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1e293b)
-                      : const Color(0xFFf8fafc),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.edit_rounded,
-                  size: 20,
-                  color: isDark
-                      ? const Color(0xFF94a3b8)
-                      : const Color(0xFF9ca3af),
+              GestureDetector(
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EditProfileScreen(),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadUser();
+                  }
+                },
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1e293b)
+                        : const Color(0xFFf8fafc),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    size: 20,
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF9ca3af),
+                  ),
                 ),
               ),
             ],
