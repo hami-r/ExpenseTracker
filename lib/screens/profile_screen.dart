@@ -14,6 +14,7 @@ import '../database/services/user_service.dart';
 import 'monthly_comparison_screen.dart';
 import 'payment_correlation_screen.dart';
 import 'region_currency_screen.dart';
+import 'ai_settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -160,6 +161,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _MenuItemData(
                             icon: Icons.analytics_rounded,
                             title: 'Monthly Comparison',
+                            color: Theme.of(context).colorScheme.primary,
+                            hasBottomBorder: false,
+                          ),
+                        ], isDark),
+                        const SizedBox(height: 32),
+
+                        // Smart Features Section
+                        _buildSectionHeader('SMART FEATURES', isDark),
+                        const SizedBox(height: 12),
+                        _buildMenuCard([
+                          _MenuItemData(
+                            icon: Icons.auto_awesome_rounded,
+                            title: 'AI Configuration',
                             color: Theme.of(context).colorScheme.primary,
                             hasBottomBorder: false,
                           ),
@@ -506,6 +520,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const MonthlyComparisonScreen(),
+                    ),
+                  );
+                } else if (item.title == 'AI Configuration') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AISettingsScreen(),
                     ),
                   );
                 }

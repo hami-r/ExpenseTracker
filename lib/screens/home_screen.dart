@@ -9,6 +9,8 @@ import 'transaction_details_screen.dart';
 import 'split_expense_detail_screen.dart';
 import 'all_transactions_screen.dart';
 import 'budget_screen.dart';
+import 'natural_language_entry_screen.dart';
+import 'scan_receipt_screen.dart';
 import '../database/services/analytics_service.dart';
 import '../database/services/transaction_service.dart';
 import '../database/services/user_service.dart';
@@ -37,7 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final CategoryService _categoryService = CategoryService();
   final PaymentMethodService _paymentMethodService = PaymentMethodService();
 
-  // Data
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
   Map<String, double> _weeklySpending = {};
   List<model.Transaction> _recentTransactions = [];
@@ -46,12 +52,8 @@ class _HomeScreenState extends State<HomeScreen> {
   double _todaySpending = 0.0;
   double _monthSpending = 0.0;
   bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
+  bool _isAIMenuOpen =
+      false; // Controls the visibility of the new AI speed dial
 
   @override
   void didChangeDependencies() {
@@ -185,39 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
               bottom: 112 + MediaQuery.of(context).padding.bottom,
               right: 24,
-              child: Material(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary, // Primary theme color
-                borderRadius: BorderRadius.circular(16),
-                elevation: 8,
-                shadowColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withOpacity(0.4),
-                child: InkWell(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AddExpenseScreen(),
-                      ),
-                    );
-                    // Reload data when coming back from add screen
-                    _loadData();
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.add_rounded,
-                      size: 32,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+              child: _buildFAB(isDark),
             ),
 
           // Bottom Navigation Bar
@@ -357,36 +327,42 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      _buildIconButton(
-                        Icons.calendar_today_rounded,
-                        isDark,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ExpenseCalendarScreen(),
-                            ),
-                          );
-                        },
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      reverse: true,
+                      child: Row(
+                        children: [
+                          _buildIconButton(
+                            Icons.calendar_today_rounded,
+                            isDark,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ExpenseCalendarScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          _buildIconButton(
+                            Icons.pie_chart_rounded,
+                            isDark,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const DetailedSpendingAnalyticsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      _buildIconButton(
-                        Icons.pie_chart_rounded,
-                        isDark,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const DetailedSpendingAnalyticsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -680,7 +656,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildIconButton(IconData icon, bool isDark, {VoidCallback? onTap}) {
+  Widget _buildIconButton(
+    IconData icon,
+    bool isDark, {
+    VoidCallback? onTap,
+    Color? color,
+  }) {
     return Container(
       width: 40,
       height: 40,
@@ -696,7 +677,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Icon(
             icon,
             size: 20,
-            color: isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569),
+            color:
+                color ??
+                (isDark ? const Color(0xFFcbd5e1) : const Color(0xFF475569)),
           ),
         ),
       ),
@@ -970,6 +953,131 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFAB(bool isDark) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // The Expandable AI Menu
+        if (_isAIMenuOpen) ...[
+          _buildSpeedDialItem(
+            icon: Icons.abc_rounded,
+            label: 'Text / Voice AI',
+            onTap: () {
+              setState(() => _isAIMenuOpen = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NaturalLanguageEntryScreen(),
+                ),
+              );
+            },
+            isDark: isDark,
+          ),
+          const SizedBox(height: 16),
+          _buildSpeedDialItem(
+            icon: Icons.document_scanner_rounded,
+            label: 'Image AI',
+            onTap: () {
+              setState(() => _isAIMenuOpen = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ScanReceiptScreen(),
+                ),
+              );
+            },
+            isDark: isDark,
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // The New AI Star Button (Sits above the main Add button)
+        FloatingActionButton(
+          heroTag: 'ai_fab', // Prevent hero animation conflict
+          onPressed: () {
+            setState(() {
+              _isAIMenuOpen = !_isAIMenuOpen;
+            });
+          },
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Icon(
+            _isAIMenuOpen ? Icons.close_rounded : Icons.auto_awesome_rounded,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 16), // Space before the main FAB
+        // The Main Add Button
+        FloatingActionButton(
+          heroTag: 'main_fab',
+          onPressed: () {
+            // Close AI menu if open
+            if (_isAIMenuOpen) setState(() => _isAIMenuOpen = false);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
+            ).then((_) {
+              _loadData();
+            });
+          },
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: const Icon(Icons.add_rounded, size: 32, color: Colors.white),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSpeedDialItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        FloatingActionButton.small(
+          heroTag: label, // Unique tag per item
+          onPressed: onTap,
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          elevation: 4,
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary),
+        ),
+      ],
     );
   }
 

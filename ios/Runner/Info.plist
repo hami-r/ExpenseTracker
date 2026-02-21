@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Enable speech recognition to dictate financial transactions naturally.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Allow microphone access to record voice inputs for AI transaction parsing.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Allow camera access to scan physical bills and receipts for AI parsing.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow photo library access to upload saved receipts for AI parsing.</string>
 </dict>
 </plist>

@@ -22,7 +22,20 @@ import 'manage_payment_methods_screen.dart';
 import 'dart:math' show min;
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  final double? initialAmount;
+  final String? initialNote;
+  final int? initialCategoryId;
+  final int? initialPaymentMethodId;
+  final DateTime? initialDate;
+
+  const AddExpenseScreen({
+    super.key,
+    this.initialAmount,
+    this.initialNote,
+    this.initialCategoryId,
+    this.initialPaymentMethodId,
+    this.initialDate,
+  });
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -57,6 +70,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialAmount != null) {
+      _amountController.text = widget.initialAmount.toString();
+    }
+    if (widget.initialNote != null) {
+      _noteController.text = widget.initialNote!;
+    }
+    if (widget.initialDate != null) {
+      _selectedDate = widget.initialDate!;
+    }
     _loadData();
   }
 
@@ -81,6 +103,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           setState(() {
             _categories = results[0] as List<Category>;
             _paymentMethods = results[1] as List<PaymentMethod>;
+
+            if (widget.initialCategoryId != null && _categories.isNotEmpty) {
+              final index = _categories.indexWhere(
+                (c) => c.categoryId == widget.initialCategoryId,
+              );
+              if (index != -1) _selectedCategoryIndex = index;
+            }
+
+            if (widget.initialPaymentMethodId != null &&
+                _paymentMethods.isNotEmpty) {
+              final index = _paymentMethods.indexWhere(
+                (m) => m.paymentMethodId == widget.initialPaymentMethodId,
+              );
+              if (index != -1) _selectedPaymentIndex = index;
+            }
           });
         }
       }

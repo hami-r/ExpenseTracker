@@ -46,6 +46,10 @@ dependencies:
   share_plus: ^12.0.1
   path_provider: ^2.1.5
   excel: ^4.0.6
+  google_generative_ai: ^0.4.6 # Or latest available
+  speech_to_text: ^7.0.0
+  image_picker: ^1.1.2
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
