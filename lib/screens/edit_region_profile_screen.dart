@@ -149,7 +149,7 @@ class _EditRegionProfileScreenState extends State<EditRegionProfileScreen> {
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
+                      Icons.arrow_back_rounded,
                       color: isDark ? Colors.white : const Color(0xFF0f172a),
                     ),
                   ),

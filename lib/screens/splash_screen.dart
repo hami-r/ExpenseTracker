@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'home_screen.dart';
+import 'package:provider/provider.dart';
 import '../database/database_helper.dart';
 import '../database/services/user_service.dart';
+import '../providers/profile_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,6 +38,11 @@ class _SplashScreenState extends State<SplashScreen>
       // Verify database is ready
       final userService = UserService();
       await userService.getCurrentUser();
+
+      // Initialize Profile (Region/Currency)
+      if (mounted) {
+        await context.read<ProfileProvider>().initialize();
+      }
 
       // Navigate after delay
       await Future.delayed(const Duration(seconds: 3));

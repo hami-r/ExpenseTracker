@@ -224,70 +224,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-
-          // Bottom Navigation Bar
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                border: Border(
-                  top: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF1e293b)
-                        : const Color(0xFFf1f5f9),
-                    width: 1,
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 20,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildNavItem(
-                        Icons.dashboard_rounded,
-                        'Dashboard',
-                        0,
-                        isDark,
-                      ),
-                      _buildNavItem(
-                        Icons.receipt_long_rounded,
-                        'Transactions',
-                        1,
-                        isDark,
-                      ),
-                      _buildNavItem(
-                        Icons.account_balance_wallet_rounded,
-                        'Budget',
-                        2,
-                        isDark,
-                      ),
-                      _buildNavItem(Icons.person_rounded, 'Profile', 3, isDark),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -301,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -319,7 +255,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                   begin: Alignment.topRight,
@@ -478,7 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -580,7 +518,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? Border(
                     bottom: BorderSide(
                       color: isDark
-                          ? const Color(0xFF1e293b).withOpacity(0.5)
+                          ? const Color(0xFF1e293b).withValues(alpha: 0.5)
                           : const Color(0xFFf1f5f9),
                     ),
                   )
@@ -592,7 +530,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.1),
+                  color: item.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(item.icon, size: 20, color: item.color),
@@ -618,7 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onChanged: (value) {
                         themeProvider.setDarkMode(value);
                       },
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
                     );
                   },
                 )
@@ -631,53 +569,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, int index, bool isDark) {
-    final isSelected = index == 3; // Profile is always selected on this screen
-    final primaryColor = Theme.of(context).colorScheme.primary;
-
-    return InkWell(
-      onTap: () {
-        if (index != 3) {
-          // Navigate back to home and pass the selected index
-          Navigator.pop(context, index);
-        }
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 80,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 26,
-              color: isSelected
-                  ? primaryColor
-                  : isDark
-                  ? const Color(0xFF64748b)
-                  : const Color(0xFF94a3b8),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                letterSpacing: 0.5,
-                color: isSelected
-                    ? primaryColor
-                    : isDark
-                    ? const Color(0xFF64748b)
-                    : const Color(0xFF94a3b8),
-              ),
-            ),
-          ],
         ),
       ),
     );

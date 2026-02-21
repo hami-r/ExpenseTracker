@@ -42,6 +42,33 @@ class _RegionCurrencyScreenState extends State<RegionCurrencyScreen> {
 
   Future<void> _switchProfile(Profile profile) async {
     if (profile.isActive) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Switch Region'),
+        content: Text(
+          'Are you sure you want to switch to "${profile.name}"? This will change your active currency and financial data view.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            child: const Text('Switch'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     await _profileService.setActiveProfile(profile.profileId!, _userId!);
     if (!mounted) return;
     await context.read<ProfileProvider>().switchProfile(profile, _userId!);
@@ -128,7 +155,7 @@ class _RegionCurrencyScreenState extends State<RegionCurrencyScreen> {
                       IconButton(
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
+                          Icons.arrow_back_rounded,
                           color: isDark
                               ? Colors.white
                               : const Color(0xFF0f172a),

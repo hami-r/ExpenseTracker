@@ -168,7 +168,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            Icons.arrow_back_rounded,
             color: isDark ? Colors.white : const Color(0xFF475569),
           ),
           onPressed: () => Navigator.pop(context),
