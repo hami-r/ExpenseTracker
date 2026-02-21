@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../database/services/analytics_service.dart';
 import '../database/services/user_service.dart';
 import '../models/category.dart';
 import '../utils/icon_helper.dart';
 import '../utils/color_helper.dart';
+import '../providers/profile_provider.dart';
 
 class MonthlyComparisonScreen extends StatefulWidget {
   const MonthlyComparisonScreen({super.key});
@@ -17,9 +19,9 @@ class MonthlyComparisonScreen extends StatefulWidget {
 class _MonthlyComparisonScreenState extends State<MonthlyComparisonScreen> {
   final AnalyticsService _analyticsService = AnalyticsService();
   final UserService _userService = UserService();
-  final NumberFormat _currencyFormat = NumberFormat.currency(
+  NumberFormat get _currencyFormat => NumberFormat.currency(
     locale: 'en_IN',
-    symbol: '₹',
+    symbol: context.read<ProfileProvider>().currencySymbol,
     decimalDigits: 0,
   );
 
@@ -52,6 +54,9 @@ class _MonthlyComparisonScreenState extends State<MonthlyComparisonScreen> {
 
     final now = DateTime.now();
 
+    final profileId = mounted
+        ? context.read<ProfileProvider>().activeProfileId
+        : null;
     // Fetch last 6 months totals
     final List<_MonthData> months = [];
     for (int i = 5; i >= 0; i--) {
@@ -62,6 +67,7 @@ class _MonthlyComparisonScreenState extends State<MonthlyComparisonScreen> {
         _userId!,
         start,
         end,
+        profileId: profileId,
       );
       months.add(
         _MonthData(

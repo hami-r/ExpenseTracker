@@ -7,12 +7,16 @@ class LoanService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // Get active loans
-  Future<List<Loan>> getActiveLoans(int userId) async {
+  Future<List<Loan>> getActiveLoans(int userId, {int? profileId}) async {
     final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, 'active', profileId]
+        : [userId, 'active'];
     final List<Map<String, dynamic>> maps = await db.query(
       'loans',
-      where: 'user_id = ? AND status = ? AND is_deleted = 0',
-      whereArgs: [userId, 'active'],
+      where: 'user_id = ? AND status = ? AND is_deleted = 0$profileClause',
+      whereArgs: args,
       orderBy: 'due_date ASC',
     );
     return List.generate(maps.length, (i) => Loan.fromMap(maps[i]));
@@ -31,21 +35,25 @@ class LoanService {
   }
 
   // Create new loan
-  Future<int> createLoan(Loan loan) async {
+  Future<int> createLoan(Loan loan, {int? profileId}) async {
     final db = await _dbHelper.database;
+    final map = loan.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     return await db.insert(
       'loans',
-      loan.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   // Update loan
-  Future<void> updateLoan(Loan loan) async {
+  Future<void> updateLoan(Loan loan, {int? profileId}) async {
     final db = await _dbHelper.database;
+    final map = loan.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     await db.update(
       'loans',
-      loan.toMap(),
+      map,
       where: 'loan_id = ?',
       whereArgs: [loan.loanId],
     );

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class AddSplitItemScreen extends StatefulWidget {
   const AddSplitItemScreen({super.key});
@@ -124,7 +126,9 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
-                                  '₹',
+                                  context
+                                      .read<ProfileProvider>()
+                                      .currencySymbol,
                                   style: Theme.of(context)
                                       .textTheme
                                       .displayLarge

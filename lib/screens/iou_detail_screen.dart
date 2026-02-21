@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 import '../database/services/iou_service.dart';
 import '../models/iou.dart';
 import '../models/iou_payment.dart';
@@ -477,7 +479,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '₹${_iou != null ? NumberFormat.currency(locale: 'en_IN', symbol: '').format(_iou!.amount - _iou!.totalPaid).replaceAll(RegExp(r'\.00$'), '') : '0'}',
+            '${context.read<ProfileProvider>().currencySymbol}${_iou != null ? NumberFormat.currency(locale: 'en_IN', symbol: '').format(_iou!.amount - _iou!.totalPaid).replaceAll(RegExp(r'\.00$'), '') : '0'}',
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w900,
@@ -500,7 +502,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Repaid: ${NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(_iou?.totalPaid ?? 0).replaceAll(RegExp(r'\.00$'), '')}',
+                    'Repaid: ${NumberFormat.currency(locale: 'en_IN', symbol: context.read<ProfileProvider>().currencySymbol).format(_iou?.totalPaid ?? 0).replaceAll(RegExp(r'\.00$'), '')}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -512,7 +514,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                 ],
               ),
               Text(
-                'Total: ${NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(_iou?.amount ?? 0).replaceAll(RegExp(r'\.00$'), '')}',
+                'Total: ${NumberFormat.currency(locale: 'en_IN', symbol: context.read<ProfileProvider>().currencySymbol).format(_iou?.amount ?? 0).replaceAll(RegExp(r'\.00$'), '')}',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -707,7 +709,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
     final dateFormatter = DateFormat('MMM dd, yyyy');
     final currencyFormatter = NumberFormat.currency(
       locale: 'en_IN',
-      symbol: '₹',
+      symbol: context.read<ProfileProvider>().currencySymbol,
     );
 
     return Container(

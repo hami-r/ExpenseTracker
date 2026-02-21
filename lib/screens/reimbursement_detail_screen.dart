@@ -5,6 +5,8 @@ import 'update_reimbursement_screen.dart';
 import '../models/reimbursement.dart';
 import '../models/reimbursement_payment.dart';
 import '../database/services/reimbursement_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class ReimbursementDetailScreen extends StatefulWidget {
   final int reimbursementId;
@@ -390,8 +392,8 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
   Widget _buildMainCard(bool isDark) {
     if (_reimbursement == null) return const SizedBox.shrink();
 
-    final currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
     final remainingBalance =
@@ -807,8 +809,8 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
       );
     }
 
-    final currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
 

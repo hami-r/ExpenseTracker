@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../providers/profile_provider.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 import '../database/services/loan_service.dart';
@@ -41,7 +43,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
 
   String _calculateEMI() {
     if (_amountController.text.isEmpty || _tenureController.text.isEmpty) {
-      return '₹0';
+      return '${context.read<ProfileProvider>().currencySymbol}0';
     }
 
     try {
@@ -49,7 +51,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       final rate = double.tryParse(_interestRateController.text) ?? 0.0;
       int tenure = int.tryParse(_tenureController.text) ?? 0;
 
-      if (principal <= 0 || tenure <= 0) return '₹0';
+      if (principal <= 0 || tenure <= 0)
+        return '${context.read<ProfileProvider>().currencySymbol}0';
 
       // Convert tenure to months if in years
       if (_tenureType == 'Yrs') {
@@ -61,7 +64,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         final emi = principal / tenure;
         return NumberFormat.currency(
           locale: 'en_IN',
-          symbol: '₹',
+          symbol: context.read<ProfileProvider>().currencySymbol,
           decimalDigits: 0,
         ).format(emi);
       }
@@ -84,11 +87,11 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
 
       return NumberFormat.currency(
         locale: 'en_IN',
-        symbol: '₹',
+        symbol: context.read<ProfileProvider>().currencySymbol,
         decimalDigits: 0,
       ).format(emi);
     } catch (e) {
-      return '₹0';
+      return '${context.read<ProfileProvider>().currencySymbol}0';
     }
   }
 
@@ -134,7 +137,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
             createdAt: DateTime.now(),
           );
 
-          await _loanService.createLoan(loan);
+          final profileId = mounted
+              ? context.read<ProfileProvider>().activeProfileId
+              : null;
+          await _loanService.createLoan(loan, profileId: profileId);
         } else {
           final iou = IOU(
             userId: user.userId!,
@@ -146,7 +152,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
             createdAt: DateTime.now(),
           );
 
-          await _iouService.createIOU(iou);
+          final profileId = mounted
+              ? context.read<ProfileProvider>().activeProfileId
+              : null;
+          await _iouService.createIOU(iou, profileId: profileId);
         }
 
         if (mounted) {
@@ -314,7 +323,9 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                               textBaseline: TextBaseline.alphabetic,
                               children: [
                                 Text(
-                                  '₹',
+                                  context
+                                      .read<ProfileProvider>()
+                                      .currencySymbol,
                                   style: TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,

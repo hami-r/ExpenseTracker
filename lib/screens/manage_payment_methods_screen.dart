@@ -5,6 +5,8 @@ import '../database/services/payment_method_service.dart';
 import '../database/services/user_service.dart';
 import '../utils/icon_helper.dart';
 import '../utils/color_helper.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class ManagePaymentMethodsScreen extends StatefulWidget {
   const ManagePaymentMethodsScreen({super.key});
@@ -31,8 +33,10 @@ class _ManagePaymentMethodsScreenState
     setState(() => _isLoading = true);
     final user = await _userService.getCurrentUser();
     if (user != null) {
+      final profileId = context.read<ProfileProvider>().activeProfileId;
       final loadedMethods = await _paymentMethodService.getAllPaymentMethods(
         user.userId!,
+        profileId: profileId,
       );
       if (mounted) {
         setState(() {

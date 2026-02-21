@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'add_expense_screen.dart';
 import 'expense_calendar_screen.dart';
 import 'detailed_spending_analytics_screen.dart';
@@ -17,6 +18,7 @@ import '../models/transaction.dart' as model;
 import '../models/category.dart';
 import '../models/payment_method.dart';
 import '../utils/icon_helper.dart';
+import '../providers/profile_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -51,26 +53,56 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload whenever active profile changes
+    final profileId = context.watch<ProfileProvider>().activeProfileId;
+    if (_lastProfileId != null && _lastProfileId != profileId) {
+      _loadData();
+    }
+    _lastProfileId = profileId;
+  }
+
+  int? _lastProfileId;
+
   Future<void> _loadData() async {
     try {
       final user = await _userService.getCurrentUser();
       if (user != null && mounted) {
+        final profileId = context.read<ProfileProvider>().activeProfileId;
         final now = DateTime.now();
         final startOfMonth = DateTime(now.year, now.month, 1);
         final endOfMonth = DateTime(now.year, now.month + 1, 0);
 
         // Load analytics and transactions in parallel
         final results = await Future.wait([
-          _analyticsService.getWeeklySpending(user.userId!),
-          _analyticsService.getTotalBalance(user.userId!),
-          _transactionService.getRecentTransactions(user.userId!, 10),
+          _analyticsService.getWeeklySpending(
+            user.userId!,
+            profileId: profileId,
+          ),
+          _analyticsService.getTotalBalance(user.userId!, profileId: profileId),
+          _transactionService.getRecentTransactions(
+            user.userId!,
+            10,
+            profileId: profileId,
+          ),
           _categoryService.getAllCategories(user.userId!),
-          _paymentMethodService.getAllPaymentMethods(user.userId!),
-          _analyticsService.getTotalSpending(user.userId!, now, now), // Today
+          _paymentMethodService.getAllPaymentMethods(
+            user.userId!,
+            profileId: profileId,
+          ),
+          _analyticsService.getTotalSpending(
+            user.userId!,
+            now,
+            now,
+            profileId: profileId,
+          ), // Today
           _analyticsService.getTotalSpending(
             user.userId!,
             startOfMonth,
             endOfMonth,
+            profileId: profileId,
           ), // Month
         ]);
 
@@ -136,7 +168,12 @@ class _HomeScreenState extends State<HomeScreen> {
           IndexedStack(
             index: _selectedIndex,
             children: [
-              _buildDashboard(isDark, dateFormat, now),
+              _buildDashboard(
+                isDark,
+                dateFormat,
+                now,
+                context.watch<ProfileProvider>().currencySymbol,
+              ),
               const AllTransactionsScreen(),
               const BudgetScreen(),
               const ProfileScreen(),
@@ -218,28 +255,53 @@ class _HomeScreenState extends State<HomeScreen> {
                     horizontal: 8,
                     vertical: 8,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildNavItem(
-                        Icons.dashboard_rounded,
-                        'Dashboard',
-                        0,
-                        isDark,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildNavItem(
+                            Icons.dashboard_rounded,
+                            'Dashboard',
+                            0,
+                            isDark,
+                          ),
+                          _buildNavItem(
+                            Icons.receipt_long_rounded,
+                            'Transactions',
+                            1,
+                            isDark,
+                          ),
+                          _buildNavItem(
+                            Icons.account_balance_wallet_rounded,
+                            'Budget',
+                            2,
+                            isDark,
+                          ),
+                          _buildNavItem(
+                            Icons.person_rounded,
+                            'Profile',
+                            3,
+                            isDark,
+                          ),
+                        ],
                       ),
-                      _buildNavItem(
-                        Icons.receipt_long_rounded,
-                        'Transactions',
-                        1,
-                        isDark,
+                      const SizedBox(height: 4),
+                      Consumer<ProfileProvider>(
+                        builder: (context, profileProvider, child) {
+                          return Text(
+                            'Active Region: ${profileProvider.profileName}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: isDark
+                                  ? const Color(0xFF64748b)
+                                  : const Color(0xFF94a3b8),
+                            ),
+                          );
+                        },
                       ),
-                      _buildNavItem(
-                        Icons.account_balance_wallet_rounded,
-                        'Budget',
-                        2,
-                        isDark,
-                      ),
-                      _buildNavItem(Icons.person_rounded, 'Profile', 3, isDark),
                     ],
                   ),
                 ),
@@ -251,7 +313,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDashboard(bool isDark, DateFormat dateFormat, DateTime now) {
+  Widget _buildDashboard(
+    bool isDark,
+    DateFormat dateFormat,
+    DateTime now,
+    String currencySymbol,
+  ) {
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
@@ -422,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: _buildStatsCard(
                       'Today',
-                      '₹ ${_todaySpending.toStringAsFixed(1)}',
+                      '$currencySymbol ${_todaySpending.toStringAsFixed(1)}',
                       false,
                       isDark,
                     ),
@@ -432,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: _buildStatsCard(
                       'Week',
                       // Calculate week total from weekly map
-                      '₹ ${_weeklySpending.values.fold(0.0, (doc, val) => doc + val).toStringAsFixed(1)}',
+                      '$currencySymbol ${_weeklySpending.values.fold(0.0, (doc, val) => doc + val).toStringAsFixed(1)}',
                       true,
                       isDark,
                     ),
@@ -441,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: _buildStatsCard(
                       'Month',
-                      '₹ ${_monthSpending.toStringAsFixed(1)}',
+                      '$currencySymbol ${_monthSpending.toStringAsFixed(1)}',
                       false,
                       isDark,
                     ),
@@ -562,6 +629,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           color,
                           transaction.isSplit,
                           isDark,
+                          currencySymbol,
                           onTap: () async {
                             final transactionMap = {
                               'id': transaction.transactionId,
@@ -747,7 +815,8 @@ class _HomeScreenState extends State<HomeScreen> {
     IconData icon,
     Color iconColor,
     bool isSplit,
-    bool isDark, {
+    bool isDark,
+    String currencySymbol, {
     VoidCallback? onTap,
   }) {
     return GestureDetector(
@@ -850,7 +919,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Text(
-                    '₹$amount',
+                    '$currencySymbol$amount',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

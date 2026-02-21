@@ -6,6 +6,8 @@ import '../database/services/budget_service.dart';
 import '../database/services/category_service.dart';
 import '../models/category.dart';
 import 'set_budget_screen.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -30,8 +32,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
   Map<int?, double> _monthlySpending = {};
   List<Category> _categories = [];
 
-  final NumberFormat _currencyFormat = NumberFormat.simpleCurrency(
-    name: 'INR',
+  NumberFormat get _currencyFormat => NumberFormat.currency(
+    symbol: context.watch<ProfileProvider>().currencySymbol,
     decimalDigits: 0,
   );
 
@@ -59,13 +61,20 @@ class _BudgetScreenState extends State<BudgetScreen> {
           final int year = _selectedDate.year;
 
           // Fetch budgets (will auto-carry-over if needed)
-          _budgets = await _budgetService.getBudgets(_userId!, month, year);
+          final profileId = context.read<ProfileProvider>().activeProfileId;
+          _budgets = await _budgetService.getBudgets(
+            _userId!,
+            month,
+            year,
+            profileId: profileId,
+          );
 
           // Fetch actual spending
           _monthlySpending = await _budgetService.getMonthlySpending(
             _userId!,
             month,
             year,
+            profileId: profileId,
           );
 
           // Calculate totals dynamically from category budgets

@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 import '../database/services/analytics_service.dart';
 import '../utils/color_helper.dart';
 import '../utils/icon_helper.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class DetailedSpendingAnalyticsScreen extends StatefulWidget {
   const DetailedSpendingAnalyticsScreen({super.key});
@@ -256,7 +258,11 @@ class _DetailedSpendingAnalyticsScreenState
         // Donut Chart
         CustomPaint(
           size: const Size(288, 288),
-          painter: DonutChartPainter(categories: categories, isDark: isDark),
+          painter: DonutChartPainter(
+            categories: categories,
+            isDark: isDark,
+            currencySymbol: context.watch<ProfileProvider>().currencySymbol,
+          ),
         ),
 
         const SizedBox(height: 40),
@@ -321,7 +327,7 @@ class _DetailedSpendingAnalyticsScreenState
                       ),
                     ),
                     Text(
-                      '₹${category['amount'].toStringAsFixed(1)}',
+                      '${context.watch<ProfileProvider>().currencySymbol}${category['amount'].toStringAsFixed(1)}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -379,8 +385,13 @@ class _DetailedSpendingAnalyticsScreenState
 class DonutChartPainter extends CustomPainter {
   final List<Map<String, dynamic>> categories;
   final bool isDark;
+  final String currencySymbol;
 
-  DonutChartPainter({required this.categories, required this.isDark});
+  DonutChartPainter({
+    required this.categories,
+    required this.isDark,
+    required this.currencySymbol,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -447,7 +458,7 @@ class DonutChartPainter extends CustomPainter {
     // Draw total amount
     final amountPainter = TextPainter(
       text: TextSpan(
-        text: '₹${totalAmount.toStringAsFixed(1)}',
+        text: '$currencySymbol${totalAmount.toStringAsFixed(1)}',
         style: const TextStyle(
           fontSize: 30,
           fontWeight: FontWeight.bold,

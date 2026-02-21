@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class BalanceCard extends StatelessWidget {
   final double amount;
@@ -47,7 +49,10 @@ class BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            NumberFormat.simpleCurrency().format(amount),
+            NumberFormat.currency(
+              symbol: context.watch<ProfileProvider>().currencySymbol,
+              decimalDigits: 2,
+            ).format(amount),
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               color: Colors.white,
               fontSize: 40,
@@ -60,13 +65,13 @@ class BalanceCard extends StatelessWidget {
               _buildMetric(
                 context,
                 'Monthly Income',
-                '\$5,400.00',
+                '${context.watch<ProfileProvider>().currencySymbol}0.00',
                 Icons.arrow_upward,
               ),
               _buildMetric(
                 context,
                 'Monthly Spent',
-                '\$1,230.50',
+                '${context.watch<ProfileProvider>().currencySymbol}0.00',
                 Icons.arrow_downward,
               ),
             ],

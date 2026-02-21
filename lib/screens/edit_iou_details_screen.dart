@@ -5,6 +5,8 @@ import '../widgets/custom_date_picker.dart';
 
 import '../database/services/iou_service.dart';
 import '../models/iou.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class EditIOUDetailsScreen extends StatefulWidget {
   final int iouId;
@@ -65,7 +67,10 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
         updatedAt: DateTime.now(),
       );
 
-      await _iouService.updateIOU(updatedIOU);
+      final profileId = mounted
+          ? context.read<ProfileProvider>().activeProfileId
+          : null;
+      await _iouService.updateIOU(updatedIOU, profileId: profileId);
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -275,7 +280,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              '₹',
+              context.read<ProfileProvider>().currencySymbol,
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,

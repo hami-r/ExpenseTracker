@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'reimbursement_detail_screen.dart'; // Keep this import as it will be used now
+import 'reimbursement_detail_screen.dart';
 import 'receivable_detail_screen.dart';
 import 'add_lent_amount_screen.dart';
 
@@ -8,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../database/services/receivable_service.dart';
 import '../database/services/reimbursement_service.dart';
 import '../database/services/user_service.dart';
+import '../providers/profile_provider.dart';
 import '../models/receivable.dart';
 import '../models/reimbursement.dart';
 
@@ -46,11 +48,13 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
 
         try {
           // Fetch both receivables and reimbursements
+          final profileId = context.read<ProfileProvider>().activeProfileId;
           final receivables = await _receivableService.getActiveReceivables(
             _userId!,
+            profileId: profileId,
           );
           final reimbursements = await _reimbursementService
-              .getActiveReimbursements(_userId!);
+              .getActiveReimbursements(_userId!, profileId: profileId);
 
           double totalReceivable = 0;
           for (var rec in receivables) {
@@ -79,8 +83,8 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
 

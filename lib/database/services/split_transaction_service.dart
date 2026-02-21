@@ -1,5 +1,5 @@
 import 'package:sqflite/sqflite.dart' hide Transaction;
-import '../../models/transaction.dart';
+import '../../models/transaction.dart' as model;
 import '../../models/split_item.dart';
 import '../database_helper.dart';
 
@@ -8,21 +8,24 @@ class SplitTransactionService {
 
   // Create split transaction with items
   Future<int> createSplitTransaction(
-    Transaction transaction,
-    List<SplitItem> items,
-  ) async {
+    model.Transaction mainTransaction,
+    List<SplitItem> splitItems, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
 
     return await db.transaction((txn) async {
-      // Insert parent transaction
+      // 1. Create main expense transaction
+      final mainMap = mainTransaction.toMap();
+      if (profileId != null) mainMap['profile_id'] = profileId;
       final transactionId = await txn.insert(
         'transactions',
-        transaction.toMap(),
+        mainMap,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
       // Insert split items
-      for (final item in items) {
+      for (final item in splitItems) {
         await txn.insert(
           'split_items',
           item.toMap()..['transaction_id'] = transactionId,
@@ -36,16 +39,19 @@ class SplitTransactionService {
 
   // Update split transaction with items
   Future<void> updateSplitTransaction(
-    Transaction transaction,
-    List<SplitItem> items,
-  ) async {
+    model.Transaction transaction,
+    List<SplitItem> items, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
 
     await db.transaction((txn) async {
       // Update parent transaction
+      final mainMap = transaction.toMap();
+      if (profileId != null) mainMap['profile_id'] = profileId;
       await txn.update(
         'transactions',
-        transaction.toMap(),
+        mainMap,
         where: 'transaction_id = ?',
         whereArgs: [transaction.transactionId],
       );

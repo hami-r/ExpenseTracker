@@ -10,6 +10,8 @@ import '../../models/category.dart';
 import '../../models/payment_method.dart';
 import '../../utils/icon_helper.dart';
 import '../../utils/color_helper.dart';
+import '../../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class SplitExpenseDetailScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -481,7 +483,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '₹',
+                context.read<ProfileProvider>().currencySymbol,
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -608,7 +610,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
             ),
           ),
           Text(
-            '₹ ${item.amount.toStringAsFixed(0)}',
+            '${context.read<ProfileProvider>().currencySymbol} ${item.amount.toStringAsFixed(0)}',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,

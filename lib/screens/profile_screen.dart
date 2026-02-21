@@ -13,6 +13,7 @@ import '../models/user.dart';
 import '../database/services/user_service.dart';
 import 'monthly_comparison_screen.dart';
 import 'payment_correlation_screen.dart';
+import 'region_currency_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -169,6 +170,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildSectionHeader('GENERAL', isDark),
                         const SizedBox(height: 12),
                         _buildMenuCard([
+                          _MenuItemData(
+                            icon: Icons.language_rounded,
+                            title: 'Region & Currency',
+                            color: const Color(0xFF2bb961),
+                            hasBottomBorder: true,
+                          ),
                           _MenuItemData(
                             icon: Icons.import_export_rounded,
                             title: 'Import and Export',
@@ -540,6 +547,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ImportExportScreen(),
+                    ),
+                  );
+                } else if (item.title == 'Region & Currency') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RegionCurrencyScreen(),
                     ),
                   );
                 } else if (item.title == 'Payment Mode Correlation') {

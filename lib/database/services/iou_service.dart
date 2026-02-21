@@ -7,12 +7,16 @@ class IOUService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // Get active IOUs
-  Future<List<IOU>> getActiveIOUs(int userId) async {
+  Future<List<IOU>> getActiveIOUs(int userId, {int? profileId}) async {
     final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, 'active', profileId]
+        : [userId, 'active'];
     final List<Map<String, dynamic>> maps = await db.query(
       'ious',
-      where: 'user_id = ? AND status = ? AND is_deleted = 0',
-      whereArgs: [userId, 'active'],
+      where: 'user_id = ? AND status = ? AND is_deleted = 0$profileClause',
+      whereArgs: args,
       orderBy: 'due_date ASC',
     );
     return List.generate(maps.length, (i) => IOU.fromMap(maps[i]));
@@ -31,24 +35,23 @@ class IOUService {
   }
 
   // Create new IOU
-  Future<int> createIOU(IOU iou) async {
+  Future<int> createIOU(IOU iou, {int? profileId}) async {
     final db = await _dbHelper.database;
+    final map = iou.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     return await db.insert(
       'ious',
-      iou.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   // Update IOU
-  Future<void> updateIOU(IOU iou) async {
+  Future<void> updateIOU(IOU iou, {int? profileId}) async {
     final db = await _dbHelper.database;
-    await db.update(
-      'ious',
-      iou.toMap(),
-      where: 'iou_id = ?',
-      whereArgs: [iou.iouId],
-    );
+    final map = iou.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
+    await db.update('ious', map, where: 'iou_id = ?', whereArgs: [iou.iouId]);
   }
 
   // Delete IOU

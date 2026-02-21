@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 import '../models/receivable.dart';
 import '../database/services/receivable_service.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class EditLentDetailsScreen extends StatefulWidget {
   final int receivableId;
@@ -299,7 +301,7 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                '₹',
+                context.read<ProfileProvider>().currencySymbol,
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
@@ -556,7 +558,13 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
         updatedAt: DateTime.now(),
       );
 
-      await _receivableService.updateReceivable(updatedReceivable);
+      final profileId = mounted
+          ? context.read<ProfileProvider>().activeProfileId
+          : null;
+      await _receivableService.updateReceivable(
+        updatedReceivable,
+        profileId: profileId,
+      );
 
       if (mounted) {
         Navigator.pop(context, true); // Return true to indicate change

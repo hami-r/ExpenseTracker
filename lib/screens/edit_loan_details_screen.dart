@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../widgets/custom_date_picker.dart';
 import '../models/loan.dart';
 import '../database/services/loan_service.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class EditLoanDetailsScreen extends StatefulWidget {
   final int loanId;
@@ -115,7 +117,10 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
         updatedAt: DateTime.now(),
       );
 
-      await _loanService.updateLoan(updatedLoan);
+      final profileId = mounted
+          ? context.read<ProfileProvider>().activeProfileId
+          : null;
+      await _loanService.updateLoan(updatedLoan, profileId: profileId);
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -331,7 +336,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              '₹',
+              context.read<ProfileProvider>().currencySymbol,
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
@@ -796,7 +801,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                 ),
                 Text(
                   _calculatedEmi > 0
-                      ? '₹${_calculatedEmi.toStringAsFixed(0)}'
+                      ? '${context.read<ProfileProvider>().currencySymbol}${_calculatedEmi.toStringAsFixed(0)}'
                       : 'Auto Calc.',
                   style: const TextStyle(
                     fontSize: 20,

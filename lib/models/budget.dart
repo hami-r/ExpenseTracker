@@ -1,6 +1,7 @@
 class Budget {
   final int? budgetId;
   final int userId;
+  final int? profileId;
   final int? categoryId; // Null means it's the overall/global budget
   final double amount;
   final int month;
@@ -11,6 +12,7 @@ class Budget {
   Budget({
     this.budgetId,
     required this.userId,
+    this.profileId,
     this.categoryId,
     required this.amount,
     required this.month,
@@ -23,6 +25,7 @@ class Budget {
     return {
       'budget_id': budgetId,
       'user_id': userId,
+      'profile_id': profileId,
       'category_id': categoryId,
       'amount': amount,
       'month': month,
@@ -36,6 +39,7 @@ class Budget {
     return Budget(
       budgetId: map['budget_id'] as int?,
       userId: map['user_id'] as int,
+      profileId: map['profile_id'] as int?,
       categoryId: map['category_id'] as int?,
       amount: (map['amount'] as num).toDouble(),
       month: map['month'] as int,
@@ -52,6 +56,7 @@ class Budget {
   Budget copyWith({
     int? budgetId,
     int? userId,
+    int? profileId,
     int? categoryId,
     double? amount,
     int? month,
@@ -60,6 +65,7 @@ class Budget {
     return Budget(
       budgetId: budgetId ?? this.budgetId,
       userId: userId ?? this.userId,
+      profileId: profileId ?? this.profileId,
       categoryId: categoryId ?? this.categoryId,
       amount: amount ?? this.amount,
       month: month ?? this.month,

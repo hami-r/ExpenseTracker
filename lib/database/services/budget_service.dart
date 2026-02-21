@@ -9,18 +9,30 @@ class BudgetService {
   Future<void> saveBudget(Budget budget) async {
     final db = await _dbHelper.database;
 
+    final profileClause = budget.profileId != null ? ' AND profile_id = ?' : '';
+    final args = budget.profileId != null
+        ? [
+            budget.userId,
+            budget.month,
+            budget.year,
+            budget.categoryId,
+            budget.categoryId,
+            budget.profileId,
+          ]
+        : [
+            budget.userId,
+            budget.month,
+            budget.year,
+            budget.categoryId,
+            budget.categoryId,
+          ];
+
     // Check if a budget already exists for this month
     final List<Map<String, dynamic>> existing = await db.query(
       'budgets',
       where:
-          'user_id = ? AND month = ? AND year = ? AND (category_id IS ? OR category_id = ?)',
-      whereArgs: [
-        budget.userId,
-        budget.month,
-        budget.year,
-        budget.categoryId,
-        budget.categoryId,
-      ],
+          'user_id = ? AND month = ? AND year = ? AND (category_id IS ? OR category_id = ?)$profileClause',
+      whereArgs: args,
     );
 
     if (existing.isNotEmpty) {
@@ -44,36 +56,59 @@ class BudgetService {
     // Forward-sync: update the same category in any future months that already have a budget row
     // This never touches records older than (budget.year, budget.month)
     if (budget.categoryId != null) {
-      await db.rawUpdate(
-        '''
+      final updateProfileClause = budget.profileId != null
+          ? ' AND profile_id = ?'
+          : '';
+      final updateArgs = budget.profileId != null
+          ? [
+              budget.amount,
+              DateTime.now().toIso8601String(),
+              budget.userId,
+              budget.categoryId,
+              budget.year,
+              budget.year,
+              budget.month,
+              budget.profileId,
+            ]
+          : [
+              budget.amount,
+              DateTime.now().toIso8601String(),
+              budget.userId,
+              budget.categoryId,
+              budget.year,
+              budget.year,
+              budget.month,
+            ];
+
+      await db.rawUpdate('''
         UPDATE budgets
         SET amount = ?, updated_at = ?
         WHERE user_id = ?
           AND category_id = ?
           AND (year > ? OR (year = ? AND month > ?))
-        ''',
-        [
-          budget.amount,
-          DateTime.now().toIso8601String(),
-          budget.userId,
-          budget.categoryId,
-          budget.year,
-          budget.year,
-          budget.month,
-        ],
-      );
+          $updateProfileClause
+        ''', updateArgs);
     }
   }
 
   // Fetch budgets for a given user, month, and year.
   // Performs the auto-carry-over cloning if nothing exists for this month.
-  Future<List<Budget>> getBudgets(int userId, int month, int year) async {
+  Future<List<Budget>> getBudgets(
+    int userId,
+    int month,
+    int year, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, month, year, profileId]
+        : [userId, month, year];
 
     List<Map<String, dynamic>> maps = await db.query(
       'budgets',
-      where: 'user_id = ? AND month = ? AND year = ?',
-      whereArgs: [userId, month, year],
+      where: 'user_id = ? AND month = ? AND year = ?$profileClause',
+      whereArgs: args,
     );
 
     // If budgets exist for this month, return them
@@ -83,15 +118,16 @@ class BudgetService {
 
     // Auto-Carry-Over Requirement: The budget goes to the next month as well
     // Let's find the most recent month before this one that has budgets
-    final List<Map<String, dynamic>> pastBudgetsResult = await db.rawQuery(
-      '''
+    final pastArgs = profileId != null
+        ? [userId, year, year, month, profileId]
+        : [userId, year, year, month];
+    final List<Map<String, dynamic>> pastBudgetsResult = await db.rawQuery('''
       SELECT * FROM budgets 
       WHERE user_id = ? 
         AND (year < ? OR (year = ? AND month < ?))
+        $profileClause
       ORDER BY year DESC, month DESC 
-    ''',
-      [userId, year, year, month],
-    );
+    ''', pastArgs);
 
     if (pastBudgetsResult.isEmpty) {
       return []; // True empty state
@@ -111,6 +147,7 @@ class BudgetService {
       for (var row in latestPastBudgets) {
         final clonedBudget = Budget(
           userId: userId,
+          profileId: profileId,
           categoryId: row['category_id'] as int?,
           amount: (row['amount'] as num).toDouble(),
           month: month,
@@ -134,8 +171,9 @@ class BudgetService {
   Future<Map<int?, double>> getMonthlySpending(
     int userId,
     int month,
-    int year,
-  ) async {
+    int year, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
 
     // Start of month
@@ -147,18 +185,21 @@ class BudgetService {
     final endMonth = month == 12 ? 1 : month + 1;
     final endDate = DateTime(endYear, endMonth, 1).toIso8601String();
 
-    final List<Map<String, dynamic>> result = await db.rawQuery(
-      '''
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, startDate, endDate, profileId]
+        : [userId, startDate, endDate];
+
+    final List<Map<String, dynamic>> result = await db.rawQuery('''
       SELECT category_id, SUM(amount) as total_spent
       FROM transactions
       WHERE user_id = ? 
         AND parent_transaction_id IS NULL
         AND transaction_date >= ?
         AND transaction_date < ?
+        $profileClause
       GROUP BY category_id
-    ''',
-      [userId, startDate, endDate],
-    );
+    ''', args);
 
     final Map<int?, double> spending = {};
     double overallSpent = 0.0;

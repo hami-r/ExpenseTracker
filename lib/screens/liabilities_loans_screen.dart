@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'add_loan_screen.dart';
 import 'loan_detail_screen.dart';
 import 'iou_detail_screen.dart';
@@ -8,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../database/services/loan_service.dart';
 import '../database/services/iou_service.dart';
 import '../database/services/user_service.dart';
+import '../providers/profile_provider.dart';
 import '../models/loan.dart';
 import '../models/iou.dart';
 
@@ -44,8 +46,15 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
         });
 
         try {
-          final loans = await _loanService.getActiveLoans(_userId!);
-          final ious = await _iouService.getActiveIOUs(_userId!);
+          final profileId = context.read<ProfileProvider>().activeProfileId;
+          final loans = await _loanService.getActiveLoans(
+            _userId!,
+            profileId: profileId,
+          );
+          final ious = await _iouService.getActiveIOUs(
+            _userId!,
+            profileId: profileId,
+          );
 
           double totalDebt = 0;
           for (var loan in loans) {
@@ -75,8 +84,8 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
 

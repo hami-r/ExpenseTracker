@@ -3,12 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../database_helper.dart';
 import '../../models/transaction_item.dart';
 
-enum TransactionSortOption {
-  dateDesc,
-  dateAsc,
-  amountHighLow, // Within month group
-  amountLowHigh, // Within month group
-}
+enum TransactionSortOption { dateDesc, dateAsc, amountHighLow, amountLowHigh }
 
 class AllTransactionsService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
@@ -18,23 +13,22 @@ class AllTransactionsService {
     int offset = 0,
     TransactionSortOption sortOption = TransactionSortOption.dateDesc,
     List<TransactionType>? typeFilter,
+    int? profileId,
   }) async {
     final db = await _dbHelper.database;
 
-    // Helper to format list for SQL IN clause
     String typeFilterClause = '';
     if (typeFilter != null && typeFilter.isNotEmpty) {
-      // mapping enum to string values used in the union query
       final types = typeFilter.map((e) => "'${e.name}'").join(',');
       typeFilterClause = 'WHERE type IN ($types)';
     }
 
-    // Base queries for each table
-    // 1. Transactions (Expenses)
-    // Note: We cast amount to Real.
-    // We select 'expense' as type string.
-    // Title is Category Name, Subtitle is Note.
-    final transactionsQuery = '''
+    // Profile clause — appended to per-profile tables
+    final p = profileId;
+    final String pClause = p != null ? ' AND profile_id = $p' : '';
+
+    final transactionsQuery =
+        '''
       SELECT 
         t.transaction_id as id,
         'expense' as type,
@@ -47,11 +41,11 @@ class AllTransactionsService {
         'paid' as status
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.category_id
-      WHERE t.parent_transaction_id IS NULL
+      WHERE t.parent_transaction_id IS NULL$pClause
     ''';
 
-    // 2. Loans (Incoming money/Debt)
-    final loansQuery = '''
+    final loansQuery =
+        '''
       SELECT 
         loan_id as id,
         'loan' as type,
@@ -60,14 +54,14 @@ class AllTransactionsService {
         lender_name as title,
         'Loan Taken' as subtitle,
         0 as is_split,
-        '#F43F5E' as color_hex, -- Redish for debt
+        '#F43F5E' as color_hex,
         status as status
       FROM loans
-      WHERE is_deleted = 0
+      WHERE is_deleted = 0$pClause
     ''';
 
-    // 3. Loan Payments (Outgoing money/Repayment)
-    final loanPaymentsQuery = '''
+    final loanPaymentsQuery =
+        '''
       SELECT 
         lp.loan_payment_id as id,
         'loanPayment' as type,
@@ -76,32 +70,31 @@ class AllTransactionsService {
         l.lender_name as title,
         'Loan Repayment' as subtitle,
         0 as is_split,
-        '#10B981' as color_hex, -- Greenish for paying off? Or Red for visual consistency with loan? Let's use Neutral/Blue.
+        '#10B981' as color_hex,
         'paid' as status
       FROM loan_payments lp
       JOIN loans l ON lp.loan_id = l.loan_id
+      ${p != null ? 'WHERE l.profile_id = $p' : ''}
     ''';
 
-    // 4. IOUs (Outgoing money/Debt to separate mostly?)
-    // Wait, IOU in this app context usually means "I Owe You" (Debt).
-    // Let's treat it similar to Loan.
-    final iousQuery = '''
+    final iousQuery =
+        '''
       SELECT 
         iou_id as id,
         'iou' as type,
         amount as amount,
-        COALESCE(created_at, date('now')) as date, -- Fallback if created_at is strictly timestamp
+        COALESCE(created_at, date('now')) as date,
         creditor_name as title,
         'IOU Added' as subtitle,
         0 as is_split,
         '#F43F5E' as color_hex,
         status as status
       FROM ious
-      WHERE is_deleted = 0
+      WHERE is_deleted = 0$pClause
     ''';
 
-    // 5. IOU Payments
-    final iouPaymentsQuery = '''
+    final iouPaymentsQuery =
+        '''
       SELECT 
         ip.iou_payment_id as id,
         'iouPayment' as type,
@@ -114,10 +107,11 @@ class AllTransactionsService {
         'paid' as status
       FROM iou_payments ip
       JOIN ious i ON ip.iou_id = i.iou_id
+      ${p != null ? 'WHERE i.profile_id = $p' : ''}
     ''';
 
-    // 6. Receivables (Money Lending - Outgoing initially?)
-    final receivablesQuery = '''
+    final receivablesQuery =
+        '''
       SELECT 
         receivable_id as id,
         'receivable' as type,
@@ -126,14 +120,14 @@ class AllTransactionsService {
         recipient_name as title,
         'Money Lent' as subtitle,
         0 as is_split,
-        '#F59E0B' as color_hex, -- Amber for pending return
+        '#F59E0B' as color_hex,
         status as status
       FROM receivables
-      WHERE is_deleted = 0
+      WHERE is_deleted = 0$pClause
     ''';
 
-    // 7. Receivable Payments (Money Incoming)
-    final receivablePaymentsQuery = '''
+    final receivablePaymentsQuery =
+        '''
       SELECT 
         rp.receivable_payment_id as id,
         'receivablePayment' as type,
@@ -146,10 +140,11 @@ class AllTransactionsService {
         'paid' as status
       FROM receivable_payments rp
       JOIN receivables r ON rp.receivable_id = r.receivable_id
+      ${p != null ? 'WHERE r.profile_id = $p' : ''}
     ''';
 
-    // 8. Reimbursements (Money expected back)
-    final reimbursementsQuery = '''
+    final reimbursementsQuery =
+        '''
       SELECT 
         reimbursement_id as id,
         'reimbursement' as type,
@@ -161,10 +156,11 @@ class AllTransactionsService {
         '#F59E0B' as color_hex,
         status as status
       FROM reimbursements
+      ${p != null ? 'WHERE profile_id = $p' : ''}
     ''';
 
-    // 9. Reimbursement Payments (Money Incoming)
-    final reimbursementPaymentsQuery = '''
+    final reimbursementPaymentsQuery =
+        '''
       SELECT 
         rp.reimbursement_payment_id as id,
         'reimbursementPayment' as type,
@@ -177,9 +173,9 @@ class AllTransactionsService {
         'paid' as status
       FROM reimbursement_payments rp
       JOIN reimbursements r ON rp.reimbursement_id = r.reimbursement_id
+      ${p != null ? 'WHERE r.profile_id = $p' : ''}
     ''';
 
-    // Combine all
     final fullQuery =
         '''
       SELECT * FROM (
@@ -235,10 +231,8 @@ class AllTransactionsService {
       case TransactionSortOption.dateAsc:
         return 'date ASC';
       case TransactionSortOption.amountHighLow:
-        // Sort by Month DESC first, then Amount DESC
         return "strftime('%Y-%m', date) DESC, amount DESC";
       case TransactionSortOption.amountLowHigh:
-        // Sort by Month DESC first, then Amount ASC
         return "strftime('%Y-%m', date) DESC, amount ASC";
     }
   }

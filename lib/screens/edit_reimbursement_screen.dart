@@ -4,6 +4,8 @@ import '../widgets/custom_date_picker.dart';
 
 import '../models/reimbursement.dart';
 import '../database/services/reimbursement_service.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class EditReimbursementScreen extends StatefulWidget {
   final int reimbursementId;
@@ -102,7 +104,13 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
         updatedAt: DateTime.now(),
       );
 
-      await _reimbursementService.updateReimbursement(updatedReimbursement);
+      final profileId = mounted
+          ? context.read<ProfileProvider>().activeProfileId
+          : null;
+      await _reimbursementService.updateReimbursement(
+        updatedReimbursement,
+        profileId: profileId,
+      );
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -335,7 +343,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
-              '₹',
+              context.read<ProfileProvider>().currencySymbol,
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,

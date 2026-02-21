@@ -7,6 +7,8 @@ import '../database/services/reimbursement_service.dart';
 import '../database/services/user_service.dart';
 import '../models/receivable.dart';
 import '../models/reimbursement.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class AddLentAmountScreen extends StatefulWidget {
   const AddLentAmountScreen({super.key});
@@ -57,7 +59,14 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
             notes: _noteController.text,
             createdAt: DateTime.now(),
           );
-          await _receivableService.createReceivable(receivable);
+
+          final profileId = mounted
+              ? context.read<ProfileProvider>().activeProfileId
+              : null;
+          await _receivableService.createReceivable(
+            receivable,
+            profileId: profileId,
+          );
         } else {
           // Reimbursement
           final reimbursement = Reimbursement(
@@ -70,7 +79,14 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
             notes: _noteController.text,
             createdAt: DateTime.now(),
           );
-          await _reimbursementService.createReimbursement(reimbursement);
+
+          final profileId = mounted
+              ? context.read<ProfileProvider>().activeProfileId
+              : null;
+          await _reimbursementService.createReimbursement(
+            reimbursement,
+            profileId: profileId,
+          );
         }
 
         if (mounted) {
@@ -450,7 +466,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                '₹',
+                context.read<ProfileProvider>().currencySymbol,
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w900,

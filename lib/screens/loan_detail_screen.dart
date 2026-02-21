@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 import '../database/services/loan_service.dart';
 import '../models/loan.dart';
 import '../models/loan_payment.dart';
@@ -469,7 +471,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '₹${_loan != null ? NumberFormat.currency(locale: 'en_IN', symbol: '').format(_loan!.principalAmount - _loan!.totalPaid) : '0'}',
+                  '${context.read<ProfileProvider>().currencySymbol}${_loan != null ? NumberFormat.currency(locale: 'en_IN', symbol: '').format(_loan!.principalAmount - _loan!.totalPaid) : '0'}',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
@@ -555,7 +557,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
 
     final currencyFormatter = NumberFormat.currency(
       locale: 'en_IN',
-      symbol: '₹',
+      symbol: context.read<ProfileProvider>().currencySymbol,
     );
 
     final stats = [
@@ -731,7 +733,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     final dateFormatter = DateFormat('MMM dd, yyyy');
     final currencyFormatter = NumberFormat.currency(
       locale: 'en_IN',
-      symbol: '₹',
+      symbol: context.read<ProfileProvider>().currencySymbol,
     );
     return Container(
       padding: const EdgeInsets.all(16),

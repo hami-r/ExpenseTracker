@@ -7,12 +7,19 @@ class ReceivableService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // Get active receivables
-  Future<List<Receivable>> getActiveReceivables(int userId) async {
+  Future<List<Receivable>> getActiveReceivables(
+    int userId, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, 'active', profileId]
+        : [userId, 'active'];
     final List<Map<String, dynamic>> maps = await db.query(
       'receivables',
-      where: 'user_id = ? AND status = ? AND is_deleted = 0',
-      whereArgs: [userId, 'active'],
+      where: 'user_id = ? AND status = ? AND is_deleted = 0$profileClause',
+      whereArgs: args,
       orderBy: 'expected_date ASC',
     );
     return List.generate(maps.length, (i) => Receivable.fromMap(maps[i]));
@@ -31,21 +38,25 @@ class ReceivableService {
   }
 
   // Create new receivable
-  Future<int> createReceivable(Receivable receivable) async {
+  Future<int> createReceivable(Receivable receivable, {int? profileId}) async {
     final db = await _dbHelper.database;
+    final map = receivable.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     return await db.insert(
       'receivables',
-      receivable.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   // Update receivable
-  Future<void> updateReceivable(Receivable receivable) async {
+  Future<void> updateReceivable(Receivable receivable, {int? profileId}) async {
     final db = await _dbHelper.database;
+    final map = receivable.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     await db.update(
       'receivables',
-      receivable.toMap(),
+      map,
       where: 'receivable_id = ?',
       whereArgs: [receivable.receivableId],
     );

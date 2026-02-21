@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../models/loan.dart';
 import '../models/loan_payment.dart';
 import '../database/services/loan_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class UpdateLoanScreen extends StatefulWidget {
   final int loanId;
@@ -563,7 +565,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 bottom: 0,
                 child: Center(
                   child: Text(
-                    '₹',
+                    context.read<ProfileProvider>().currencySymbol,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -777,7 +779,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '₹${(_loan?.interestRate ?? 0) > 0 ? ((_loan?.principalAmount ?? 0) * (_loan?.interestRate ?? 0) / 100).toStringAsFixed(0) : "0"}',
+                    '${context.read<ProfileProvider>().currencySymbol}${(_loan?.interestRate ?? 0) > 0 ? ((_loan?.principalAmount ?? 0) * (_loan?.interestRate ?? 0) / 100).toStringAsFixed(0) : "0"}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../models/transaction_item.dart';
 import '../database/services/all_transactions_service.dart';
 import '../utils/color_helper.dart';
 import '../utils/icon_helper.dart';
+import '../providers/profile_provider.dart';
 import 'transaction_details_screen.dart';
 import 'loan_detail_screen.dart';
 import 'iou_detail_screen.dart';
@@ -48,6 +50,18 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     _scrollController.addListener(_onScroll);
   }
 
+  int? _lastProfileId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final profileId = context.watch<ProfileProvider>().activeProfileId;
+    if (_lastProfileId != null && _lastProfileId != profileId) {
+      _loadTransactions(refresh: true);
+    }
+    _lastProfileId = profileId;
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -79,6 +93,9 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         offset: _offset,
         sortOption: _sortOption,
         typeFilter: _selectedTypeFilter != null ? [_selectedTypeFilter!] : null,
+        profileId: mounted
+            ? context.read<ProfileProvider>().activeProfileId
+            : null,
       );
 
       setState(() {
@@ -339,7 +356,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '${isIncome ? "+" : "-"}₹${item.amount.abs().toStringAsFixed(2)}',
+              '${isIncome ? "+" : "-"}${context.read<ProfileProvider>().currencySymbol}${item.amount.abs().toStringAsFixed(2)}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,

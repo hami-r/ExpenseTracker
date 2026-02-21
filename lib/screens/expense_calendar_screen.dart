@@ -8,6 +8,8 @@ import '../models/transaction.dart';
 import '../models/category.dart';
 import 'transaction_details_screen.dart';
 import 'split_expense_detail_screen.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class ExpenseCalendarScreen extends StatefulWidget {
   const ExpenseCalendarScreen({super.key});
@@ -70,10 +72,12 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final profileId = context.read<ProfileProvider>().activeProfileId;
       final expenses = await _analyticsService.getDailySpendingByMonth(
         _userId!,
         _currentMonth.year,
         _currentMonth.month,
+        profileId: profileId,
       );
 
       double total = 0;
@@ -107,9 +111,13 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     if (_userId == null) return;
 
     try {
+      final profileId = mounted
+          ? context.read<ProfileProvider>().activeProfileId
+          : null;
       final transactions = await _transactionService.getTransactionsByDate(
         _userId!,
         date,
+        profileId: profileId,
       );
       if (mounted) {
         setState(() {
@@ -513,7 +521,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '₹${_monthTotal.toStringAsFixed(1)}',
+                              '${context.read<ProfileProvider>().currencySymbol}${_monthTotal.toStringAsFixed(1)}',
                               style: TextStyle(
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
@@ -540,7 +548,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '₹${_dailyAvg.toStringAsFixed(0)}',
+                              '${context.read<ProfileProvider>().currencySymbol}${_dailyAvg.toStringAsFixed(0)}',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -704,7 +712,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        '₹${transaction.amount}',
+                                        '${context.read<ProfileProvider>().currencySymbol}${transaction.amount}',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,

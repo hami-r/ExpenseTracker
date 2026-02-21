@@ -6,6 +6,8 @@ import '../widgets/custom_date_picker.dart';
 import '../models/receivable.dart';
 import '../models/receivable_payment.dart';
 import '../database/services/receivable_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class UpdateReceivableScreen extends StatefulWidget {
   final int receivableId;
@@ -318,7 +320,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
-              '₹',
+              context.read<ProfileProvider>().currencySymbol,
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
@@ -551,8 +553,8 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
   Widget _buildSummaryCard(bool isDark) {
     if (_receivable == null) return const SizedBox.shrink();
 
-    final currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
     final previousBalance =

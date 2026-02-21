@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class LoanPaymentHistoryScreen extends StatelessWidget {
   const LoanPaymentHistoryScreen({super.key});
@@ -32,7 +34,8 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                         {
                           'date': 'Nov 05, 2023',
                           'method': 'Auto-debit • SBI ****8839',
-                          'amount': '₹12,500',
+                          'amount':
+                              '${context.read<ProfileProvider>().currencySymbol}12,500',
                           'icon': Icons.autorenew_rounded,
                         },
                       ], isDark),
@@ -40,7 +43,8 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                         {
                           'date': 'Oct 05, 2023',
                           'method': 'Auto-debit • SBI ****8839',
-                          'amount': '₹12,500',
+                          'amount':
+                              '${context.read<ProfileProvider>().currencySymbol}12,500',
                           'icon': Icons.autorenew_rounded,
                         },
                       ], isDark),
@@ -48,7 +52,8 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                         {
                           'date': 'Sep 05, 2023',
                           'method': 'UPI Transfer • PhonePe',
-                          'amount': '₹12,500',
+                          'amount':
+                              '${context.read<ProfileProvider>().currencySymbol}12,500',
                           'icon': Icons.account_balance_wallet_rounded,
                         },
                       ], isDark),
@@ -56,13 +61,15 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                         {
                           'date': 'Aug 05, 2023',
                           'method': 'Auto-debit • SBI ****8839',
-                          'amount': '₹12,500',
+                          'amount':
+                              '${context.read<ProfileProvider>().currencySymbol}12,500',
                           'icon': Icons.autorenew_rounded,
                         },
                         {
                           'date': 'Aug 01, 2023',
                           'method': 'Bank Transfer • HDFC',
-                          'amount': '₹5,000',
+                          'amount':
+                              '${context.read<ProfileProvider>().currencySymbol}5,000',
                           'icon': Icons.account_balance_rounded,
                         },
                       ], isDark),
@@ -70,7 +77,8 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                         {
                           'date': 'Jul 05, 2023',
                           'method': 'Auto-debit • SBI ****8839',
-                          'amount': '₹12,500',
+                          'amount':
+                              '${context.read<ProfileProvider>().currencySymbol}12,500',
                           'icon': Icons.autorenew_rounded,
                         },
                       ], isDark),

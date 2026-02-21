@@ -5,6 +5,8 @@ import '../widgets/custom_date_picker.dart';
 import '../models/reimbursement.dart';
 import '../models/reimbursement_payment.dart';
 import '../database/services/reimbursement_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class UpdateReimbursementScreen extends StatefulWidget {
   final int reimbursementId;
@@ -316,7 +318,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
-              '₹',
+              context.read<ProfileProvider>().currencySymbol,
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
@@ -590,8 +592,8 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
   Widget _buildSummaryCard(bool isDark) {
     if (_reimbursement == null) return const SizedBox.shrink();
 
-    final currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
     final remainingBalance =

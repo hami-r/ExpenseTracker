@@ -6,6 +6,8 @@ import '../database/services/payment_method_service.dart';
 import '../database/services/user_service.dart';
 import '../utils/icon_helper.dart';
 import '../utils/color_helper.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class EditPaymentMethodScreen extends StatefulWidget {
   final PaymentMethod? paymentMethod;
@@ -1187,9 +1189,21 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
         );
 
         if (isEditMode) {
-          await _paymentMethodService.updatePaymentMethod(paymentMethod);
+          final profileId = mounted
+              ? context.read<ProfileProvider>().activeProfileId
+              : null;
+          await _paymentMethodService.updatePaymentMethod(
+            paymentMethod,
+            profileId: profileId,
+          );
         } else {
-          await _paymentMethodService.createPaymentMethod(paymentMethod);
+          final profileId = mounted
+              ? context.read<ProfileProvider>().activeProfileId
+              : null;
+          await _paymentMethodService.createPaymentMethod(
+            paymentMethod,
+            profileId: profileId,
+          );
         }
 
         if (mounted) {

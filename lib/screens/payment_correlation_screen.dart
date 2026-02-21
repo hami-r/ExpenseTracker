@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../database/database_helper.dart';
 import '../database/services/payment_method_service.dart';
 import '../database/services/user_service.dart';
 import '../models/payment_method.dart';
 import '../utils/color_helper.dart';
 import '../utils/icon_helper.dart';
+import '../providers/profile_provider.dart';
 
 class PaymentCorrelationScreen extends StatefulWidget {
   const PaymentCorrelationScreen({super.key});
@@ -20,9 +22,9 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
   final UserService _userService = UserService();
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  final NumberFormat _fmt = NumberFormat.currency(
+  NumberFormat get _fmt => NumberFormat.currency(
     locale: 'en_IN',
-    symbol: '₹',
+    symbol: context.read<ProfileProvider>().currencySymbol,
     decimalDigits: 0,
   );
 
@@ -66,6 +68,16 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
       0,
     ).toIso8601String().split('T')[0];
 
+    final profileId = mounted
+        ? context.read<ProfileProvider>().activeProfileId
+        : null;
+    final profileFilter = profileId != null
+        ? ' AND t.profile_id = $profileId'
+        : '';
+    final pmProfileFilter = profileId != null
+        ? ' AND pm.profile_id = $profileId'
+        : '';
+
     // 1. Spending per payment method this month
     final pmRows = await db.rawQuery(
       '''
@@ -77,8 +89,8 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
         AND t.user_id = ?
         AND t.transaction_date >= ?
         AND t.transaction_date <= ?
-        AND t.parent_transaction_id IS NULL
-      WHERE pm.user_id = ? AND pm.is_active = 1
+        AND t.parent_transaction_id IS NULL$profileFilter
+      WHERE pm.user_id = ? AND pm.is_active = 1$pmProfileFilter
       GROUP BY pm.payment_method_id
       HAVING total > 0
       ORDER BY total DESC
@@ -95,6 +107,7 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
         AND transaction_date >= ?
         AND transaction_date <= ?
         AND parent_transaction_id IS NULL
+        ${profileId != null ? 'AND profile_id = $profileId' : ''}
       GROUP BY payment_method_id
     ''',
       [user.userId, lastMonthStart, lastMonthEnd],
@@ -105,7 +118,10 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
         (r['payment_method_id'] as int): (r['total'] as num).toDouble(),
     };
 
-    final methods = await _pmService.getAllPaymentMethods(user.userId!);
+    final methods = await _pmService.getAllPaymentMethods(
+      user.userId!,
+      profileId: profileId,
+    );
 
     final List<_MethodSummary> summaries = [];
     for (final row in pmRows) {
@@ -147,6 +163,7 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
         AND t.transaction_date >= ?
         AND t.transaction_date <= ?
         AND t.parent_transaction_id IS NULL
+        ${profileId != null ? 'AND t.profile_id = $profileId' : ''}
       GROUP BY c.category_id, t.payment_method_id
       ORDER BY total DESC
     ''',

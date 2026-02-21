@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class ExpenseCard extends StatelessWidget {
   final Expense expense;
@@ -25,10 +27,7 @@ class ExpenseCard extends StatelessWidget {
               color: expense.category.color.withOpacity(0.15),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(
-              expense.category.icon,
-              color: expense.category.color,
-            ),
+            child: Icon(expense.category.icon, color: expense.category.color),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -37,15 +36,15 @@ class ExpenseCard extends StatelessWidget {
               children: [
                 Text(
                   expense.title,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
                   expense.category.name,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white54,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.white54),
                 ),
               ],
             ),
@@ -54,7 +53,7 @@ class ExpenseCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '-\$${expense.amount.toStringAsFixed(2)}',
+                '-${context.read<ProfileProvider>().currencySymbol}${expense.amount.toStringAsFixed(2)}',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.redAccent,
@@ -62,9 +61,9 @@ class ExpenseCard extends StatelessWidget {
               ),
               Text(
                 DateFormat('MMM dd').format(expense.date),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white54,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.white54),
               ),
             ],
           ),

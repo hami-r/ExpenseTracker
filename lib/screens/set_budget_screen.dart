@@ -4,6 +4,8 @@ import '../models/category.dart';
 import '../database/services/budget_service.dart';
 import '../database/services/category_service.dart';
 import 'manage_categories_screen.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class SetBudgetScreen extends StatefulWidget {
   final int userId;
@@ -70,6 +72,8 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
   Future<void> _saveBudgets() async {
     // Save only category budgets
 
+    final profileId = context.read<ProfileProvider>().activeProfileId;
+
     for (var cat in _categories) {
       final ctrl = _categoryControllers[cat.categoryId!];
       if (ctrl != null) {
@@ -80,6 +84,7 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
             await _budgetService.saveBudget(
               Budget(
                 userId: widget.userId,
+                profileId: profileId,
                 categoryId: cat.categoryId,
                 amount: val,
                 month: widget.month,
@@ -240,7 +245,8 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
                     color: isDark ? Colors.white : const Color(0xFF30353E),
                   ),
                   decoration: InputDecoration(
-                    prefixText: '₹ ',
+                    prefixText:
+                        '${context.read<ProfileProvider>().currencySymbol} ',
                     prefixStyle: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

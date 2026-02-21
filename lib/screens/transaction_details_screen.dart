@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'edit_expense_screen.dart';
 import '../../database/services/transaction_service.dart';
 import 'package:intl/intl.dart';
+import '../../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -111,7 +113,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                 textBaseline: TextBaseline.alphabetic,
                                 children: [
                                   Text(
-                                    '₹',
+                                    context
+                                        .read<ProfileProvider>()
+                                        .currencySymbol,
                                     style: TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.bold,

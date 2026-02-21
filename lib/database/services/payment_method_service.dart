@@ -5,13 +5,18 @@ import '../database_helper.dart';
 class PaymentMethodService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  // Get all payment methods for a user
-  Future<List<PaymentMethod>> getAllPaymentMethods(int userId) async {
+  // Get all payment methods for a user (optionally scoped to a profile)
+  Future<List<PaymentMethod>> getAllPaymentMethods(
+    int userId, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null ? [userId, profileId] : [userId];
     final List<Map<String, dynamic>> maps = await db.query(
       'payment_methods',
-      where: 'user_id = ? AND is_active = 1',
-      whereArgs: [userId],
+      where: 'user_id = ? AND is_active = 1$profileClause',
+      whereArgs: args,
       orderBy: 'display_order ASC, name ASC',
     );
     return List.generate(maps.length, (i) => PaymentMethod.fromMap(maps[i]));
@@ -30,21 +35,31 @@ class PaymentMethodService {
   }
 
   // Create new payment method
-  Future<int> createPaymentMethod(PaymentMethod paymentMethod) async {
+  Future<int> createPaymentMethod(
+    PaymentMethod paymentMethod, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
+    final map = paymentMethod.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     return await db.insert(
       'payment_methods',
-      paymentMethod.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   // Update payment method
-  Future<void> updatePaymentMethod(PaymentMethod paymentMethod) async {
+  Future<void> updatePaymentMethod(
+    PaymentMethod paymentMethod, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
+    final map = paymentMethod.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     await db.update(
       'payment_methods',
-      paymentMethod.toMap(),
+      map,
       where: 'payment_method_id = ?',
       whereArgs: [paymentMethod.paymentMethodId],
     );

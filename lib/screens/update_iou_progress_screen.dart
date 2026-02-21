@@ -5,6 +5,8 @@ import '../models/iou.dart';
 import '../models/iou_payment.dart';
 import '../database/services/iou_service.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 class UpdateIOUProgressScreen extends StatefulWidget {
   final int iouId;
@@ -321,8 +323,8 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
 
   Widget _buildRepaymentInfo(bool isDark) {
     if (_iou == null) return const SizedBox.shrink();
-    final NumberFormat currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final NumberFormat currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
     final double remainingDue = _iou!.amount - _iou!.totalPaid;
@@ -435,7 +437,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
               Positioned(
                 left: 0,
                 child: Text(
-                  '₹',
+                  context.read<ProfileProvider>().currencySymbol,
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -618,8 +620,8 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
   }
 
   Widget _buildProjectionCard(bool isDark) {
-    final NumberFormat currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final NumberFormat currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
 

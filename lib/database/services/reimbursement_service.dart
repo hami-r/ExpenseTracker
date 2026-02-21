@@ -7,12 +7,20 @@ class ReimbursementService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // Get active reimbursements
-  Future<List<Reimbursement>> getActiveReimbursements(int userId) async {
+  Future<List<Reimbursement>> getActiveReimbursements(
+    int userId, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, 'active', 'pending', profileId]
+        : [userId, 'active', 'pending'];
     final List<Map<String, dynamic>> maps = await db.query(
       'reimbursements',
-      where: 'user_id = ? AND status IN (?, ?) AND is_deleted = 0',
-      whereArgs: [userId, 'active', 'pending'],
+      where:
+          'user_id = ? AND status IN (?, ?) AND is_deleted = 0$profileClause',
+      whereArgs: args,
       orderBy: 'expected_date ASC',
     );
     return List.generate(maps.length, (i) => Reimbursement.fromMap(maps[i]));
@@ -31,21 +39,31 @@ class ReimbursementService {
   }
 
   // Create new reimbursement
-  Future<int> createReimbursement(Reimbursement reimbursement) async {
+  Future<int> createReimbursement(
+    Reimbursement reimbursement, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
+    final map = reimbursement.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     return await db.insert(
       'reimbursements',
-      reimbursement.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   // Update reimbursement
-  Future<void> updateReimbursement(Reimbursement reimbursement) async {
+  Future<void> updateReimbursement(
+    Reimbursement reimbursement, {
+    int? profileId,
+  }) async {
     final db = await _dbHelper.database;
+    final map = reimbursement.toMap();
+    if (profileId != null) map['profile_id'] = profileId;
     await db.update(
       'reimbursements',
-      reimbursement.toMap(),
+      map,
       where: 'reimbursement_id = ?',
       whereArgs: [reimbursement.reimbursementId],
     );

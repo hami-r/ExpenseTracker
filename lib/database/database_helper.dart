@@ -18,7 +18,7 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -61,6 +61,79 @@ class DatabaseHelper {
       ''');
       await db.execute(
         'CREATE INDEX idx_budgets_user_month_year ON budgets(user_id, month, year)',
+      );
+    }
+
+    if (oldVersion < 5) {
+      // Profiles table
+      await db.execute('''
+        CREATE TABLE profiles (
+          profile_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id      INTEGER NOT NULL,
+          name         TEXT NOT NULL,
+          currency_id  INTEGER NOT NULL DEFAULT 1,
+          country_code TEXT,
+          is_active    INTEGER DEFAULT 0,
+          created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+          FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
+        )
+      ''');
+      await db.execute('CREATE INDEX idx_profiles_user ON profiles(user_id)');
+      await db.execute(
+        'CREATE INDEX idx_profiles_active ON profiles(user_id, is_active)',
+      );
+
+      // Insert default India profile for existing user (id=1)
+      await db.insert('profiles', {
+        'user_id': 1,
+        'name': 'India',
+        'currency_id': 1,
+        'country_code': 'IN',
+        'is_active': 1,
+      });
+
+      // Add profile_id to per-profile tables (DEFAULT 1 = India profile)
+      await db.execute(
+        'ALTER TABLE transactions ADD COLUMN profile_id INTEGER DEFAULT 1',
+      );
+      await db.execute(
+        'ALTER TABLE payment_methods ADD COLUMN profile_id INTEGER DEFAULT 1',
+      );
+      await db.execute(
+        'ALTER TABLE budgets ADD COLUMN profile_id INTEGER DEFAULT 1',
+      );
+      await db.execute(
+        'ALTER TABLE loans ADD COLUMN profile_id INTEGER DEFAULT 1',
+      );
+      await db.execute(
+        'ALTER TABLE receivables ADD COLUMN profile_id INTEGER DEFAULT 1',
+      );
+      await db.execute(
+        'ALTER TABLE ious ADD COLUMN profile_id INTEGER DEFAULT 1',
+      );
+      await db.execute(
+        'ALTER TABLE reimbursements ADD COLUMN profile_id INTEGER DEFAULT 1',
+      );
+
+      // Indexes for fast profile-scoped queries
+      await db.execute(
+        'CREATE INDEX idx_transactions_profile ON transactions(profile_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_payment_methods_profile ON payment_methods(profile_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_budgets_profile ON budgets(profile_id, month, year)',
+      );
+      await db.execute('CREATE INDEX idx_loans_profile ON loans(profile_id)');
+      await db.execute(
+        'CREATE INDEX idx_receivables_profile ON receivables(profile_id)',
+      );
+      await db.execute('CREATE INDEX idx_ious_profile ON ious(profile_id)');
+      await db.execute(
+        'CREATE INDEX idx_reimbursements_profile ON reimbursements(profile_id)',
       );
     }
   }
@@ -434,6 +507,26 @@ class DatabaseHelper {
 
     await db.execute(
       'CREATE INDEX idx_budgets_user_month_year ON budgets(user_id, month, year)',
+    );
+
+    // 15. Profiles Table
+    await db.execute('''
+      CREATE TABLE profiles (
+        profile_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      INTEGER NOT NULL,
+        name         TEXT NOT NULL,
+        currency_id  INTEGER NOT NULL DEFAULT 1,
+        country_code TEXT,
+        is_active    INTEGER DEFAULT 0,
+        created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_profiles_user ON profiles(user_id)');
+    await db.execute(
+      'CREATE INDEX idx_profiles_active ON profiles(user_id, is_active)',
     );
 
     // Seed default data

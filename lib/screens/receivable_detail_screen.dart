@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../models/receivable.dart';
 import '../models/receivable_payment.dart';
 import '../database/services/receivable_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 import 'edit_lent_details_screen.dart';
 import 'update_receivable_screen.dart';
 
@@ -392,8 +394,8 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
   Widget _buildMainCard(bool isDark) {
     if (_receivable == null) return const SizedBox.shrink();
 
-    final NumberFormat currencyFormat = NumberFormat.simpleCurrency(
-      name: 'INR',
+    final NumberFormat currencyFormat = NumberFormat.currency(
+      symbol: context.watch<ProfileProvider>().currencySymbol,
       decimalDigits: 0,
     );
     final remainingBalance =
@@ -740,8 +742,8 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
           )
         else
           ..._payments.map((payment) {
-            final currencyFormat = NumberFormat.simpleCurrency(
-              name: 'INR',
+            final NumberFormat currencyFormat = NumberFormat.currency(
+              symbol: context.watch<ProfileProvider>().currencySymbol,
               decimalDigits: 0,
             );
             return Padding(

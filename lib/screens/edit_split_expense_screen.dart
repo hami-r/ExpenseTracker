@@ -9,6 +9,8 @@ import '../../models/split_item.dart';
 import '../../models/category.dart';
 import '../../utils/icon_helper.dart';
 import '../../utils/color_helper.dart';
+import '../../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class EditSplitExpenseScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -226,9 +228,13 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
       }).toList();
 
       // 3. Call Service
+      final profileId = mounted
+          ? context.read<ProfileProvider>().activeProfileId
+          : null;
       await _splitTransactionService.updateSplitTransaction(
         updatedTransaction,
         splitItems,
+        profileId: profileId,
       );
 
       if (mounted) {
@@ -338,7 +344,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(
-                                '₹',
+                                context.read<ProfileProvider>().currencySymbol,
                                 style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
@@ -407,7 +413,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                                 Text(
                                   isBalanced
                                       ? 'Balanced'
-                                      : '₹${remaining.toStringAsFixed(2)} left',
+                                      : '${context.read<ProfileProvider>().currencySymbol}${remaining.toStringAsFixed(2)} left',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -737,9 +743,9 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    '₹',
-                    style: TextStyle(
+                  Text(
+                    context.read<ProfileProvider>().currencySymbol,
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF94a3b8),

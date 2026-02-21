@@ -12,6 +12,8 @@ import '../models/transaction.dart' as model;
 import '../models/category.dart';
 import '../database/services/transaction_service.dart';
 import '../database/services/category_service.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 import 'manage_payment_methods_screen.dart';
 
 class EditExpenseScreen extends StatefulWidget {
@@ -72,9 +74,13 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
         _userId = user.userId;
       });
 
+      final profileId = context.read<ProfileProvider>().activeProfileId;
       final results = await Future.wait([
         _categoryService.getAllCategories(user.userId!),
-        _paymentMethodService.getAllPaymentMethods(user.userId!),
+        _paymentMethodService.getAllPaymentMethods(
+          user.userId!,
+          profileId: profileId,
+        ),
       ]);
 
       if (mounted) {
@@ -150,7 +156,11 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       createdAt: originalTransaction.createdAt,
     );
 
-    await _transactionService.updateTransaction(updatedTransaction);
+    final profileId = context.read<ProfileProvider>().activeProfileId;
+    await _transactionService.updateTransaction(
+      updatedTransaction,
+      profileId: profileId,
+    );
     if (mounted) {
       Navigator.pop(context, true); // Return true to indicate update
     }
@@ -542,7 +552,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '₹',
+                    context.read<ProfileProvider>().currencySymbol,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontSize: 36,
                       color: Theme.of(

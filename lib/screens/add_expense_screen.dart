@@ -15,6 +15,8 @@ import '../models/split_item.dart';
 import '../database/services/split_transaction_service.dart';
 import '../utils/icon_helper.dart';
 import '../utils/color_helper.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 import 'manage_categories_screen.dart';
 import 'manage_payment_methods_screen.dart';
 import 'dart:math' show min;
@@ -66,9 +68,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           _userId = user.userId;
         });
 
+        final profileId = context.read<ProfileProvider>().activeProfileId;
         final results = await Future.wait([
           _categoryService.getAllCategories(user.userId!),
-          _paymentMethodService.getAllPaymentMethods(user.userId!),
+          _paymentMethodService.getAllPaymentMethods(
+            user.userId!,
+            profileId: profileId,
+          ),
         ]);
 
         if (mounted) {
@@ -120,11 +126,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         createdAt: DateTime.now(),
       );
 
+      final profileId = mounted
+          ? context.read<ProfileProvider>().activeProfileId
+          : null;
+
       if (_isSplitBill) {
         final splitTotal = _getSplitTotal();
         if ((splitTotal - amount).abs() > 0.01) {
           _showError(
-            'Split items total (₹${splitTotal.toStringAsFixed(2)}) does not match Total Amount (₹${amount.toStringAsFixed(2)})',
+            'Split items total (${context.read<ProfileProvider>().currencySymbol}${splitTotal.toStringAsFixed(2)}) does not match Total Amount (${context.read<ProfileProvider>().currencySymbol}${amount.toStringAsFixed(2)})',
           );
           return;
         }
@@ -148,9 +158,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         await _splitTransactionService.createSplitTransaction(
           transaction,
           splitItems,
+          profileId: profileId,
         );
       } else {
-        await _transactionService.createTransaction(transaction);
+        await _transactionService.createTransaction(
+          transaction,
+          profileId: profileId,
+        );
       }
 
       if (mounted) {
@@ -379,7 +393,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '₹',
+                    context.read<ProfileProvider>().currencySymbol,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontSize: 36,
                       color: Theme.of(
@@ -1045,7 +1059,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '₹',
+                    context.read<ProfileProvider>().currencySymbol,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
@@ -1127,10 +1141,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       const SizedBox(width: 6),
                       Text(
                         isOver
-                            ? 'Over by ₹${remaining.abs().toStringAsFixed(2)}'
+                            ? 'Over by ${context.read<ProfileProvider>().currencySymbol}${remaining.abs().toStringAsFixed(2)}'
                             : (isComplete
                                   ? 'Split Complete'
-                                  : '₹${remaining.toStringAsFixed(2)} left to split'),
+                                  : '${context.read<ProfileProvider>().currencySymbol}${remaining.toStringAsFixed(2)} left to split'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -1298,7 +1312,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '₹',
+                          context.read<ProfileProvider>().currencySymbol,
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
