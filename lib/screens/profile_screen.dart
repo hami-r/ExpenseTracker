@@ -12,6 +12,7 @@ import '../providers/theme_provider.dart';
 import '../models/user.dart';
 import '../database/services/user_service.dart';
 import 'monthly_comparison_screen.dart';
+import 'payment_correlation_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -539,6 +540,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ImportExportScreen(),
+                    ),
+                  );
+                } else if (item.title == 'Payment Mode Correlation') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PaymentCorrelationScreen(),
                     ),
                   );
                 } else if (item.title == 'Monthly Comparison') {
