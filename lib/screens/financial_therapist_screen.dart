@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -11,17 +12,8 @@ import '../database/services/payment_method_service.dart';
 import '../database/services/user_service.dart';
 import '../database/database_helper.dart';
 import '../providers/profile_provider.dart';
-
-// ─── Message Model ───────────────────────────────────────────────────────────
-enum MessageRole { user, model }
-
-class ChatMessage {
-  final MessageRole role;
-  final String text;
-  final DateTime timestamp;
-  ChatMessage({required this.role, required this.text})
-    : timestamp = DateTime.now();
-}
+import '../providers/chat_provider.dart';
+import '../models/chat_message.dart';
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class FinancialTherapistScreen extends StatefulWidget {
@@ -32,7 +24,9 @@ class FinancialTherapistScreen extends StatefulWidget {
       _FinancialTherapistScreenState();
 }
 
-class _FinancialTherapistScreenState extends State<FinancialTherapistScreen> {
+class _FinancialTherapistScreenState extends State<FinancialTherapistScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
   final _userService = UserService();
@@ -40,11 +34,6 @@ class _FinancialTherapistScreenState extends State<FinancialTherapistScreen> {
   final _transactionService = TransactionService();
   final _categoryService = CategoryService();
   late final AIService _aiService;
-
-  final List<ChatMessage> _messages = [];
-  // Conversation history for Gemini multi-turn
-  final List<Map<String, String>> _geminiHistory = [];
-  String _financialContext = '';
 
   bool _isLoading = true;
   bool _isTyping = false;
@@ -60,27 +49,45 @@ class _FinancialTherapistScreenState extends State<FinancialTherapistScreen> {
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+
     _aiService = AIService(_categoryService, PaymentMethodService());
-    _loadContextAndGreet();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final chatProvider = context.read<ChatProvider>();
+      if (chatProvider.isEmpty) {
+        _loadContextAndGreet();
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        _scrollToBottom();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _loadContextAndGreet() async {
+    // Capture context-dependent values before any async gap
+    final profileId = context.read<ProfileProvider>().activeProfileId;
+    final currencySymbol = context.read<ProfileProvider>().currencySymbol;
+
     final user = await _userService.getCurrentUser();
     if (user == null || user.userId == null) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
       return;
     }
 
-    // Capture context-dependent values before async gap
-    final profileId = context.read<ProfileProvider>().activeProfileId;
-    final currencySymbol = context.read<ProfileProvider>().currencySymbol;
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
     final endOfMonth = DateTime(now.year, now.month + 1, 0);
@@ -141,14 +148,14 @@ class _FinancialTherapistScreenState extends State<FinancialTherapistScreen> {
              AND t.user_id = b.user_id
              AND strftime('%Y-%m', t.transaction_date) = ?
            WHERE b.user_id = ? AND b.month = ? AND b.year = ?
-             ${profileId != null ? 'AND b.profile_id = ?' : ''}
+             AND b.profile_id = ?
            GROUP BY b.budget_id''',
         [
           '${now.year}-${now.month.toString().padLeft(2, '0')}',
           user.userId,
           now.month,
           now.year,
-          if (profileId != null) profileId,
+          profileId,
         ],
       );
 
@@ -165,7 +172,7 @@ class _FinancialTherapistScreenState extends State<FinancialTherapistScreen> {
                 })
                 .join('\n');
 
-      _financialContext =
+      final financialContext =
           '''
 Net Balance: $currencySymbol${balance.toStringAsFixed(2)}
 This Month's Total Spending: $currencySymbol${monthSpend.toStringAsFixed(2)}
@@ -180,6 +187,14 @@ $budgetLines
 Recent Transactions (last 10):
 ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol${t.amount.toStringAsFixed(2)} on ${t.transactionDate}').join('\n')}
 ''';
+
+      if (!mounted) return;
+      final chatProvider = context.read<ChatProvider>();
+      chatProvider.setContext(
+        financialContext: financialContext,
+        userId: user.userId!,
+        profileId: profileId,
+      );
 
       setState(() => _isLoading = false);
 
@@ -196,6 +211,7 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
 
   Future<void> _sendInitialGreeting() async {
     setState(() => _isTyping = true);
+    final chatProvider = context.read<ChatProvider>();
     try {
       final reply = await _aiService.chatWithContext(
         history: [],
@@ -203,13 +219,17 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
             'Give me a short, friendly, proactive greeting based on my financial data. '
             'Mention one specific insight (like a category where I spent a lot or how my week looks). '
             'Keep it to 2-3 sentences.',
-        financialContext: _financialContext,
+        financialContext: chatProvider.financialContext,
+        userId: chatProvider.userId!,
+        profileId: chatProvider.profileId!,
       );
-      _addAIMessage(reply);
+      if (mounted) _addAIMessage(reply);
     } catch (_) {
-      _addAIMessage(
-        "Hey! I'm your Financial Therapist 👋 Ask me anything about your spending, budgets, or savings — I have your data loaded and ready!",
-      );
+      if (mounted) {
+        _addAIMessage(
+          "Hey! I'm your Financial Therapist 👋 Ask me anything about your spending, budgets, or savings — I have your data loaded and ready!",
+        );
+      }
     } finally {
       if (mounted) setState(() => _isTyping = false);
     }
@@ -217,40 +237,78 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
 
   void _addAIMessage(String text) {
     if (mounted) {
-      setState(() {
-        _messages.add(ChatMessage(role: MessageRole.model, text: text));
-        _geminiHistory.add({'role': 'model', 'text': text});
-      });
-      _scrollToBottom();
+      _addMessage(ChatMessage(role: MessageRole.model, text: text));
     }
+  }
+
+  void _addMessage(ChatMessage message) {
+    final chatProvider = context.read<ChatProvider>();
+    chatProvider.addMessage(message);
+    chatProvider.addHistory({
+      'role': message.role == MessageRole.user ? 'user' : 'model',
+      'text': message.text,
+    });
+    _scrollToBottom();
   }
 
   Future<void> _sendMessage(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || _isTyping) return;
 
+    final chatProvider = context.read<ChatProvider>();
     _inputController.clear();
-    setState(() {
-      _messages.add(ChatMessage(role: MessageRole.user, text: trimmed));
-      _isTyping = true;
-    });
-    _scrollToBottom();
+    _addMessage(ChatMessage(role: MessageRole.user, text: trimmed));
 
-    // We'll add to history after reply so the model doesn't see its own incomplete reply
+    setState(() => _isTyping = true);
+
     try {
       final reply = await _aiService.chatWithContext(
-        history: _geminiHistory,
+        history: chatProvider.geminiHistory,
         userMessage: trimmed,
-        financialContext: _financialContext,
+        financialContext: chatProvider.financialContext,
+        userId: chatProvider.userId!,
+        profileId: chatProvider.profileId!,
       );
-      _geminiHistory.add({'role': 'user', 'text': trimmed});
-      _addAIMessage(reply);
+      if (mounted) _addAIMessage(reply);
     } catch (e) {
-      _geminiHistory.add({'role': 'user', 'text': trimmed});
-      _addAIMessage('Sorry, something went wrong: $e');
+      debugPrint('Error sending message: $e');
+      if (mounted) {
+        _addAIMessage(
+          "I'm sorry, I'm having trouble thinking right now. Could you repeat that? 🧐",
+        );
+      }
     } finally {
       if (mounted) setState(() => _isTyping = false);
     }
+  }
+
+  void _resetChat() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('New Chat?'),
+        content: const Text(
+          'This will clear the current conversation and start fresh.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<ChatProvider>().clearChat();
+              Navigator.pop(context);
+              _loadContextAndGreet();
+            },
+            child: const Text(
+              'New Chat',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _scrollToBottom() {
@@ -366,38 +424,49 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
             ),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Financial Therapist',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : Colors.black87,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Financial Therapist',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                 ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF22C55E),
-                      shape: BoxShape.circle,
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    'Always here for you',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark ? Colors.white38 : Colors.black38,
+                    const SizedBox(width: 5),
+                    Text(
+                      'Always here for you',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white38 : Colors.black38,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.refresh_rounded,
+              color: isDark ? Colors.white70 : Colors.black87,
+              size: 24,
+            ),
+            tooltip: 'New Chat',
+            onPressed: _resetChat,
           ),
         ],
       ),
@@ -425,22 +494,25 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
   }
 
   Widget _buildMessageList(bool isDark, Color primary) {
+    final chatProvider = context.watch<ChatProvider>();
+    final messages = chatProvider.messages;
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _messages.length + (_isTyping ? 1 : 0),
+      itemCount: messages.length + (_isTyping ? 1 : 0),
       itemBuilder: (context, index) {
         // Typing indicator bubble
-        if (index == _messages.length) {
+        if (index == messages.length) {
           return _buildTypingIndicator(isDark, primary);
         }
-        final msg = _messages[index];
+        final msg = messages[index];
         final isUser = msg.role == MessageRole.user;
 
         // Date separator
         final showDate =
             index == 0 ||
-            !_isSameDay(_messages[index - 1].timestamp, msg.timestamp);
+            !_isSameDay(messages[index - 1].timestamp, msg.timestamp);
 
         return Column(
           children: [
@@ -632,7 +704,8 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
                   ),
                 ),
                 // Show suggestions after last AI message
-                if (index == _messages.length - 1 && !_isTyping)
+                if (index == context.read<ChatProvider>().messages.length - 1 &&
+                    !_isTyping)
                   _buildSuggestions(primary, isDark),
               ],
             ),
@@ -700,19 +773,30 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
     );
   }
 
-  Widget _buildDot(Color color, int delay) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.4, end: 1.0),
-      duration: Duration(milliseconds: 600 + delay),
-      builder: (_, val, __) => Opacity(
-        opacity: val,
-        child: Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
+  Widget _buildDot(Color color, int index) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        // Use the controller value to drive a sine wave for each dot with an offset
+        final progress = (_animationController.value + (index * 0.2)) % 1.0;
+
+        // Sine wave jump: smooth and cute
+        final sinVal = math.sin(progress * 2 * math.pi);
+        final yOffset = -6.0 * (sinVal > 0 ? sinVal : 0);
+
+        return Transform.translate(
+          offset: Offset(0, yOffset),
+          child: Opacity(
+            opacity: 0.4 + 0.6 * (sinVal > 0 ? sinVal : 0),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
-      onEnd: () => setState(() {}), // re-trigger animation
     );
   }
 

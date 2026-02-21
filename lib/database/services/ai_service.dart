@@ -4,10 +4,13 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/category_service.dart';
 import '../services/payment_method_service.dart';
+import '../services/ai_history_service.dart';
+import '../../models/ai_history.dart';
 
 class AIService {
   final CategoryService _categoryService;
   final PaymentMethodService _paymentMethodService;
+  final AIHistoryService _historyService = AIHistoryService();
 
   AIService(this._categoryService, this._paymentMethodService);
 
@@ -42,8 +45,9 @@ class AIService {
 
   Future<Map<String, dynamic>?> parseNaturalLanguageExpense(
     String text,
-    int userId,
-  ) async {
+    int userId, {
+    required int profileId,
+  }) async {
     final apiKey = await _getActiveApiKey();
     if (apiKey == null || apiKey.isEmpty) {
       throw Exception('API Key not configured. Please set it in AI Settings.');
@@ -94,8 +98,22 @@ Respond ONLY with a valid JSON object:
         final startIndex = responseText.indexOf('{');
         final endIndex = responseText.lastIndexOf('}') + 1;
         if (startIndex != -1 && endIndex != -1) {
-          return jsonDecode(responseText.substring(startIndex, endIndex))
-              as Map<String, dynamic>;
+          final result =
+              jsonDecode(responseText.substring(startIndex, endIndex))
+                  as Map<String, dynamic>;
+
+          // Save to history
+          await _historyService.saveEntry(
+            AIHistory(
+              userId: userId,
+              profileId: profileId,
+              feature: 'voice',
+              title: text.length > 30 ? '${text.substring(0, 27)}...' : text,
+              payload: jsonEncode(result),
+            ),
+          );
+
+          return result;
         }
       }
       return null;
@@ -106,8 +124,9 @@ Respond ONLY with a valid JSON object:
 
   Future<Map<String, dynamic>?> parseImageToExpense(
     Uint8List imageBytes,
-    int userId,
-  ) async {
+    int userId, {
+    required int profileId,
+  }) async {
     final apiKey = await _getActiveApiKey();
     if (apiKey == null || apiKey.isEmpty) {
       throw Exception('API Key not configured. Please set it in AI Settings.');
@@ -159,8 +178,22 @@ Respond ONLY with a valid JSON object:
         final startIndex = responseText.indexOf('{');
         final endIndex = responseText.lastIndexOf('}') + 1;
         if (startIndex != -1 && endIndex != -1) {
-          return jsonDecode(responseText.substring(startIndex, endIndex))
-              as Map<String, dynamic>;
+          final result =
+              jsonDecode(responseText.substring(startIndex, endIndex))
+                  as Map<String, dynamic>;
+
+          // Save to history
+          await _historyService.saveEntry(
+            AIHistory(
+              userId: userId,
+              profileId: profileId,
+              feature: 'receipt',
+              title: 'Scanned Receipt: ${result['note'] ?? 'Expense'}',
+              payload: jsonEncode(result),
+            ),
+          );
+
+          return result;
         }
       }
       return null;
@@ -178,6 +211,8 @@ Respond ONLY with a valid JSON object:
     required List<Map<String, String>> history,
     required String userMessage,
     required String financialContext,
+    required int userId,
+    required int profileId,
   }) async {
     final apiKey = await _getActiveApiKey();
     if (apiKey == null || apiKey.isEmpty) {
@@ -216,8 +251,23 @@ Guidelines:
 
     try {
       final response = await chat.sendMessage(Content.text(userMessage));
-      return response.text ??
-          'I could not generate a response. Please try again.';
+      final reply =
+          response.text ?? 'I could not generate a response. Please try again.';
+
+      // Save to history
+      await _historyService.saveEntry(
+        AIHistory(
+          userId: userId,
+          profileId: profileId,
+          feature: 'chat',
+          title: userMessage.length > 40
+              ? '${userMessage.substring(0, 37)}...'
+              : userMessage,
+          payload: jsonEncode({'question': userMessage, 'answer': reply}),
+        ),
+      );
+
+      return reply;
     } catch (e) {
       throw Exception('Chat failed: $e');
     }

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'providers/expense_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/chat_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() {
@@ -22,6 +23,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const ExpenseTrackerApp(),
     ),

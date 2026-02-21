@@ -18,7 +18,7 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -134,6 +134,24 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX idx_ious_profile ON ious(profile_id)');
       await db.execute(
         'CREATE INDEX idx_reimbursements_profile ON reimbursements(profile_id)',
+      );
+    }
+
+    if (oldVersion < 6) {
+      await db.execute('''
+        CREATE TABLE ai_history (
+          history_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id      INTEGER NOT NULL,
+          profile_id   INTEGER NOT NULL,
+          feature      TEXT NOT NULL,
+          title        TEXT NOT NULL,
+          payload      TEXT,
+          timestamp    TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX idx_ai_history_profile ON ai_history(profile_id, timestamp DESC)',
       );
     }
   }
@@ -527,6 +545,23 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_profiles_user ON profiles(user_id)');
     await db.execute(
       'CREATE INDEX idx_profiles_active ON profiles(user_id, is_active)',
+    );
+
+    // 16. AI History Table
+    await db.execute('''
+      CREATE TABLE ai_history (
+        history_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      INTEGER NOT NULL,
+        profile_id   INTEGER NOT NULL,
+        feature      TEXT NOT NULL,
+        title        TEXT NOT NULL,
+        payload      TEXT,
+        timestamp    TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_ai_history_profile ON ai_history(profile_id, timestamp DESC)',
     );
 
     // Seed default data

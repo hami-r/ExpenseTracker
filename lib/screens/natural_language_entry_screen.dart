@@ -5,6 +5,8 @@ import '../database/services/ai_service.dart';
 import '../database/services/category_service.dart';
 import '../database/services/payment_method_service.dart';
 import '../database/services/user_service.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 import 'add_expense_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
@@ -99,9 +101,11 @@ class _NaturalLanguageEntryScreenState
         throw Exception('User not logged in');
       }
 
+      final profileId = context.read<ProfileProvider>().activeProfileId;
       final parsedData = await _aiService.parseNaturalLanguageExpense(
         text,
         user.userId!,
+        profileId: profileId,
       );
 
       if (parsedData != null && mounted) {

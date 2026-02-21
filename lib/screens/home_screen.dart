@@ -12,6 +12,7 @@ import 'budget_screen.dart';
 import 'natural_language_entry_screen.dart';
 import 'scan_receipt_screen.dart';
 import 'financial_therapist_screen.dart';
+import 'ai_history_screen.dart';
 import '../database/services/analytics_service.dart';
 import '../database/services/transaction_service.dart';
 import '../database/services/user_service.dart';
@@ -1003,6 +1004,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ScanReceiptScreen(),
+                ),
+              );
+            },
+            isDark: isDark,
+          ),
+          const SizedBox(height: 16),
+          _buildSpeedDialItem(
+            icon: Icons.history_rounded,
+            label: 'AI History',
+            onTap: () {
+              setState(() => _isAIMenuOpen = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AIHistoryScreen(),
                 ),
               );
             },

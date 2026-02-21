@@ -8,6 +8,8 @@ import '../database/services/ai_service.dart';
 import '../database/services/category_service.dart';
 import '../database/services/payment_method_service.dart';
 import '../database/services/user_service.dart';
+import '../providers/profile_provider.dart';
+import 'package:provider/provider.dart';
 import 'add_expense_screen.dart';
 
 class ScanReceiptScreen extends StatefulWidget {
@@ -63,9 +65,11 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     setState(() => _isProcessing = true);
 
     try {
+      final profileId = context.read<ProfileProvider>().activeProfileId;
       final parsedData = await _aiService.parseImageToExpense(
         _pickedImageBytes!,
         user.userId!,
+        profileId: profileId,
       );
       if (!mounted) return;
 
