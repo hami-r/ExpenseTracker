@@ -7,6 +7,7 @@ import 'profile_screen.dart';
 import 'transaction_details_screen.dart';
 import 'split_expense_detail_screen.dart';
 import 'all_transactions_screen.dart';
+import 'budget_screen.dart';
 import '../database/services/analytics_service.dart';
 import '../database/services/transaction_service.dart';
 import '../database/services/user_service.dart';
@@ -137,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildDashboard(isDark, dateFormat, now),
               const AllTransactionsScreen(),
-              const Center(child: Text('Budget (Coming Soon)')),
+              const BudgetScreen(),
               const ProfileScreen(),
             ],
           ),

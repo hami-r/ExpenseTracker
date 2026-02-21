@@ -18,7 +18,7 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -40,6 +40,27 @@ class DatabaseHelper {
       );
       await db.execute(
         'ALTER TABLE reimbursements ADD COLUMN is_deleted INTEGER DEFAULT 0',
+      );
+    }
+
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE budgets (
+          budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          category_id INTEGER,
+          amount REAL NOT NULL,
+          month INTEGER NOT NULL,
+          year INTEGER NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+          FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE,
+          UNIQUE(user_id, category_id, month, year)
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX idx_budgets_user_month_year ON budgets(user_id, month, year)',
       );
     }
   }
@@ -392,6 +413,27 @@ class DatabaseHelper {
     );
     await db.execute(
       'CREATE INDEX idx_reimbursement_payments_date ON reimbursement_payments(reimbursement_id, payment_date DESC)',
+    );
+
+    // 15. Budgets Table
+    await db.execute('''
+      CREATE TABLE budgets (
+        budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        category_id INTEGER,
+        amount REAL NOT NULL,
+        month INTEGER NOT NULL,
+        year INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE,
+        UNIQUE(user_id, category_id, month, year)
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX idx_budgets_user_month_year ON budgets(user_id, month, year)',
     );
 
     // Seed default data
