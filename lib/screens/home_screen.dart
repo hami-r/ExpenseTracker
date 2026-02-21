@@ -11,6 +11,7 @@ import 'all_transactions_screen.dart';
 import 'budget_screen.dart';
 import 'natural_language_entry_screen.dart';
 import 'scan_receipt_screen.dart';
+import 'financial_therapist_screen.dart';
 import '../database/services/analytics_service.dart';
 import '../database/services/transaction_service.dart';
 import '../database/services/user_service.dart';
@@ -972,6 +973,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const NaturalLanguageEntryScreen(),
+                ),
+              );
+            },
+            isDark: isDark,
+          ),
+          const SizedBox(height: 16),
+          _buildSpeedDialItem(
+            icon: Icons.chat_rounded,
+            label: 'AI Therapist',
+            onTap: () {
+              setState(() => _isAIMenuOpen = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FinancialTherapistScreen(),
                 ),
               );
             },

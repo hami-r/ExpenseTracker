@@ -14,7 +14,6 @@ class AIService {
   Future<String?> _getActiveApiKey() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // 1. Try modern multi-key setup
     final activeId = prefs.getString('active_ai_key_id');
     final keysJson = prefs.getString('ai_api_keys_list');
 
@@ -33,7 +32,6 @@ class AIService {
       }
     }
 
-    // 2. Fallback to legacy single key setup
     final legacyKey = prefs.getString('gemini_api_key');
     if (legacyKey != null && legacyKey.isNotEmpty) {
       return legacyKey;
@@ -51,20 +49,17 @@ class AIService {
       throw Exception('API Key not configured. Please set it in AI Settings.');
     }
 
-    // Initialize the Gemini 3 Flash model
     final model = GenerativeModel(
-      model: 'gemini-3-flash-preview', // Using the recommended Flash model
+      model: 'gemini-3-flash-preview',
       apiKey: apiKey,
       generationConfig: GenerationConfig(responseMimeType: 'application/json'),
     );
 
-    // Fetch context data
     final categories = await _categoryService.getAllCategories(userId);
     final paymentMethods = await _paymentMethodService.getAllPaymentMethods(
       userId,
     );
 
-    // Build context strings
     final categoriesStr = categories
         .map((c) => '{"id": ${c.categoryId}, "name": "${c.name}"}')
         .join(', ');
@@ -74,46 +69,33 @@ class AIService {
 
     final prompt =
         '''
-You are a highly intelligent financial assistant. Your task is to parse a natural language input describing a financial transaction and extract the relevant details into a STRICT JSON format.
+You are a highly intelligent financial assistant. Parse the natural language input and extract details into STRICT JSON.
 
-Here is the user's input:
-"$text"
+User input: "$text"
 
-Context - Available Categories (You MUST choose the most appropriate category_id from this list. If it resembles income, pick an Income category, otherwise Expense):
-[$categoriesStr]
-
-Context - Available Payment Methods (You MUST choose the most appropriate payment_method_id from this list):
-[$methodsStr]
+Available Categories: [$categoriesStr]
+Available Payment Methods: [$methodsStr]
 
 Rules:
-1. "amount": The parsed numerical amount (double).
-2. "category_id": The integer ID of the best matching category from the context. If nothing fits exactly, pick the closest one (e.g., General or Miscellaneous).
-3. "payment_method_id": The integer ID of the best matching payment method. (e.g., if they say "Cash", find the ID for Cash). Defaults to the first ID if unsure.
-4. "note": A concise, useful title or note for the transaction.
-5. "date": The date of the transaction in ISO 8601 format (YYYY-MM-DDTHH:mm:ss). If they say "yesterday", calculate yesterday's date relative to now. Assume today if not specified. Current date/time is ${DateTime.now().toIso8601String()}.
+1. "amount": numerical amount (double).
+2. "category_id": integer ID of the best matching category.
+3. "payment_method_id": integer ID of the best matching payment method.
+4. "note": concise title/note for the transaction.
+5. "date": ISO 8601 date (YYYY-MM-DDTHH:mm:ss). Current date/time: ${DateTime.now().toIso8601String()}.
 
-Respond ONLY with a valid JSON object matching this schema:
-{
-  "amount": number,
-  "category_id": number,
-  "payment_method_id": number,
-  "note": string,
-  "date": string
-}
+Respond ONLY with a valid JSON object:
+{"amount": number, "category_id": number, "payment_method_id": number, "note": string, "date": string}
 ''';
 
     try {
       final response = await model.generateContent([Content.text(prompt)]);
       final responseText = response.text;
-
       if (responseText != null) {
-        // Find JSON boundaries just in case markdown formatting creeps in
         final startIndex = responseText.indexOf('{');
         final endIndex = responseText.lastIndexOf('}') + 1;
-
         if (startIndex != -1 && endIndex != -1) {
-          final jsonString = responseText.substring(startIndex, endIndex);
-          return jsonDecode(jsonString) as Map<String, dynamic>;
+          return jsonDecode(responseText.substring(startIndex, endIndex))
+              as Map<String, dynamic>;
         }
       }
       return null;
@@ -151,29 +133,20 @@ Respond ONLY with a valid JSON object matching this schema:
 
     final prompt =
         '''
-You are a highly intelligent financial assistant. Your task is to process the provided receipt/bill image and extract the transaction details into a STRICT JSON format.
+You are a financial assistant. Process the receipt image and extract transaction details into STRICT JSON.
 
-Context - Available Categories (You MUST choose the most appropriate category_id from this list):
-[$categoriesStr]
-
-Context - Available Payment Methods (You MUST choose the most appropriate payment_method_id from this list):
-[$methodsStr]
+Available Categories: [$categoriesStr]
+Available Payment Methods: [$methodsStr]
 
 Rules:
-1. "amount": The final total amount on the receipt (double).
-2. "category_id": The integer ID of the best matching category from the context based on the items purchased or the vendor.
-3. "payment_method_id": The integer ID of the best matching payment method based on any card descriptors or payment types mentioned on the receipt (e.g., Visa, Cash).
-4. "note": A concise, useful title or note describing the vendor or purchase.
-5. "date": The date of the transaction found on the receipt in ISO 8601 format (YYYY-MM-DDTHH:mm:ss). If no date is found, use ${DateTime.now().toIso8601String()}.
+1. "amount": final total on the receipt (double).
+2. "category_id": integer ID of the best matching category.
+3. "payment_method_id": integer ID of the best matching payment method.
+4. "note": concise vendor/purchase description.
+5. "date": ISO 8601 date from the receipt. If not found, use ${DateTime.now().toIso8601String()}.
 
-Respond ONLY with a valid JSON object matching this schema:
-{
-  "amount": number,
-  "category_id": number,
-  "payment_method_id": number,
-  "note": string,
-  "date": string
-}
+Respond ONLY with a valid JSON object:
+{"amount": number, "category_id": number, "payment_method_id": number, "note": string, "date": string}
 ''';
 
     try {
@@ -182,19 +155,71 @@ Respond ONLY with a valid JSON object matching this schema:
         Content.multi([TextPart(prompt), imagePart]),
       ]);
       final responseText = response.text;
-
       if (responseText != null) {
         final startIndex = responseText.indexOf('{');
         final endIndex = responseText.lastIndexOf('}') + 1;
-
         if (startIndex != -1 && endIndex != -1) {
-          final jsonString = responseText.substring(startIndex, endIndex);
-          return jsonDecode(jsonString) as Map<String, dynamic>;
+          return jsonDecode(responseText.substring(startIndex, endIndex))
+              as Map<String, dynamic>;
         }
       }
       return null;
     } catch (e) {
       throw Exception('Failed to process image with AI: $e');
+    }
+  }
+
+  /// Sends a message in the Financial Therapist chat with full financial context.
+  ///
+  /// [history] — conversation so far as [{role: 'user'|'model', text: '...'}]
+  /// [userMessage] — the new user message to send
+  /// [financialContext] — pre-built summary of the user's current finances
+  Future<String> chatWithContext({
+    required List<Map<String, String>> history,
+    required String userMessage,
+    required String financialContext,
+  }) async {
+    final apiKey = await _getActiveApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('API Key not configured. Please set it in AI Settings.');
+    }
+
+    final systemInstruction = Content.system('''
+You are a warm, empathetic, and insightful Financial Therapist AI built into a personal finance app.
+You have access to the user's real financial data shown below. Use it to give personalised, 
+actionable, and specific advice. Be conversational, concise, and encouraging — not overly formal.
+
+User's current financial snapshot:
+$financialContext
+
+Guidelines:
+- Reference specific numbers from their data when relevant.
+- Be proactive: if you notice something concerning or positive, mention it.
+- Keep responses concise (2-4 sentences for simple questions).
+- Use emoji sparingly to keep it friendly.
+- Format amounts naturally (e.g. ₹5,000 not 5000.0).
+- Today's date: ${DateTime.now().toString().split(' ')[0]}.
+''');
+
+    final model = GenerativeModel(
+      model: 'gemini-3-flash-preview',
+      apiKey: apiKey,
+      systemInstruction: systemInstruction,
+    );
+
+    final geminiHistory = history.map((msg) {
+      final role = msg['role'] == 'user' ? 'user' : 'model';
+      return Content(role, [TextPart(msg['text'] ?? '')]);
+    }).toList();
+
+    final chat = model.startChat(history: geminiHistory);
+
+    try {
+      final response = await chat.sendMessage(Content.text(userMessage));
+      return response.text ??
+          'I could not generate a response. Please try again.';
+    } catch (e) {
+      throw Exception('Chat failed: $e');
     }
   }
 }
