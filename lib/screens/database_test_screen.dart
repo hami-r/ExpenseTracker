@@ -415,6 +415,87 @@ class _DatabaseTestScreenState extends State<DatabaseTestScreen>
     }
   }
 
+  Future<void> _seedSampleData() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    _addLog('--- SEEDING SAMPLE DATA (6 months) ---');
+
+    try {
+      final user = await _userService.getCurrentUser();
+      if (user == null) throw Exception('No user found');
+
+      final cats = await _categoryService.getAllCategories(user.userId!);
+      final methods = await _paymentMethodService.getAllPaymentMethods(
+        user.userId!,
+      );
+
+      if (cats.isEmpty) {
+        _addLog(
+          'No categories found. Please create categories first.',
+          isError: true,
+        );
+        return;
+      }
+      if (methods.isEmpty) {
+        _addLog(
+          'No payment methods found. Please create one first.',
+          isError: true,
+        );
+        return;
+      }
+
+      final now = DateTime.now();
+
+      // Amounts per category per month (slightly different each month to simulate real spending)
+      // Row = month offset (0=5 months ago, 5=current month)
+      final monthOffsets = [5, 4, 3, 2, 1, 0];
+      int totalInserted = 0;
+
+      for (final monthOffset in monthOffsets) {
+        final targetMonth = DateTime(now.year, now.month - monthOffset, 1);
+
+        for (int ci = 0; ci < cats.length; ci++) {
+          final cat = cats[ci];
+          // Vary spending naturally across months using a simple multiplier
+          final baseAmount = 1000.0 + (ci * 500.0);
+          final variance = (monthOffset % 3 == 0)
+              ? 0.8
+              : (monthOffset % 2 == 0 ? 1.2 : 1.0);
+          final txAmount = (baseAmount * variance).roundToDouble();
+
+          // Spread 2-3 transactions across the month
+          for (int d = 0; d < 2; d++) {
+            final txDate = DateTime(
+              targetMonth.year,
+              targetMonth.month,
+              5 + d * 10,
+            );
+            final tx = model.Transaction(
+              userId: user.userId!,
+              categoryId: cat.categoryId!,
+              paymentMethodId: methods.first.paymentMethodId!,
+              amount: txAmount / 2,
+              transactionDate: txDate,
+              note: 'Sample · ${cat.name}',
+              createdAt: txDate,
+            );
+            await _transactionService.createTransaction(tx);
+            totalInserted++;
+          }
+        }
+      }
+
+      _addLog(
+        'Seeded $totalInserted transactions across 6 months for ${cats.length} categories.',
+        isSuccess: true,
+      );
+    } catch (e) {
+      _addLog('Seed Failed: $e', isError: true);
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -522,6 +603,13 @@ class _DatabaseTestScreenState extends State<DatabaseTestScreen>
                 'Create, Update, Soft-Delete Payment Method',
                 Icons.credit_card,
                 _runPaymentMethodTests,
+              ),
+              const SizedBox(height: 16),
+              _buildActionCard(
+                '🌱 Seed Sample Data',
+                'Insert 6 months of test transactions across all categories',
+                Icons.auto_graph_rounded,
+                _seedSampleData,
               ),
             ],
           ),
