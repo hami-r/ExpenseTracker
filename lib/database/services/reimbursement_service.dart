@@ -26,6 +26,25 @@ class ReimbursementService {
     return List.generate(maps.length, (i) => Reimbursement.fromMap(maps[i]));
   }
 
+  // Get completed reimbursements
+  Future<List<Reimbursement>> getCompletedReimbursements(
+    int userId, {
+    int? profileId,
+  }) async {
+    final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, 'completed', profileId]
+        : [userId, 'completed'];
+    final List<Map<String, dynamic>> maps = await db.query(
+      'reimbursements',
+      where: 'user_id = ? AND status = ? AND is_deleted = 0$profileClause',
+      whereArgs: args,
+      orderBy: 'updated_at DESC, expected_date DESC',
+    );
+    return List.generate(maps.length, (i) => Reimbursement.fromMap(maps[i]));
+  }
+
   // Get reimbursement by ID
   Future<Reimbursement?> getReimbursementById(int reimbursementId) async {
     final db = await _dbHelper.database;
@@ -96,14 +115,25 @@ class ReimbursementService {
     double totalReimbursed,
   ) async {
     final db = await _dbHelper.database;
-    await db.update(
-      'reimbursements',
-      {
-        'total_reimbursed': totalReimbursed,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      where: 'reimbursement_id = ?',
-      whereArgs: [reimbursementId],
+    final clampedTotalReimbursed = totalReimbursed < 0 ? 0.0 : totalReimbursed;
+    await db.rawUpdate(
+      '''
+      UPDATE reimbursements
+      SET
+        total_reimbursed = ?,
+        status = CASE
+          WHEN ? >= amount THEN 'completed'
+          ELSE 'pending'
+        END,
+        updated_at = ?
+      WHERE reimbursement_id = ?
+      ''',
+      [
+        clampedTotalReimbursed,
+        clampedTotalReimbursed,
+        DateTime.now().toIso8601String(),
+        reimbursementId,
+      ],
     );
   }
 

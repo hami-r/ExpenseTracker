@@ -54,14 +54,19 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
     if (_iou == null) return;
 
     try {
+      final updatedAmount =
+          double.tryParse(_amountController.text) ?? _iou!.amount;
+      final updatedStatus = _iou!.totalPaid >= updatedAmount
+          ? 'completed'
+          : 'active';
       final updatedIOU = IOU(
         iouId: _iou!.iouId,
         userId: _iou!.userId,
         creditorName: _personController.text.trim(),
-        amount: double.tryParse(_amountController.text) ?? _iou!.amount,
+        amount: updatedAmount,
         dueDate: _repaymentDate,
         totalPaid: _iou!.totalPaid,
-        status: _iou!.status,
+        status: updatedStatus,
         notes: _iou!.notes,
         createdAt: _iou!.createdAt,
         updatedAt: DateTime.now(),

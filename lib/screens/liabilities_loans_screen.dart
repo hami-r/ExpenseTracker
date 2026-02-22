@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'add_loan_screen.dart';
 import 'loan_detail_screen.dart';
 import 'iou_detail_screen.dart';
+import 'liabilities_history_screen.dart';
 
 import 'package:intl/intl.dart';
 import '../database/services/loan_service.dart';
@@ -125,7 +126,24 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                               : const Color(0xFF0f172a),
                         ),
                       ),
-                      const SizedBox(width: 40),
+                      IconButton(
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const LiabilitiesHistoryScreen(),
+                            ),
+                          );
+                          _loadData();
+                        },
+                        icon: Icon(
+                          Icons.history_rounded,
+                          color: isDark
+                              ? const Color(0xFFe5e7eb)
+                              : const Color(0xFF374151),
+                        ),
+                      ),
                     ],
                   ),
                 ),

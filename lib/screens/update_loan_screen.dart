@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/loan.dart';
@@ -43,25 +42,19 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             ? (loan.tenureValue ?? 0) * 12
             : (loan.tenureValue ?? 0);
 
-        // Simple EMI approximation if rate > 0, else Principal/Months
-        double emi = 0;
-        if (totalMonths > 0) {
-          if (loan.interestRate > 0) {
-            double r = loan.interestRate / (12 * 100);
-            emi =
-                (loan.principalAmount * r * pow(1 + r, totalMonths)) /
-                (pow(1 + r, totalMonths) - 1);
-          } else {
-            emi = loan.principalAmount / totalMonths;
-          }
-        }
-
-        int monthsPaid = emi > 0 ? (loan.totalPaid / emi).floor() : 0;
+        // Progress should be principal-based (not EMI with interest), since
+        // remaining amount and completion logic are principal-based.
+        final monthlyPrincipal = totalMonths > 0
+            ? (loan.principalAmount / totalMonths)
+            : 0.0;
+        final monthsPaid = monthlyPrincipal > 0
+            ? (loan.totalPaid / monthlyPrincipal).floor().clamp(0, totalMonths)
+            : 0;
 
         setState(() {
           _loan = loan;
           _totalMonths = totalMonths;
-          _emi = emi;
+          _emi = monthlyPrincipal;
           _initialMonthsPaid = monthsPaid;
           _monthsPaid = monthsPaid;
           _progressPercentage = loan.principalAmount > 0
@@ -78,8 +71,8 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
 
   void _updateCalculations() {
     if (_loan == null) return;
-    double extraPayment = double.tryParse(_extraPaymentController.text) ?? 0;
-    double newTotalPaid =
+    final extraPayment = double.tryParse(_extraPaymentController.text) ?? 0;
+    final newTotalPaid =
         _loan!.totalPaid +
         extraPayment +
         ((_monthsPaid - _initialMonthsPaid) * _emi);

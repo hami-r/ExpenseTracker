@@ -25,6 +25,25 @@ class ReceivableService {
     return List.generate(maps.length, (i) => Receivable.fromMap(maps[i]));
   }
 
+  // Get completed receivables
+  Future<List<Receivable>> getCompletedReceivables(
+    int userId, {
+    int? profileId,
+  }) async {
+    final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, 'completed', profileId]
+        : [userId, 'completed'];
+    final List<Map<String, dynamic>> maps = await db.query(
+      'receivables',
+      where: 'user_id = ? AND status = ? AND is_deleted = 0$profileClause',
+      whereArgs: args,
+      orderBy: 'updated_at DESC, expected_date DESC',
+    );
+    return List.generate(maps.length, (i) => Receivable.fromMap(maps[i]));
+  }
+
   // Get receivable by ID
   Future<Receivable?> getReceivableById(int receivableId) async {
     final db = await _dbHelper.database;
@@ -89,14 +108,25 @@ class ReceivableService {
     double totalReceived,
   ) async {
     final db = await _dbHelper.database;
-    await db.update(
-      'receivables',
-      {
-        'total_received': totalReceived,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      where: 'receivable_id = ?',
-      whereArgs: [receivableId],
+    final clampedTotalReceived = totalReceived < 0 ? 0.0 : totalReceived;
+    await db.rawUpdate(
+      '''
+      UPDATE receivables
+      SET
+        total_received = ?,
+        status = CASE
+          WHEN ? >= principal_amount THEN 'completed'
+          ELSE 'active'
+        END,
+        updated_at = ?
+      WHERE receivable_id = ?
+      ''',
+      [
+        clampedTotalReceived,
+        clampedTotalReceived,
+        DateTime.now().toIso8601String(),
+        receivableId,
+      ],
     );
   }
 

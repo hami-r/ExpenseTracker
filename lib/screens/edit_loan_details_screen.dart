@@ -97,13 +97,17 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
     if (_loan == null) return;
 
     try {
+      final updatedPrincipal =
+          double.tryParse(_amountController.text) ?? _loan!.principalAmount;
+      final updatedStatus = _loan!.totalPaid >= updatedPrincipal
+          ? 'completed'
+          : 'active';
       final updatedLoan = Loan(
         loanId: _loan!.loanId,
         userId: _loan!.userId,
         lenderName: _lenderController.text.trim(),
         loanType: _loan!.loanType,
-        principalAmount:
-            double.tryParse(_amountController.text) ?? _loan!.principalAmount,
+        principalAmount: updatedPrincipal,
         interestRate:
             double.tryParse(_rateController.text) ?? _loan!.interestRate,
         tenureValue: int.tryParse(_tenureController.text) ?? _loan!.tenureValue,
@@ -111,7 +115,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
         startDate: _startDate,
         dueDate: _loan!.dueDate, // Ideally calculate based on new tenure/start
         totalPaid: _loan!.totalPaid,
-        status: _loan!.status,
+        status: updatedStatus,
         notes: _loan!.notes,
         createdAt: _loan!.createdAt,
         updatedAt: DateTime.now(),

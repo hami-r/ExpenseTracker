@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'reimbursement_detail_screen.dart';
 import 'receivable_detail_screen.dart';
 import 'add_lent_amount_screen.dart';
+import 'money_owed_history_screen.dart';
 
 import 'package:intl/intl.dart';
 import '../database/services/receivable_service.dart';
@@ -349,7 +350,21 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
               color: isDark ? Colors.white : const Color(0xFF0f172a),
             ),
           ),
-          const SizedBox(width: 48),
+          IconButton(
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MoneyOwedHistoryScreen(),
+                ),
+              );
+              _loadData();
+            },
+            icon: Icon(
+              Icons.history_rounded,
+              color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),
+            ),
+          ),
         ],
       ),
     );

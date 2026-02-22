@@ -22,6 +22,22 @@ class LoanService {
     return List.generate(maps.length, (i) => Loan.fromMap(maps[i]));
   }
 
+  // Get completed loans
+  Future<List<Loan>> getCompletedLoans(int userId, {int? profileId}) async {
+    final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, 'completed', profileId]
+        : [userId, 'completed'];
+    final List<Map<String, dynamic>> maps = await db.query(
+      'loans',
+      where: 'user_id = ? AND status = ? AND is_deleted = 0$profileClause',
+      whereArgs: args,
+      orderBy: 'updated_at DESC, due_date DESC',
+    );
+    return List.generate(maps.length, (i) => Loan.fromMap(maps[i]));
+  }
+
   // Get loan by ID
   Future<Loan?> getLoanById(int loanId) async {
     final db = await _dbHelper.database;
@@ -79,11 +95,25 @@ class LoanService {
   // Update total paid
   Future<void> updateLoanTotalPaid(int loanId, double totalPaid) async {
     final db = await _dbHelper.database;
-    await db.update(
-      'loans',
-      {'total_paid': totalPaid, 'updated_at': DateTime.now().toIso8601String()},
-      where: 'loan_id = ?',
-      whereArgs: [loanId],
+    final clampedTotalPaid = totalPaid < 0 ? 0.0 : totalPaid;
+    await db.rawUpdate(
+      '''
+      UPDATE loans
+      SET
+        total_paid = ?,
+        status = CASE
+          WHEN ? >= principal_amount THEN 'completed'
+          ELSE 'active'
+        END,
+        updated_at = ?
+      WHERE loan_id = ?
+      ''',
+      [
+        clampedTotalPaid,
+        clampedTotalPaid,
+        DateTime.now().toIso8601String(),
+        loanId,
+      ],
     );
   }
 

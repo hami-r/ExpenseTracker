@@ -339,6 +339,8 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                 ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.transparent,
                   contentPadding: EdgeInsets.zero,
                   isDense: true,
                   hintText: '0',
@@ -346,14 +348,6 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                     color: isDark
                         ? const Color(0xFF334155).withOpacity(0.5)
                         : const Color(0xFFe2e8f0),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.3),
-                      width: 2,
-                    ),
                   ),
                 ),
                 keyboardType: TextInputType.number,

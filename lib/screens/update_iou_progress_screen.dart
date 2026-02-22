@@ -106,22 +106,6 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
         _iou!.totalPaid + finalAmount,
       );
 
-      if (_isFullyPaid || (_iou!.totalPaid + finalAmount >= _iou!.amount)) {
-        final updatedIOU = IOU(
-          iouId: _iou!.iouId,
-          userId: _iou!.userId,
-          amount: _iou!.amount,
-          creditorName: _iou!.creditorName,
-          dueDate: _iou!.dueDate,
-          totalPaid: _iou!.totalPaid + finalAmount,
-          status: 'completed',
-          notes: _iou!.notes,
-          createdAt: _iou!.createdAt,
-          updatedAt: DateTime.now(),
-        );
-        await _iouService.updateIOU(updatedIOU);
-      }
-
       if (mounted) {
         Navigator.pop(context, true);
       }

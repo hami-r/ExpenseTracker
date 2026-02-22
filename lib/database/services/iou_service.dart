@@ -22,6 +22,22 @@ class IOUService {
     return List.generate(maps.length, (i) => IOU.fromMap(maps[i]));
   }
 
+  // Get completed IOUs
+  Future<List<IOU>> getCompletedIOUs(int userId, {int? profileId}) async {
+    final db = await _dbHelper.database;
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null
+        ? [userId, 'completed', profileId]
+        : [userId, 'completed'];
+    final List<Map<String, dynamic>> maps = await db.query(
+      'ious',
+      where: 'user_id = ? AND status = ? AND is_deleted = 0$profileClause',
+      whereArgs: args,
+      orderBy: 'updated_at DESC, due_date DESC',
+    );
+    return List.generate(maps.length, (i) => IOU.fromMap(maps[i]));
+  }
+
   // Get IOU by ID
   Future<IOU?> getIOUById(int iouId) async {
     final db = await _dbHelper.database;
@@ -74,11 +90,25 @@ class IOUService {
   // Update total paid
   Future<void> updateIOUTotalPaid(int iouId, double totalPaid) async {
     final db = await _dbHelper.database;
-    await db.update(
-      'ious',
-      {'total_paid': totalPaid, 'updated_at': DateTime.now().toIso8601String()},
-      where: 'iou_id = ?',
-      whereArgs: [iouId],
+    final clampedTotalPaid = totalPaid < 0 ? 0.0 : totalPaid;
+    await db.rawUpdate(
+      '''
+      UPDATE ious
+      SET
+        total_paid = ?,
+        status = CASE
+          WHEN ? >= amount THEN 'completed'
+          ELSE 'active'
+        END,
+        updated_at = ?
+      WHERE iou_id = ?
+      ''',
+      [
+        clampedTotalPaid,
+        clampedTotalPaid,
+        DateTime.now().toIso8601String(),
+        iouId,
+      ],
     );
   }
 
