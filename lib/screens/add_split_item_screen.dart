@@ -165,6 +165,8 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                                         height: 1,
                                       ),
                                   decoration: InputDecoration(
+                                    filled: false,
+                                    fillColor: Colors.transparent,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,

@@ -87,8 +87,8 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
       FROM payment_methods pm
       LEFT JOIN transactions t ON pm.payment_method_id = t.payment_method_id
         AND t.user_id = ?
-        AND t.transaction_date >= ?
-        AND t.transaction_date <= ?
+        AND date(t.transaction_date) >= ?
+        AND date(t.transaction_date) <= ?
         AND t.parent_transaction_id IS NULL$profileFilter
       WHERE pm.user_id = ? AND pm.is_active = 1$pmProfileFilter
       GROUP BY pm.payment_method_id
@@ -104,8 +104,8 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
       SELECT payment_method_id, COALESCE(SUM(amount), 0) AS total
       FROM transactions
       WHERE user_id = ?
-        AND transaction_date >= ?
-        AND transaction_date <= ?
+        AND date(transaction_date) >= ?
+        AND date(transaction_date) <= ?
         AND parent_transaction_id IS NULL
         ${profileId != null ? 'AND profile_id = $profileId' : ''}
       GROUP BY payment_method_id
@@ -160,8 +160,8 @@ class _PaymentCorrelationScreenState extends State<PaymentCorrelationScreen> {
       FROM categories c
       INNER JOIN transactions t ON c.category_id = t.category_id
       WHERE t.user_id = ?
-        AND t.transaction_date >= ?
-        AND t.transaction_date <= ?
+        AND date(t.transaction_date) >= ?
+        AND date(t.transaction_date) <= ?
         AND t.parent_transaction_id IS NULL
         ${profileId != null ? 'AND t.profile_id = $profileId' : ''}
       GROUP BY c.category_id, t.payment_method_id

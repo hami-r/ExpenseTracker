@@ -150,9 +150,9 @@ class DataManagementService {
 
       List<dynamic> args = [];
       if (startDate != null && endDate != null) {
-        query += ' AND t.transaction_date BETWEEN ? AND ?';
-        args.add(startDate.toIso8601String());
-        args.add(endDate.toIso8601String());
+        query += ' AND date(t.transaction_date) BETWEEN ? AND ?';
+        args.add(startDate.toIso8601String().split('T')[0]);
+        args.add(endDate.toIso8601String().split('T')[0]);
       }
 
       if (selectedCategoryIds != null && selectedCategoryIds.isNotEmpty) {

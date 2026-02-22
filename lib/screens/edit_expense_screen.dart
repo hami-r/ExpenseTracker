@@ -15,6 +15,7 @@ import '../database/services/category_service.dart';
 import '../providers/profile_provider.dart';
 import 'package:provider/provider.dart';
 import 'manage_payment_methods_screen.dart';
+import 'manage_categories_screen.dart';
 
 class EditExpenseScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -33,7 +34,6 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   int _selectedPaymentIndex = 0;
 
   late DateTime _selectedDate;
-  bool _isDeleteDialogVisible = false;
 
   final PaymentMethodService _paymentMethodService = PaymentMethodService();
   final UserService _userService = UserService();
@@ -163,14 +163,6 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
     );
     if (mounted) {
       Navigator.pop(context, true); // Return true to indicate update
-    }
-  }
-
-  Future<void> _deleteExpense() async {
-    final transactionId = widget.transaction['id'] as int;
-    await _transactionService.deleteTransaction(transactionId);
-    if (mounted) {
-      Navigator.pop(context, true); // Close screen
     }
   }
 
@@ -304,181 +296,6 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
               ),
             ),
           ),
-          if (_isDeleteDialogVisible) ...[
-            // Dimmed background
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isDeleteDialogVisible = false;
-                  });
-                },
-                child: Container(color: Colors.black.withOpacity(0.4)),
-              ),
-            ),
-
-            // Dialog
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 1.0, end: 0.0),
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-                builder: (context, value, child) {
-                  return Transform.translate(
-                    offset: Offset(0, value * 200),
-                    child: child,
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(32),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(24).copyWith(bottom: 40),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).dividerColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Icon
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withOpacity(0.2),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.delete_rounded,
-                          size: 40,
-                          color: Colors.red,
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      Text(
-                        'Delete Expense?',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Text(
-                        'Are you sure you want to delete this transaction?\nThis action cannot be undone.',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
-                          height: 1.5,
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      Column(
-                        children: [
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _deleteExpense,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 8,
-                                shadowColor: Colors.red.withOpacity(0.3),
-                              ),
-                              child: const Text(
-                                'Delete',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _isDeleteDialogVisible = false;
-                                });
-                              },
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  side: BorderSide(
-                                    color: Theme.of(
-                                      context,
-                                    ).dividerColor.withOpacity(0.1),
-                                  ),
-                                ),
-                              ),
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -501,37 +318,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
             'Edit Expense',
             style: Theme.of(context).appBarTheme.titleTextStyle,
           ),
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.red.withOpacity(0.2)),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () {
-                      setState(() {
-                        _isDeleteDialogVisible = true;
-                      });
-                    },
-                    child: const Icon(
-                      Icons.delete_outline_rounded,
-                      size: 20,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const SizedBox(width: 40),
-            ],
-          ),
+          const SizedBox(width: 40),
         ],
       ),
     );
@@ -602,9 +389,30 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   }
 
   Widget _buildCategorySection(bool isDark) {
+    final hasCategories = _categories.isNotEmpty;
+    final selectedIndex = hasCategories
+        ? (_selectedCategoryIndex >= 0 &&
+                  _selectedCategoryIndex < _categories.length
+              ? _selectedCategoryIndex
+              : 0)
+        : -1;
+    final selectedCategory = hasCategories ? _categories[selectedIndex] : null;
+    const maxVisibleCategories = 8;
+    final visibleCategories = _categories.take(maxVisibleCategories).toList();
+    if (selectedCategory != null &&
+        !visibleCategories.any(
+          (category) => category.categoryId == selectedCategory.categoryId,
+        )) {
+      if (visibleCategories.length == maxVisibleCategories) {
+        visibleCategories.removeLast();
+      }
+      visibleCategories.add(selectedCategory);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -616,7 +424,26 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                 ).textTheme.titleLarge?.copyWith(fontSize: 14),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () async {
+                  final selectedCategory = await Navigator.push<Category>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ManageCategoriesScreen(isSelectionMode: true),
+                    ),
+                  );
+
+                  if (selectedCategory != null && mounted) {
+                    setState(() {
+                      final index = _categories.indexWhere(
+                        (c) => c.categoryId == selectedCategory.categoryId,
+                      );
+                      if (index != -1) {
+                        _selectedCategoryIndex = index;
+                      }
+                    });
+                  }
+                },
                 child: Text(
                   'See all',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -628,143 +455,203 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.85,
-            ),
-            itemCount: _categories.length,
-            itemBuilder: (context, index) {
-              final category = _categories[index];
-              final isSelected = _selectedCategoryIndex == index;
-              final isMore = category.name == 'More';
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedCategoryIndex = index;
-                  });
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    border: isMore
-                        ? Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outline.withOpacity(0.3),
-                            style: BorderStyle.solid,
-                            width: 1.5,
-                          )
-                        : isSelected
-                        ? Border.all(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2,
-                          )
-                        : Border.all(color: Colors.transparent),
-                    boxShadow: !isMore && !isDark
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : [],
+          if (selectedCategory != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: ColorHelper.fromHex(
+                        selectedCategory.colorHex,
+                      ).withOpacity(isDark ? 0.25 : 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      IconHelper.getIcon(selectedCategory.iconName),
+                      size: 18,
+                      color: isDark
+                          ? ColorHelper.fromHex(
+                              selectedCategory.colorHex,
+                            ).withOpacity(0.9)
+                          : ColorHelper.fromHex(selectedCategory.colorHex),
+                    ),
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: isMore
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.05)
-                                  : ColorHelper.fromHex(
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      selectedCategory.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Selected',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          SizedBox(
+            height: 104,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: visibleCategories.length,
+              itemBuilder: (context, index) {
+                final category = visibleCategories[index];
+                final isSelected =
+                    selectedCategory != null &&
+                    category.categoryId == selectedCategory.categoryId;
+
+                return Padding(
+                  padding: EdgeInsets.only(
+                    right: index == visibleCategories.length - 1 ? 0 : 12,
+                  ),
+                  child: SizedBox(
+                    width: 84,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          final selectedOriginalIndex = _categories.indexWhere(
+                            (c) => c.categoryId == category.categoryId,
+                          );
+                          if (selectedOriginalIndex != -1) {
+                            _selectedCategoryIndex = selectedOriginalIndex;
+                          }
+                        });
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color,
+                          borderRadius: BorderRadius.circular(16),
+                          border: isSelected
+                              ? Border.all(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 2,
+                                )
+                              : Border.all(color: Colors.transparent),
+                          boxShadow: !isDark
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: ColorHelper.fromHex(
                                       category.colorHex,
                                     ).withOpacity(isDark ? 0.2 : 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              IconHelper.getIcon(category.iconName),
-                              size: 20,
-                              color: isMore
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.5)
-                                  : (isDark
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    IconHelper.getIcon(category.iconName),
+                                    size: 20,
+                                    color: isDark
                                         ? ColorHelper.fromHex(
                                             category.colorHex,
                                           ).withOpacity(0.8)
                                         : ColorHelper.fromHex(
                                             category.colorHex,
-                                          )),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            category.name,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  fontSize: 10,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w600,
-                                  color: isMore
-                                      ? Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface.withOpacity(0.6)
-                                      : isSelected
-                                      ? Theme.of(context).colorScheme.onSurface
-                                      : Theme.of(context).colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                  letterSpacing: 0,
+                                          ),
+                                  ),
                                 ),
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                      if (isSelected && !isMore)
-                        Positioned(
-                          top: -2,
-                          right: -2,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).cardTheme.color!,
-                                width: 2,
+                                const SizedBox(height: 8),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
+                                  child: Text(
+                                    category.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          fontSize: 10,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                          color: isSelected
+                                              ? Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface
+                                              : Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withOpacity(0.6),
+                                          letterSpacing: 0,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (isSelected)
+                              Positioned(
+                                top: -2,
+                                right: -2,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Theme.of(context).cardTheme.color!,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.check,
+                                    size: 8,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              size: 8,
-                              color: Colors.white,
-                            ),
-                          ),
+                          ],
                         ),
-                    ],
+                      ),
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -1077,10 +964,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
-                      filled: false,
                       border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
                       hintText: 'Add a note...',
                       hintStyle: TextStyle(
                         color: Theme.of(

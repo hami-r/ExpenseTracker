@@ -10,6 +10,7 @@ import '../../models/category.dart';
 import '../../utils/icon_helper.dart';
 import '../../utils/color_helper.dart';
 import '../../providers/profile_provider.dart';
+import 'package:expense_tracker_ai/widgets/custom_date_picker.dart';
 import 'package:provider/provider.dart';
 
 class EditSplitExpenseScreen extends StatefulWidget {
@@ -366,6 +367,8 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                                     height: 1,
                                   ),
                                   decoration: const InputDecoration(
+                                    filled: false,
+                                    fillColor: Colors.transparent,
                                     border: InputBorder.none,
                                     contentPadding: EdgeInsets.zero,
                                     isDense: true,
@@ -494,16 +497,25 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
 
                           // Date
                           GestureDetector(
-                            onTap: () async {
-                              final picked = await showDatePicker(
-                                context: context,
+                            onTap: () {
+                              CustomDatePicker.show(
+                                context,
                                 initialDate: _selectedDate,
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime.now(),
+                                onDateSelected: (date) {
+                                  setState(() {
+                                    _selectedDate = DateTime(
+                                      date.year,
+                                      date.month,
+                                      date.day,
+                                      _selectedDate.hour,
+                                      _selectedDate.minute,
+                                      _selectedDate.second,
+                                      _selectedDate.millisecond,
+                                      _selectedDate.microsecond,
+                                    );
+                                  });
+                                },
                               );
-                              if (picked != null) {
-                                setState(() => _selectedDate = picked);
-                              }
                             },
                             child: _buildSettingsRow(
                               context,
@@ -735,9 +747,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.black.withOpacity(0.2)
-                    : const Color(0xFFf8fafc),
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -768,6 +778,8 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                         color: isDark ? Colors.white : const Color(0xFF0f172a),
                       ),
                       decoration: const InputDecoration(
+                        filled: false,
+                        fillColor: Colors.transparent,
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,

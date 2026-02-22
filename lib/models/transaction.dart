@@ -36,7 +36,7 @@ class Transaction {
       'amount': amount,
       'currency_id': currencyId,
       'note': note,
-      'transaction_date': transactionDate.toIso8601String().split('T')[0],
+      'transaction_date': transactionDate.toIso8601String(),
       'is_split': isSplit ? 1 : 0,
       'parent_transaction_id': parentTransactionId,
       'created_at': createdAt?.toIso8601String(),

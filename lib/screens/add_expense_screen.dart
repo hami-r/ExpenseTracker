@@ -19,7 +19,6 @@ import '../providers/profile_provider.dart';
 import 'package:provider/provider.dart';
 import 'manage_categories_screen.dart';
 import 'manage_payment_methods_screen.dart';
-import 'dart:math' show min;
 
 class AddExpenseScreen extends StatefulWidget {
   final double? initialAmount;
@@ -480,9 +479,30 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Widget _buildCategorySection(bool isDark) {
+    final hasCategories = _categories.isNotEmpty;
+    final selectedIndex = hasCategories
+        ? (_selectedCategoryIndex >= 0 &&
+                  _selectedCategoryIndex < _categories.length
+              ? _selectedCategoryIndex
+              : 0)
+        : -1;
+    final selectedCategory = hasCategories ? _categories[selectedIndex] : null;
+    const maxVisibleCategories = 8;
+    final visibleCategories = _categories.take(maxVisibleCategories).toList();
+    if (selectedCategory != null &&
+        !visibleCategories.any(
+          (category) => category.categoryId == selectedCategory.categoryId,
+        )) {
+      if (visibleCategories.length == maxVisibleCategories) {
+        visibleCategories.removeLast();
+      }
+      visibleCategories.add(selectedCategory);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -525,150 +545,203 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ],
           ),
           const SizedBox(height: 16),
-
-          // See All Button Logic update (this is inside _buildCategorySection but above GridView)
-          // Actually, I am replacing the GridView block, but I should also fix the See All logic which was in the previous block.
-          // Wait, I can only replace one contiguous block.
-          // The "See All" button is lines 413-437. GridView starts at 441.
-          // I will replacing mainly the GridView.
-          // But I need to fix the "See All" logic separately or include it if I expand the range.
-          // Let's replace 441-567 (GridView).
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-            ),
-            itemCount: min(_categories.length, 12),
-            itemBuilder: (context, index) {
-              final category = _categories[index];
-              final isSelected = _selectedCategoryIndex == index;
-              final isMore = category.name == 'More';
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedCategoryIndex = index;
-                  });
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    border: isMore
-                        ? Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outline.withOpacity(0.3),
-                            style: BorderStyle.solid,
-                            width: 1.5,
-                          )
-                        : isSelected
-                        ? Border.all(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2,
-                          )
-                        : Border.all(color: Colors.transparent),
-                    boxShadow: !isMore && !isDark
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : [],
+          if (selectedCategory != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: ColorHelper.fromHex(
+                        selectedCategory.colorHex,
+                      ).withOpacity(isDark ? 0.25 : 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      IconHelper.getIcon(selectedCategory.iconName),
+                      size: 18,
+                      color: isDark
+                          ? ColorHelper.fromHex(
+                              selectedCategory.colorHex,
+                            ).withOpacity(0.9)
+                          : ColorHelper.fromHex(selectedCategory.colorHex),
+                    ),
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: isMore
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.05)
-                                  : ColorHelper.fromHex(
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      selectedCategory.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Selected',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          SizedBox(
+            height: 104,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: visibleCategories.length,
+              itemBuilder: (context, index) {
+                final category = visibleCategories[index];
+                final isSelected =
+                    selectedCategory != null &&
+                    category.categoryId == selectedCategory.categoryId;
+
+                return Padding(
+                  padding: EdgeInsets.only(
+                    right: index == visibleCategories.length - 1 ? 0 : 12,
+                  ),
+                  child: SizedBox(
+                    width: 84,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          final selectedOriginalIndex = _categories.indexWhere(
+                            (c) => c.categoryId == category.categoryId,
+                          );
+                          if (selectedOriginalIndex != -1) {
+                            _selectedCategoryIndex = selectedOriginalIndex;
+                          }
+                        });
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color,
+                          borderRadius: BorderRadius.circular(16),
+                          border: isSelected
+                              ? Border.all(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 2,
+                                )
+                              : Border.all(color: Colors.transparent),
+                          boxShadow: !isDark
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: ColorHelper.fromHex(
                                       category.colorHex,
                                     ).withOpacity(isDark ? 0.2 : 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              IconHelper.getIcon(category.iconName),
-                              size: 20,
-                              color: isMore
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.5)
-                                  : (isDark
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    IconHelper.getIcon(category.iconName),
+                                    size: 20,
+                                    color: isDark
                                         ? ColorHelper.fromHex(
                                             category.colorHex,
                                           ).withOpacity(0.8)
                                         : ColorHelper.fromHex(
                                             category.colorHex,
-                                          )),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            category.name,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  fontSize: 10,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w600,
-                                  color: isMore
-                                      ? Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface.withOpacity(0.6)
-                                      : isSelected
-                                      ? Theme.of(context).colorScheme.onSurface
-                                      : Theme.of(context).colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                  letterSpacing: 0,
+                                          ),
+                                  ),
                                 ),
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                      if (isSelected && !isMore)
-                        Positioned(
-                          top: -2,
-                          right: -2,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).cardTheme.color!,
-                                width: 2,
+                                const SizedBox(height: 8),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
+                                  child: Text(
+                                    category.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          fontSize: 10,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                          color: isSelected
+                                              ? Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface
+                                              : Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withOpacity(0.6),
+                                          letterSpacing: 0,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (isSelected)
+                              Positioned(
+                                top: -2,
+                                right: -2,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Theme.of(context).cardTheme.color!,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.check,
+                                    size: 8,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              size: 8,
-                              color: Colors.white,
-                            ),
-                          ),
+                          ],
                         ),
-                    ],
+                      ),
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -886,7 +959,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     initialDate: _selectedDate,
                     onDateSelected: (date) {
                       setState(() {
-                        _selectedDate = date;
+                        _selectedDate = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          _selectedDate.hour,
+                          _selectedDate.minute,
+                          _selectedDate.second,
+                          _selectedDate.millisecond,
+                          _selectedDate.microsecond,
+                        );
                       });
                     },
                   );
@@ -1121,6 +1203,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ),
                     onChanged: (value) => setState(() {}),
                     decoration: InputDecoration(
+                      filled: false,
+                      fillColor: Colors.transparent,
                       border: InputBorder.none,
                       hintText: '0.00',
                       hintStyle: TextStyle(
@@ -1444,7 +1528,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       initialDate: _selectedDate,
                       onDateSelected: (date) {
                         setState(() {
-                          _selectedDate = date;
+                          _selectedDate = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            _selectedDate.hour,
+                            _selectedDate.minute,
+                            _selectedDate.second,
+                            _selectedDate.millisecond,
+                            _selectedDate.microsecond,
+                          );
                         });
                       },
                     );

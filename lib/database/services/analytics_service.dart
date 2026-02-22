@@ -33,7 +33,7 @@ class AnalyticsService {
       final result = await db.rawQuery('''
         SELECT COALESCE(SUM(amount), 0) as total
         FROM transactions
-        WHERE user_id = ? AND transaction_date = ? AND parent_transaction_id IS NULL$profileClause
+        WHERE user_id = ? AND date(transaction_date) = ? AND parent_transaction_id IS NULL$profileClause
       ''', args);
 
       final dayName = [
@@ -129,8 +129,8 @@ class AnalyticsService {
         SUM(amount) as total
       FROM transactions
       WHERE user_id = ? 
-        AND transaction_date >= ? 
-        AND transaction_date <= ?
+        AND date(transaction_date) >= ? 
+        AND date(transaction_date) <= ?
         AND parent_transaction_id IS NULL$profileClause
       GROUP BY day
     ''', args);
@@ -167,8 +167,8 @@ class AnalyticsService {
       FROM categories c
       LEFT JOIN transactions t ON c.category_id = t.category_id
         AND t.user_id = ?
-        AND t.transaction_date >= ?
-        AND t.transaction_date <= ?
+        AND date(t.transaction_date) >= ?
+        AND date(t.transaction_date) <= ?
         AND t.parent_transaction_id IS NULL$profileClause
       WHERE c.user_id = ? AND c.is_active = 1
       GROUP BY c.category_id
@@ -209,8 +209,8 @@ class AnalyticsService {
       FROM categories c
       INNER JOIN transactions t ON c.category_id = t.category_id
       WHERE t.user_id = ?
-        AND t.transaction_date >= ?
-        AND t.transaction_date <= ?
+        AND date(t.transaction_date) >= ?
+        AND date(t.transaction_date) <= ?
         AND t.parent_transaction_id IS NULL$profileClause
       GROUP BY c.category_id
       ORDER BY total DESC
@@ -246,8 +246,8 @@ class AnalyticsService {
       SELECT COALESCE(SUM(amount), 0) as total
       FROM transactions
       WHERE user_id = ? 
-        AND transaction_date >= ? 
-        AND transaction_date <= ?
+        AND date(transaction_date) >= ? 
+        AND date(transaction_date) <= ?
         AND parent_transaction_id IS NULL$profileClause
     ''', args);
 

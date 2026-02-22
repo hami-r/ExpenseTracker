@@ -235,6 +235,7 @@ class DatabaseHelper {
         account_number TEXT,
         is_active INTEGER DEFAULT 1,
         display_order INTEGER DEFAULT 0,
+        profile_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -246,6 +247,9 @@ class DatabaseHelper {
     );
     await db.execute(
       'CREATE INDEX idx_payment_methods_active ON payment_methods(user_id, is_active)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_payment_methods_profile ON payment_methods(profile_id)',
     );
 
     // 5. Transactions Table
@@ -261,6 +265,7 @@ class DatabaseHelper {
         transaction_date TEXT NOT NULL,
         is_split INTEGER DEFAULT 0,
         parent_transaction_id INTEGER,
+        profile_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -285,6 +290,9 @@ class DatabaseHelper {
     );
     await db.execute(
       'CREATE INDEX idx_transactions_currency ON transactions(currency_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_transactions_profile ON transactions(profile_id)',
     );
 
     // 6. Split Items Table
@@ -322,6 +330,7 @@ class DatabaseHelper {
         status TEXT DEFAULT 'active',
         notes TEXT,
         is_deleted INTEGER DEFAULT 0,
+        profile_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -333,6 +342,7 @@ class DatabaseHelper {
     await db.execute(
       'CREATE INDEX idx_loans_due_date ON loans(user_id, due_date)',
     );
+    await db.execute('CREATE INDEX idx_loans_profile ON loans(profile_id)');
 
     // 8. Loan Payments Table
     await db.execute('''
@@ -372,6 +382,7 @@ class DatabaseHelper {
         status TEXT DEFAULT 'active',
         notes TEXT,
         is_deleted INTEGER DEFAULT 0,
+        profile_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -386,6 +397,9 @@ class DatabaseHelper {
     );
     await db.execute(
       'CREATE INDEX idx_receivables_expected ON receivables(user_id, expected_date)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_receivables_profile ON receivables(profile_id)',
     );
 
     // 10. Receivable Payments Table
@@ -423,6 +437,7 @@ class DatabaseHelper {
         status TEXT DEFAULT 'active',
         notes TEXT,
         is_deleted INTEGER DEFAULT 0,
+        profile_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -432,6 +447,7 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_ious_user ON ious(user_id)');
     await db.execute('CREATE INDEX idx_ious_status ON ious(user_id, status)');
     await db.execute('CREATE INDEX idx_ious_due ON ious(user_id, due_date)');
+    await db.execute('CREATE INDEX idx_ious_profile ON ious(profile_id)');
 
     // 12. IOU Payments Table
     await db.execute('''
@@ -468,6 +484,7 @@ class DatabaseHelper {
         status TEXT DEFAULT 'active',
         notes TEXT,
         is_deleted INTEGER DEFAULT 0,
+        profile_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -482,6 +499,9 @@ class DatabaseHelper {
     );
     await db.execute(
       'CREATE INDEX idx_reimbursements_expected ON reimbursements(user_id, expected_date)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_reimbursements_profile ON reimbursements(profile_id)',
     );
 
     // 14. Reimbursement Payments Table
@@ -515,16 +535,20 @@ class DatabaseHelper {
         amount REAL NOT NULL,
         month INTEGER NOT NULL,
         year INTEGER NOT NULL,
+        profile_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
         FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE,
-        UNIQUE(user_id, category_id, month, year)
+        UNIQUE(user_id, category_id, month, year, profile_id)
       )
     ''');
 
     await db.execute(
       'CREATE INDEX idx_budgets_user_month_year ON budgets(user_id, month, year)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_budgets_profile ON budgets(profile_id, month, year)',
     );
 
     // 15. Profiles Table
@@ -637,6 +661,15 @@ class DatabaseHelper {
       'theme_preference': 'system',
       'theme_color': 'Emerald Green',
       'primary_currency_id': 1,
+    });
+
+    // Create default profile (id=1)
+    await db.insert('profiles', {
+      'user_id': 1,
+      'name': 'India',
+      'currency_id': 1,
+      'country_code': 'IN',
+      'is_active': 1,
     });
 
     // Seed default categories for user_id = 1

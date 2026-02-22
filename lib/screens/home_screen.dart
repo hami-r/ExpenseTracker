@@ -468,7 +468,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: _buildStatsCard(
                       'Today',
-                      '$currencySymbol ${_todaySpending.toStringAsFixed(1)}',
+                      _formatStatsAmount(_todaySpending, currencySymbol),
                       false,
                       isDark,
                     ),
@@ -478,7 +478,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: _buildStatsCard(
                       'Week',
                       // Calculate week total from weekly map
-                      '$currencySymbol ${_weeklySpending.values.fold(0.0, (doc, val) => doc + val).toStringAsFixed(1)}',
+                      _formatStatsAmount(
+                        _weeklySpending.values.fold(
+                          0.0,
+                          (sum, value) => sum + value,
+                        ),
+                        currencySymbol,
+                      ),
                       true,
                       isDark,
                     ),
@@ -487,7 +493,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: _buildStatsCard(
                       'Month',
-                      '$currencySymbol ${_monthSpending.toStringAsFixed(1)}',
+                      _formatStatsAmount(_monthSpending, currencySymbol),
                       false,
                       isDark,
                     ),
@@ -780,17 +786,41 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF1e293b),
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF1e293b),
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatStatsAmount(double amount, String currencySymbol) {
+    if (amount == 0) return '$currencySymbol 0';
+
+    final absolute = amount.abs();
+    if (absolute >= 1000) {
+      final compact = NumberFormat.compact(locale: 'en_IN').format(amount);
+      return '$currencySymbol $compact';
+    }
+
+    final hasFraction = amount != amount.truncateToDouble();
+    final formatted = hasFraction
+        ? amount.toStringAsFixed(1)
+        : amount.toStringAsFixed(0);
+    return '$currencySymbol $formatted';
   }
 
   Widget _buildTransactionCard(

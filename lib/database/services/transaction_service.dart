@@ -41,7 +41,7 @@ class TransactionService {
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
       where:
-          'user_id = ? AND transaction_date = ? AND parent_transaction_id IS NULL$profileClause',
+          'user_id = ? AND date(transaction_date) = ? AND parent_transaction_id IS NULL$profileClause',
       whereArgs: args,
       orderBy: 'created_at DESC',
     );
@@ -66,7 +66,7 @@ class TransactionService {
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
       where:
-          'user_id = ? AND transaction_date = ? AND parent_transaction_id IS NULL$profileClause',
+          'user_id = ? AND date(transaction_date) = ? AND parent_transaction_id IS NULL$profileClause',
       whereArgs: args,
       orderBy: 'created_at DESC',
     );
@@ -97,7 +97,7 @@ class TransactionService {
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
       where:
-          'user_id = ? AND transaction_date >= ? AND transaction_date <= ? AND parent_transaction_id IS NULL$profileClause',
+          'user_id = ? AND date(transaction_date) >= ? AND date(transaction_date) <= ? AND parent_transaction_id IS NULL$profileClause',
       whereArgs: args,
       orderBy: 'transaction_date DESC',
     );
