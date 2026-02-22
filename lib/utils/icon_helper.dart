@@ -38,6 +38,7 @@ class IconHelper {
     'local_activity_rounded': Icons.local_activity_rounded,
     'local_hospital_rounded': Icons.local_hospital_rounded,
     'payments_rounded': Icons.payments_rounded,
+    'account_balance_wallet_rounded': Icons.account_balance_wallet_rounded,
     'credit_card_rounded': Icons.credit_card_rounded,
     'account_balance_rounded': Icons.account_balance_rounded,
     'qr_code_scanner_rounded': Icons.qr_code_scanner_rounded,

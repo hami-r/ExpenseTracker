@@ -17,7 +17,7 @@ class PaymentMethodService {
       'payment_methods',
       where: 'user_id = ? AND is_active = 1$profileClause',
       whereArgs: args,
-      orderBy: 'display_order ASC, name ASC',
+      orderBy: 'is_primary DESC, display_order ASC, name ASC',
     );
     return List.generate(maps.length, (i) => PaymentMethod.fromMap(maps[i]));
   }
@@ -40,13 +40,31 @@ class PaymentMethodService {
     int? profileId,
   }) async {
     final db = await _dbHelper.database;
-    final map = paymentMethod.toMap();
-    if (profileId != null) map['profile_id'] = profileId;
-    return await db.insert(
-      'payment_methods',
-      map,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    return await db.transaction<int>((txn) async {
+      final map = paymentMethod.toMap();
+      if (profileId != null) map['profile_id'] = profileId;
+
+      if (paymentMethod.isPrimary) {
+        final where = profileId != null
+            ? 'user_id = ? AND profile_id = ?'
+            : 'user_id = ?';
+        final args = profileId != null
+            ? [paymentMethod.userId, profileId]
+            : [paymentMethod.userId];
+        await txn.update(
+          'payment_methods',
+          {'is_primary': 0},
+          where: where,
+          whereArgs: args,
+        );
+      }
+
+      return await txn.insert(
+        'payment_methods',
+        map,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    });
   }
 
   // Update payment method
@@ -55,14 +73,32 @@ class PaymentMethodService {
     int? profileId,
   }) async {
     final db = await _dbHelper.database;
-    final map = paymentMethod.toMap();
-    if (profileId != null) map['profile_id'] = profileId;
-    await db.update(
-      'payment_methods',
-      map,
-      where: 'payment_method_id = ?',
-      whereArgs: [paymentMethod.paymentMethodId],
-    );
+    await db.transaction((txn) async {
+      final map = paymentMethod.toMap();
+      if (profileId != null) map['profile_id'] = profileId;
+
+      if (paymentMethod.isPrimary) {
+        final where = profileId != null
+            ? 'user_id = ? AND profile_id = ? AND payment_method_id != ?'
+            : 'user_id = ? AND payment_method_id != ?';
+        final args = profileId != null
+            ? [paymentMethod.userId, profileId, paymentMethod.paymentMethodId]
+            : [paymentMethod.userId, paymentMethod.paymentMethodId];
+        await txn.update(
+          'payment_methods',
+          {'is_primary': 0},
+          where: where,
+          whereArgs: args,
+        );
+      }
+
+      await txn.update(
+        'payment_methods',
+        map,
+        where: 'payment_method_id = ?',
+        whereArgs: [paymentMethod.paymentMethodId],
+      );
+    });
   }
 
   // Deactivate payment method (soft delete)

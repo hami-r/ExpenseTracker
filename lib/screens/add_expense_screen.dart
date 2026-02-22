@@ -116,6 +116,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 (m) => m.paymentMethodId == widget.initialPaymentMethodId,
               );
               if (index != -1) _selectedPaymentIndex = index;
+            } else if (_paymentMethods.isNotEmpty) {
+              final primaryIndex = _paymentMethods.indexWhere(
+                (m) => m.isPrimary,
+              );
+              if (primaryIndex != -1) {
+                _selectedPaymentIndex = primaryIndex;
+              }
             }
           });
         }

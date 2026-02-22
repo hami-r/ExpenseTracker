@@ -21,11 +21,8 @@ class EditPaymentMethodScreen extends StatefulWidget {
 
 class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
   String _selectedType = 'Card';
-  bool _isPrimary =
-      false; // Not persisted in current model, UI only for now or need schema update?
+  bool _isPrimary = false;
   String _linkedBank = 'HDFC Bank';
-  // Model doesn't have isPrimary. I will ignore it for persistence or treat 'Cash' as default/primary implicitly or add logic later.
-  // For now, simple persistence.
 
   Color _selectedCardColor = const Color(0xFF14b8a6);
   late TextEditingController _nameController;
@@ -92,7 +89,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
     }
 
     _selectedType = widget.paymentMethod?.type ?? 'Card';
-    // _isPrimary = widget.paymentMethod?.isPrimary ?? false; // Model lacks isPrimary
+    _isPrimary = widget.paymentMethod?.isPrimary ?? false;
 
     _selectedCardColor =
         ColorHelper.fromHex(widget.paymentMethod?.colorHex) == Colors.blue
@@ -1182,6 +1179,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
           ),
           colorHex: ColorHelper.toHex(_selectedCardColor),
           accountNumber: accountNumber,
+          isPrimary: _isPrimary,
           isActive: true,
           displayOrder: widget.paymentMethod?.displayOrder ?? 0,
           createdAt: widget.paymentMethod?.createdAt ?? DateTime.now(),

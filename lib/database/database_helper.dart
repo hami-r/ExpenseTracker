@@ -18,7 +18,7 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -154,6 +154,15 @@ class DatabaseHelper {
         'CREATE INDEX idx_ai_history_profile ON ai_history(profile_id, timestamp DESC)',
       );
     }
+
+    if (oldVersion < 7) {
+      await db.execute(
+        'ALTER TABLE payment_methods ADD COLUMN is_primary INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'CREATE INDEX idx_payment_methods_primary ON payment_methods(user_id, profile_id, is_primary)',
+      );
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -233,6 +242,7 @@ class DatabaseHelper {
         icon_name TEXT,
         color_hex TEXT,
         account_number TEXT,
+        is_primary INTEGER DEFAULT 0,
         is_active INTEGER DEFAULT 1,
         display_order INTEGER DEFAULT 0,
         profile_id INTEGER DEFAULT 1,
@@ -250,6 +260,9 @@ class DatabaseHelper {
     );
     await db.execute(
       'CREATE INDEX idx_payment_methods_profile ON payment_methods(profile_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_payment_methods_primary ON payment_methods(user_id, profile_id, is_primary)',
     );
 
     // 5. Transactions Table

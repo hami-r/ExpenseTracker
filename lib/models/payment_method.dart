@@ -6,6 +6,7 @@ class PaymentMethod {
   final String? iconName;
   final String? colorHex;
   final String? accountNumber;
+  final bool isPrimary;
   final bool isActive;
   final int displayOrder;
   final DateTime? createdAt;
@@ -19,6 +20,7 @@ class PaymentMethod {
     this.iconName,
     this.colorHex,
     this.accountNumber,
+    this.isPrimary = false,
     this.isActive = true,
     this.displayOrder = 0,
     this.createdAt,
@@ -34,6 +36,7 @@ class PaymentMethod {
       'icon_name': iconName,
       'color_hex': colorHex,
       'account_number': accountNumber,
+      'is_primary': isPrimary ? 1 : 0,
       'is_active': isActive ? 1 : 0,
       'display_order': displayOrder,
       'created_at': createdAt?.toIso8601String(),
@@ -50,6 +53,7 @@ class PaymentMethod {
       iconName: map['icon_name'] as String?,
       colorHex: map['color_hex'] as String?,
       accountNumber: map['account_number'] as String?,
+      isPrimary: (map['is_primary'] as int?) == 1,
       isActive: (map['is_active'] as int?) == 1,
       displayOrder: map['display_order'] as int? ?? 0,
       createdAt: map['created_at'] != null

@@ -276,38 +276,6 @@ class _ManagePaymentMethodsScreenState
 
                     const SizedBox(height: 24),
 
-                    // Bottom Note
-                    Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            'Swipe left on a card to reveal quick actions.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color:
-                                  (isDark
-                                          ? const Color(0xFF6b7280)
-                                          : const Color(0xFF9ca3af))
-                                      .withOpacity(0.6),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          GestureDetector(
-                            onTap: () {},
-                            child: Text(
-                              'Need help adding a card?',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     const SizedBox(height: 32),
                   ],
                 ),

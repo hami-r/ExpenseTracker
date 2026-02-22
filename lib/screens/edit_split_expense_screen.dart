@@ -12,6 +12,7 @@ import '../../utils/color_helper.dart';
 import '../../providers/profile_provider.dart';
 import 'package:expense_tracker_ai/widgets/custom_date_picker.dart';
 import 'package:provider/provider.dart';
+import 'add_split_item_screen.dart';
 
 class EditSplitExpenseScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -139,24 +140,49 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
 
   double get _remainingAmount => _totalAmount - _currentSplitTotal;
 
-  void _addNewItem() {
-    // Default to first category or a generic one
-    int? defaultCategoryId;
-    if (_categoriesMap.isNotEmpty) {
-      defaultCategoryId = _categoriesMap.keys.first;
-    }
+  Future<void> _addNewItem() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(builder: (context) => const AddSplitItemScreen()),
+    );
 
-    final category = _categoriesMap[defaultCategoryId];
+    if (result == null || !mounted) return;
+
+    final selectedCategoryName = result['category'] as String?;
+    int? categoryId;
+    Category? matchedCategory;
+    if (selectedCategoryName != null) {
+      for (final entry in _categoriesMap.entries) {
+        if (entry.value.name.toLowerCase() ==
+            selectedCategoryName.toLowerCase()) {
+          categoryId = entry.key;
+          matchedCategory = entry.value;
+          break;
+        }
+      }
+    }
+    matchedCategory ??= categoryId != null
+        ? _categoriesMap[categoryId]
+        : _categoriesMap.values.firstOrNull;
 
     setState(() {
       _splitItems.add({
         'id': null, // New item
-        'categoryId': defaultCategoryId,
-        'controller': TextEditingController(text: ''),
-        'amountController': TextEditingController(text: ''),
-        'color': ColorHelper.fromHex(category?.colorHex),
-        'icon': IconHelper.getIcon(category?.iconName),
-        'categoryName': category?.name ?? 'Category',
+        'categoryId': categoryId,
+        'controller': TextEditingController(
+          text: result['name']?.toString() ?? '',
+        ),
+        'amountController': TextEditingController(
+          text: result['amount']?.toString() ?? '',
+        ),
+        'color': matchedCategory != null
+            ? ColorHelper.fromHex(matchedCategory.colorHex)
+            : (result['color'] as Color? ?? Colors.grey),
+        'icon': matchedCategory != null
+            ? IconHelper.getIcon(matchedCategory.iconName)
+            : (result['icon'] as IconData? ?? Icons.category),
+        'categoryName':
+            matchedCategory?.name ?? (selectedCategoryName ?? 'Category'),
       });
     });
   }
@@ -479,18 +505,21 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                               ),
                             )
                           else
-                            ..._splitItems.asMap().entries.map(
-                              (entry) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _buildSplitItemInput(
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _splitItems.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                return _buildSplitItemInput(
                                   context,
                                   isDark,
-                                  surfaceColor,
                                   primaryColor,
-                                  entry.value,
-                                  entry.key,
-                                ),
-                              ),
+                                  _splitItems[index],
+                                  index,
+                                );
+                              },
                             ),
 
                           const SizedBox(height: 24),
@@ -649,154 +678,140 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
   Widget _buildSplitItemInput(
     BuildContext context,
     bool isDark,
-    Color surfaceColor,
     Color primaryColor,
     Map<String, dynamic> item,
     int index,
   ) {
-    return Dismissible(
-      key:
-          UniqueKey(), // Use ID if available, but UniqueKey safer for now with maps
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) => _removeItem(index),
-      background: Container(
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color:
+                  (item['color'] as Color?)?.withOpacity(isDark ? 0.2 : 0.1) ??
+                  Colors.grey.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color:
-                    (item['color'] as Color?)?.withOpacity(
-                      isDark ? 0.2 : 0.1,
-                    ) ??
-                    Colors.grey.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                item['icon'] as IconData? ?? Icons.category,
-                color: item['color'] as Color?,
-                size: 20,
-              ),
+            child: Icon(
+              item['icon'] as IconData? ?? Icons.category,
+              size: 20,
+              color: isDark
+                  ? (item['color'] as Color?)?.withOpacity(0.8)
+                  : (item['color'] as Color?),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: item['controller'],
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : const Color(0xFF0f172a),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: item['controller'],
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    hintText: 'Item name',
+                    hintStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.4),
                     ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  (item['categoryName'] as String? ?? 'CATEGORY').toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  context.read<ProfileProvider>().currencySymbol,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 40,
+                  child: TextField(
+                    controller: item['amountController'],
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                    ],
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    decoration: const InputDecoration(
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
-                      hintText: 'Item name',
-                      hintStyle: TextStyle(
-                        color: isDark
-                            ? const Color(0xFF64748b)
-                            : const Color(0xFF94a3b8),
-                      ),
+                      border: InputBorder.none,
                     ),
+                    onChanged: (_) => setState(() {}),
                   ),
-                  const SizedBox(height: 2),
-                  // Category Dropdown or Text? For now static or Text because we don't have a category picker yet here.
-                  // We'll just display the category name.
-                  GestureDetector(
-                    // Future enhancement: Open category picker
-                    child: Text(
-                      (item['categoryName'] as String? ?? 'CATEGORY')
-                          .toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF94a3b8),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    context.read<ProfileProvider>().currencySymbol,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF94a3b8),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  IntrinsicWidth(
-                    child: TextField(
-                      controller: item['amountController'],
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d*\.?\d*'),
-                        ),
-                      ],
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF0f172a),
-                      ),
-                      decoration: const InputDecoration(
-                        filled: false,
-                        fillColor: Colors.transparent,
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                        constraints: BoxConstraints(minWidth: 40),
-                      ),
-                      onChanged: (_) => setState(() {}), // Trigger total recalc
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: () => _removeItem(index),
+            icon: Icon(
+              Icons.remove_circle_outline_rounded,
+              color: Colors.red.withOpacity(0.7),
+              size: 20,
             ),
-            IconButton(
-              icon: const Icon(Icons.close, size: 16, color: Colors.grey),
-              onPressed: () => _removeItem(index),
-            ),
-          ],
-        ),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 20,
+          ),
+        ],
       ),
     );
   }
