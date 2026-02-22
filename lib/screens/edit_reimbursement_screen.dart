@@ -363,6 +363,8 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
                 ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.transparent,
                   contentPadding: EdgeInsets.zero,
                   isDense: true,
                   hintText: '0',

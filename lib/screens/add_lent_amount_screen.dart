@@ -297,7 +297,9 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                           Icon(Icons.check_circle_rounded, size: 20),
                         SizedBox(width: 8),
                         Text(
-                          'Save Reimbursement',
+                          _selectedTypeIndex == 0
+                              ? 'Save Personal Lent'
+                              : 'Save Reimbursement',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -329,7 +331,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
             ),
           ),
           Text(
-            'Add Reimbursement',
+            'Add Money Owed to Me',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -487,6 +489,8 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                 ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.transparent,
                   contentPadding: EdgeInsets.zero,
                   isDense: true,
                   hintText: '0',

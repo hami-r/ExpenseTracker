@@ -354,6 +354,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                     ),
                                     decoration: const InputDecoration(
                                       border: InputBorder.none,
+                                      filled: true,
+                                      fillColor: Colors.transparent,
                                       hintText: '0',
                                       hintStyle: TextStyle(
                                         color: Color(

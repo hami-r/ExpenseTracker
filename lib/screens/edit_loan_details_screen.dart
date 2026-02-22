@@ -356,6 +356,8 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                 ),
                 decoration: const InputDecoration(
                   border: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.transparent,
                   contentPadding: EdgeInsets.zero,
                   isDense: true,
                 ),
