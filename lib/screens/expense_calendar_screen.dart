@@ -9,6 +9,7 @@ import '../models/category.dart';
 import 'transaction_details_screen.dart';
 import 'split_expense_detail_screen.dart';
 import '../providers/profile_provider.dart';
+import '../utils/icon_helper.dart';
 import 'package:provider/provider.dart';
 
 class ExpenseCalendarScreen extends StatefulWidget {
@@ -19,6 +20,11 @@ class ExpenseCalendarScreen extends StatefulWidget {
 }
 
 class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
+  static const double _collapsedSheetSize = 0.41;
+  static const double _maxSheetSize = 0.86;
+  double _currentSheetSize = _collapsedSheetSize;
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
   DateTime _currentMonth = DateTime.now();
   DateTime _selectedDate = DateTime.now();
 
@@ -40,6 +46,12 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -130,23 +142,28 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     }
   }
 
-  IconData _getIconFromName(String? iconName) {
-    const iconMap = {
-      'food': Icons.lunch_dining_rounded,
-      'transport': Icons.directions_car_rounded,
-      'shopping': Icons.shopping_bag_rounded,
-      'charity': Icons.volunteer_activism_rounded,
-      'housing': Icons.cottage_rounded,
-      'fun': Icons.local_activity_rounded,
-      'education': Icons.school_rounded,
-      'health': Icons.local_hospital_rounded,
-      'utilities': Icons.flash_on_rounded,
-      'cash': Icons.payments_rounded,
-      'card': Icons.credit_card_rounded,
-      'bank': Icons.account_balance_rounded,
-      'upi': Icons.qr_code_scanner_rounded,
-    };
-    return iconMap[iconName?.toLowerCase()] ?? Icons.more_horiz_rounded;
+  Future<void> _changeMonth(int delta) async {
+    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + delta);
+    final daysInNextMonth = DateUtils.getDaysInMonth(
+      nextMonth.year,
+      nextMonth.month,
+    );
+    final selectedDay = _selectedDate.day.clamp(1, daysInNextMonth);
+    final nextSelectedDate = DateTime(
+      nextMonth.year,
+      nextMonth.month,
+      selectedDay,
+    );
+
+    if (mounted) {
+      setState(() {
+        _currentMonth = nextMonth;
+        _selectedDate = nextSelectedDate;
+      });
+    }
+
+    await _loadMonthData();
+    await _loadDayTransactions(nextSelectedDate);
   }
 
   Color _getColorFromHex(String? colorHex) {
@@ -183,31 +200,69 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(isDark),
-
-            // Month Selector
-            _buildMonthSelector(isDark),
-
-            // Calendar Grid
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final collapsedSheetHeight =
+                constraints.maxHeight * _collapsedSheetSize;
+            final currentSheetHeight =
+                constraints.maxHeight * _currentSheetSize;
+            return Stack(
+              children: [
+                Column(
                   children: [
-                    _buildWeekdayHeaders(),
-                    const SizedBox(height: 8),
-                    Expanded(child: _buildCalendarGrid(isDark)),
+                    // Header
+                    _buildHeader(isDark),
+
+                    // Month Selector
+                    _buildMonthSelector(isDark),
+
+                    // Calendar Grid
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: [
+                            _buildWeekdayHeaders(),
+                            const SizedBox(height: 8),
+                            Expanded(child: _buildCalendarGrid(isDark)),
+                            SizedBox(height: collapsedSheetHeight + 16),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ),
-
-            // Bottom Sheet with Stats
-            _buildBottomSheet(isDark),
-          ],
+                NotificationListener<DraggableScrollableNotification>(
+                  onNotification: (notification) {
+                    if ((notification.extent - _currentSheetSize).abs() >
+                        0.001) {
+                      setState(() {
+                        _currentSheetSize = notification.extent;
+                      });
+                    }
+                    return false;
+                  },
+                  child: DraggableScrollableSheet(
+                    controller: _sheetController,
+                    initialChildSize: _collapsedSheetSize,
+                    minChildSize: _collapsedSheetSize,
+                    maxChildSize: _maxSheetSize,
+                    builder: (context, scrollController) {
+                      return _buildBottomSheet(isDark, scrollController);
+                    },
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: currentSheetHeight - 32,
+                  child: Center(
+                    child: _buildSheetCircle(isDark, constraints.maxHeight),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -247,15 +302,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            onPressed: () {
-              setState(() {
-                _currentMonth = DateTime(
-                  _currentMonth.year,
-                  _currentMonth.month - 1,
-                );
-                _loadMonthData();
-              });
-            },
+            onPressed: () => _changeMonth(-1),
             icon: Icon(
               Icons.chevron_left_rounded,
               color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
@@ -270,15 +317,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
             ),
           ),
           IconButton(
-            onPressed: () {
-              setState(() {
-                _currentMonth = DateTime(
-                  _currentMonth.year,
-                  _currentMonth.month + 1,
-                );
-                _loadMonthData();
-              });
-            },
+            onPressed: () => _changeMonth(1),
             icon: Icon(
               Icons.chevron_right_rounded,
               color: isDark ? const Color(0xFF9ca3af) : const Color(0xFF6b7280),
@@ -402,7 +441,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     );
   }
 
-  Widget _buildBottomSheet(bool isDark) {
+  Widget _buildBottomSheet(bool isDark, ScrollController scrollController) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1e293b) : Colors.white,
@@ -415,329 +454,345 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: ListView(
+        controller: scrollController,
         children: [
-          // Floating Button
-          Transform.translate(
-            offset: const Offset(0, -40),
+          Center(
             child: Container(
-              width: 80,
-              height: 80,
+              margin: const EdgeInsets.only(top: 12),
+              width: 44,
+              height: 4,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1e293b) : Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 30,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(6),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.4),
-                      blurRadius: 20,
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 3,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFcbd5e1),
+                borderRadius: BorderRadius.circular(999),
               ),
             ),
           ),
-
-          Transform.translate(
-            offset: const Offset(0, -32),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                children: [
-                  // Stats Row
-                  Container(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: isDark
-                              ? const Color(0xFF1f2937)
-                              : const Color(0xFFf3f4f6),
-                        ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              children: [
+                // Stats Row
+                Container(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF1f2937)
+                            : const Color(0xFFf3f4f6),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'MONTH\'S TOTAL',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.2,
-                                color: isDark
-                                    ? const Color(0xFF9ca3af)
-                                    : const Color(0xFF9ca3af),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${context.read<ProfileProvider>().currencySymbol}${_monthTotal.toStringAsFixed(1)}',
-                              style: TextStyle(
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF111827),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'DAILY AVG',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.2,
-                                color: isDark
-                                    ? const Color(0xFF9ca3af)
-                                    : const Color(0xFF9ca3af),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${context.read<ProfileProvider>().currencySymbol}${_dailyAvg.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF111827),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Transaction Item
-                  if (_isLoading)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(),
-                    )
-                  else if (_selectedDayTransactions.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: Column(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.receipt_long_rounded,
-                            size: 48,
-                            color: isDark
-                                ? Colors.grey.shade800
-                                : Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 16),
                           Text(
-                            'No transactions on this day',
+                            'MONTH\'S TOTAL',
                             style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
                               color: isDark
-                                  ? Colors.grey.shade600
-                                  : Colors.grey.shade500,
+                                  ? const Color(0xFF9ca3af)
+                                  : const Color(0xFF9ca3af),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${context.read<ProfileProvider>().currencySymbol}${_monthTotal.toStringAsFixed(1)}',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
                             ),
                           ),
                         ],
                       ),
-                    )
-                  else
-                    SizedBox(
-                      height: 300,
-                      child: ListView.builder(
-                        itemCount: _selectedDayTransactions.length,
-                        padding: EdgeInsets.zero,
-                        itemBuilder: (context, index) {
-                          final transaction = _selectedDayTransactions[index];
-                          final category =
-                              _categoriesMap[transaction.categoryId];
-                          final formattedDate = DateFormat(
-                            'd MMM, h:mm a',
-                          ).format(transaction.transactionDate);
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'DAILY AVG',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
+                              color: isDark
+                                  ? const Color(0xFF9ca3af)
+                                  : const Color(0xFF9ca3af),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${context.read<ProfileProvider>().currencySymbol}${_dailyAvg.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
 
-                          final icon = _getIconFromName(category?.iconName);
-                          final color = _getColorFromHex(category?.colorHex);
+                const SizedBox(height: 16),
 
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () async {
-                                  final transactionMap = {
-                                    'id': transaction.transactionId,
-                                    'title': transaction.note ?? 'Expense',
-                                    'date': formattedDate,
-                                    'amount': transaction.amount.toString(),
-                                    'category':
-                                        category?.name ?? 'Uncategorized',
-                                    'paymentMethod':
-                                        'Cash', // TODO: Fetch payment method name if needed
-                                    'icon': icon,
-                                    'color': color,
-                                    'note': transaction.note ?? '',
-                                  };
+                // Transaction Item
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  )
+                else if (_selectedDayTransactions.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.receipt_long_rounded,
+                          size: 48,
+                          color: isDark
+                              ? Colors.grey.shade800
+                              : Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No transactions on this day',
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.grey.shade600
+                                : Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ListView.builder(
+                    itemCount: _selectedDayTransactions.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    itemBuilder: (context, index) {
+                      final transaction = _selectedDayTransactions[index];
+                      final category = _categoriesMap[transaction.categoryId];
+                      final formattedDate = DateFormat(
+                        'd MMM, h:mm a',
+                      ).format(transaction.transactionDate);
 
-                                  if (transaction.isSplit) {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            SplitExpenseDetailScreen(
-                                              transaction: transactionMap,
-                                            ),
-                                      ),
-                                    );
-                                  } else {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            TransactionDetailsScreen(
-                                              transaction: transactionMap,
-                                            ),
-                                      ),
-                                    );
-                                  }
-                                  // Refresh data
-                                  _loadData();
-                                },
-                                borderRadius: BorderRadius.circular(16),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 12,
+                      final icon = IconHelper.getIcon(category?.iconName);
+                      final color = _getColorFromHex(category?.colorHex);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () async {
+                              final transactionMap = {
+                                'id': transaction.transactionId,
+                                'userId': transaction.userId,
+                                'title': transaction.note ?? 'Expense',
+                                'date': transaction.transactionDate,
+                                'amount': transaction.amount,
+                                'paymentMethodId': transaction.paymentMethodId,
+                                'category': category?.name ?? 'Uncategorized',
+                                'paymentMethod':
+                                    'Cash', // TODO: Fetch payment method name if needed
+                                'icon': icon,
+                                'color': color,
+                                'note': transaction.note ?? '',
+                              };
+
+                              if (transaction.isSplit) {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        SplitExpenseDetailScreen(
+                                          transaction: transactionMap,
+                                        ),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 56,
-                                        height: 56,
-                                        decoration: BoxDecoration(
-                                          color: color.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            16,
+                                );
+                              } else {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        TransactionDetailsScreen(
+                                          transaction: transactionMap,
+                                        ),
+                                  ),
+                                );
+                              }
+                              // Refresh data
+                              _loadData();
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: color.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Icon(icon, color: color, size: 24),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          transaction.note ?? 'Expense',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark
+                                                ? Colors.white
+                                                : const Color(0xFF111827),
                                           ),
                                         ),
-                                        child: Icon(
-                                          icon,
-                                          color: color,
-                                          size: 30,
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          formattedDate,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: isDark
+                                                ? const Color(0xFF9ca3af)
+                                                : const Color(0xFF6b7280),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                      const SizedBox(width: 20),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              transaction.note ?? 'Expense',
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: isDark
-                                                    ? Colors.white
-                                                    : const Color(0xFF111827),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              formattedDate,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                                color: isDark
-                                                    ? const Color(0xFF9ca3af)
-                                                    : const Color(0xFF6b7280),
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '${context.read<ProfileProvider>().currencySymbol}${transaction.amount}',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF111827),
-                                        ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${context.read<ProfileProvider>().currencySymbol}${transaction.amount}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF111827),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
 
-                  SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-                ],
-              ),
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSheetCircle(bool isDark, double viewportHeight) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragUpdate: (details) {
+        if (!_sheetController.isAttached) return;
+        final deltaExtent = -(details.delta.dy / viewportHeight);
+        final nextExtent = (_currentSheetSize + deltaExtent).clamp(
+          _collapsedSheetSize,
+          _maxSheetSize,
+        );
+        _sheetController.jumpTo(nextExtent);
+        if ((nextExtent - _currentSheetSize).abs() > 0.001) {
+          setState(() {
+            _currentSheetSize = nextExtent;
+          });
+        }
+      },
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1e293b) : Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 30,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(6),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primary.withOpacity(0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                blurRadius: 20,
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 3,
+                  ),
+                ),
+              ),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -191,7 +191,26 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
 
                         const SizedBox(height: 32),
                         // Reimbursements Section
-                        _buildSectionHeader('Pending Reimbursements', isDark),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildSectionHeader(
+                              'Pending Reimbursements',
+                              isDark,
+                            ),
+                            if (_reimbursements.isNotEmpty)
+                              Text(
+                                '${_reimbursements.length}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                          ],
+                        ),
                         const SizedBox(height: 12),
 
                         if (_isLoading)
