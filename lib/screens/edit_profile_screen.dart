@@ -219,8 +219,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             elevation: WidgetStateProperty.resolveWith<double>((
                               Set<WidgetState> states,
                             ) {
-                              if (states.contains(WidgetState.pressed))
+                              if (states.contains(WidgetState.pressed)) {
                                 return 2;
+                              }
                               return 8; // Default elevation for shadow
                             }),
                           ),

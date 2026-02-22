@@ -97,7 +97,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                             TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onBackground,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                       ),
                       const SizedBox(width: 40), // Placeholder for alignment

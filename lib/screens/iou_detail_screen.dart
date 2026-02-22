@@ -700,7 +700,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
         const SizedBox(height: 16),
         ..._payments
             .map((payment) => _buildPaymentItem(payment, isDark))
-            .toList(),
+            ,
       ],
     );
   }

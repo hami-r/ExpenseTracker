@@ -165,8 +165,9 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     // Create heatmap gradient based on theme's primary color
     if (amount < 300) return primaryColor.withOpacity(0.2); // heatmap-low (20%)
     if (amount < 600) return primaryColor.withOpacity(0.5); // heatmap-med (50%)
-    if (amount < 900)
+    if (amount < 900) {
       return primaryColor.withOpacity(0.75); // heatmap-high (75%)
+    }
     return primaryColor; // heatmap-max (100%)
   }
 

@@ -608,7 +608,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                         _buildLabel(
                           _selectedType == 'Cash'
                               ? 'Wallet Label'
-                              : '${_selectedType} Name / Label',
+                              : '$_selectedType Name / Label',
                           isDark,
                         ),
                         const SizedBox(height: 8),
@@ -906,7 +906,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: DropdownButtonFormField<String>(
-                              value: _linkedBank,
+                              initialValue: _linkedBank,
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.transparent,
@@ -1013,7 +1013,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     _isPrimary = value;
                                   });
                                 },
-                                activeColor: Theme.of(
+                                activeThumbColor: Theme.of(
                                   context,
                                 ).colorScheme.primary,
                               ),

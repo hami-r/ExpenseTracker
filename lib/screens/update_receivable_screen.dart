@@ -538,7 +538,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                     }
                   });
                 },
-                activeColor: Theme.of(context).colorScheme.primary,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
                 activeTrackColor: Theme.of(
                   context,
                 ).colorScheme.primary.withOpacity(0.2),

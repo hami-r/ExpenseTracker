@@ -24,7 +24,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   final AllTransactionsService _service = AllTransactionsService();
   final ScrollController _scrollController = ScrollController();
 
-  List<TransactionItem> _transactions = [];
+  final List<TransactionItem> _transactions = [];
   bool _isLoading = false;
   bool _hasMore = true;
   int _offset = 0;
@@ -459,10 +459,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   }
 
   IconData _getIcon(TransactionItem item) {
-    if (item.type == TransactionType.expense)
+    if (item.type == TransactionType.expense) {
       return IconHelper.getIcon('category_rounded');
-    if (item.type == TransactionType.loan)
+    }
+    if (item.type == TransactionType.loan) {
       return Icons.account_balance_wallet_rounded;
+    }
     if (item.type == TransactionType.loanPayment) return Icons.payment_rounded;
     if (item.type == TransactionType.iou) return Icons.handshake_rounded;
     if (item.type == TransactionType.receivable) return Icons.upcoming_rounded;

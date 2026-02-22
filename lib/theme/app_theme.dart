@@ -29,7 +29,6 @@ class AppTheme {
         secondary: secondaryColor,
         tertiary: tertiaryColor,
         surface: surfaceLight,
-        background: backgroundLight,
       ),
 
       textTheme:
@@ -152,7 +151,6 @@ class AppTheme {
         secondary: secondaryColor,
         tertiary: tertiaryColor,
         surface: surfaceDark,
-        background: backgroundDark,
       ),
 
       textTheme:

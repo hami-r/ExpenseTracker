@@ -836,7 +836,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
               title: payment.notes?.isNotEmpty == true
                   ? payment.notes!
                   : 'Payment Received',
-              date: '${DateFormat('MMM dd').format(payment.paymentDate)}',
+              date: DateFormat('MMM dd').format(payment.paymentDate),
               amount: '+ ${currencyFormat.format(payment.paymentAmount)}',
               isDark: isDark,
             ),

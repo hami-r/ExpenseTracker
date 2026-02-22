@@ -306,7 +306,7 @@ class _DatabaseTestScreenState extends State<DatabaseTestScreen>
                                 ? Colors.grey[800]!
                                 : Colors.grey[300]!,
                           ),
-                          headingRowColor: MaterialStateProperty.all(
+                          headingRowColor: WidgetStateProperty.all(
                             isDark ? Colors.grey[900] : Colors.grey[100],
                           ),
                           columns: _tableData.first.keys

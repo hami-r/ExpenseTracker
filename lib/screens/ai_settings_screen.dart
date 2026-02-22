@@ -693,7 +693,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Theme.of(context).colorScheme.primary,
+            activeThumbColor: Theme.of(context).colorScheme.primary,
             activeTrackColor: Theme.of(
               context,
             ).colorScheme.primary.withValues(alpha: 0.2),
@@ -702,8 +702,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                 ? Colors.white10
                 : const Color(0xFFf1f5f9),
             trackOutlineColor: WidgetStateProperty.resolveWith<Color>((states) {
-              if (states.contains(WidgetState.selected))
+              if (states.contains(WidgetState.selected)) {
                 return Colors.transparent;
+              }
               return isDark ? Colors.white10 : const Color(0xFFf1f5f9);
             }),
           ),

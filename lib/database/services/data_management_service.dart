@@ -66,7 +66,7 @@ class DataManagementService {
 
       // Close existing DB connection
       final db = await _dbHelper.database;
-      if (await db.isOpen) {
+      if (db.isOpen) {
         await db.close();
       }
 

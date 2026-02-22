@@ -122,8 +122,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
           final paymentMethodsMap = <int, PaymentMethod>{};
           for (var pm in paymentMethods) {
-            if (pm.paymentMethodId != null)
+            if (pm.paymentMethodId != null) {
               paymentMethodsMap[pm.paymentMethodId!] = pm;
+            }
           }
 
           setState(() {

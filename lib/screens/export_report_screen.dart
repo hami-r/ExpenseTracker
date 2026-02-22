@@ -26,7 +26,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
   // Filters & Sorting
   SortOption _sortOption = SortOption.dateDesc;
   List<Category> _categories = [];
-  List<int> _selectedCategoryIds = []; // Empty means all
+  final List<int> _selectedCategoryIds = []; // Empty means all
   bool _isLoadingCategories = true;
 
   // Options

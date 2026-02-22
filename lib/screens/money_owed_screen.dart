@@ -187,7 +187,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                                 },
                               ),
                             );
-                          }).toList(),
+                          }),
 
                         const SizedBox(height: 32),
                         // Reimbursements Section
@@ -229,7 +229,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                                 context: context,
                                 isDark: isDark,
                                 name: reim.sourceName,
-                                type: '${reim.category ?? 'Reimbursement'}',
+                                type: reim.category ?? 'Reimbursement',
                                 amount: currencyFormat.format(reim.amount),
                                 received: currencyFormat.format(
                                   reim.totalReimbursed,
@@ -254,7 +254,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                                 },
                               ),
                             );
-                          }).toList(),
+                          }),
                       ],
                     ),
                   ),

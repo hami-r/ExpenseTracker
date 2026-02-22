@@ -27,7 +27,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
 
   DateTime _selectedDate = DateTime.now();
   bool _isFullyReimbursed = false;
-  String _paymentMethod = 'Bank Transfer - HDFC';
+  final String _paymentMethod = 'Bank Transfer - HDFC';
 
   @override
   void initState() {
@@ -769,7 +769,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                 _isFullyReimbursed = value;
               });
             },
-            activeColor: Theme.of(context).colorScheme.primary,
+            activeThumbColor: Theme.of(context).colorScheme.primary,
             activeTrackColor: Theme.of(
               context,
             ).colorScheme.primary.withOpacity(0.2),

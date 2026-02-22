@@ -288,7 +288,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                                 },
                               ),
                             );
-                          }).toList(),
+                          }),
 
                         const SizedBox(height: 32),
 
@@ -370,7 +370,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                                 },
                               ),
                             );
-                          }).toList(),
+                          }),
                       ],
                     ),
                   ),

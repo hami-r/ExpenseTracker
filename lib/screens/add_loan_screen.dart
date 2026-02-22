@@ -26,7 +26,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   final TextEditingController _tenureController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   String _tenureType = 'Yrs';
-  String _interestType = 'Diminishing';
+  final String _interestType = 'Diminishing';
   DateTime _startDate = DateTime.now();
 
   @override
@@ -51,8 +51,9 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       final rate = double.tryParse(_interestRateController.text) ?? 0.0;
       int tenure = int.tryParse(_tenureController.text) ?? 0;
 
-      if (principal <= 0 || tenure <= 0)
+      if (principal <= 0 || tenure <= 0) {
         return '${context.read<ProfileProvider>().currencySymbol}0';
+      }
 
       // Convert tenure to months if in years
       if (_tenureType == 'Yrs') {

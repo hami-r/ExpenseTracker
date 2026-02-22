@@ -724,7 +724,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
         ),
         ...recentPayments
             .map((payment) => _buildPaymentItem(payment, isDark))
-            .toList(),
+            ,
       ],
     );
   }
