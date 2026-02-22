@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'edit_expense_screen.dart';
 import '../../database/services/transaction_service.dart';
+import '../../database/services/payment_method_service.dart';
 import 'package:intl/intl.dart';
 import '../../providers/profile_provider.dart';
 import 'package:provider/provider.dart';
+import '../../utils/icon_helper.dart';
+import '../../utils/color_helper.dart';
+import '../../models/payment_method.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -17,7 +21,33 @@ class TransactionDetailsScreen extends StatefulWidget {
 
 class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   final TransactionService _transactionService = TransactionService();
+  final PaymentMethodService _paymentMethodService = PaymentMethodService();
   bool _isDeleteDialogVisible = false;
+  PaymentMethod? _paymentMethod;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPaymentMethodDetails();
+  }
+
+  Future<void> _loadPaymentMethodDetails() async {
+    final paymentMethodId = widget.transaction['paymentMethodId'] as int?;
+    if (paymentMethodId == null) return;
+
+    try {
+      final method = await _paymentMethodService.getPaymentMethodById(
+        paymentMethodId,
+      );
+      if (mounted) {
+        setState(() {
+          _paymentMethod = method;
+        });
+      }
+    } catch (_) {
+      // Keep UI resilient with fallback icon/text if lookup fails.
+    }
+  }
 
   Future<void> _deleteTransaction() async {
     try {
@@ -184,11 +214,21 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                     child: _buildInfoBox(
                                       context,
                                       'Payment',
-                                      widget.transaction['paymentMethod'] ??
-                                          'UPI',
-                                      Icons.qr_code_scanner_rounded,
-                                      primaryColor,
-                                      subtitle: 'GPay Personal',
+                                      _paymentMethod?.name ??
+                                          widget.transaction['paymentMethod'] ??
+                                          'Payment',
+                                      _paymentMethod != null
+                                          ? IconHelper.getIcon(
+                                              _paymentMethod!.iconName,
+                                            )
+                                          : Icons
+                                                .account_balance_wallet_rounded,
+                                      _paymentMethod != null
+                                          ? ColorHelper.fromHex(
+                                              _paymentMethod!.colorHex,
+                                            )
+                                          : primaryColor,
+                                      subtitle: _paymentMethod?.type,
                                     ),
                                   ),
                                 ],

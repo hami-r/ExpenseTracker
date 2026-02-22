@@ -4,15 +4,19 @@ import 'package:intl/intl.dart';
 
 import '../../database/services/split_transaction_service.dart';
 import '../../database/services/category_service.dart';
+import '../../database/services/payment_method_service.dart';
 import '../../models/transaction.dart' as model; // Alias to avoid conflict
 import '../../models/split_item.dart';
 import '../../models/category.dart';
+import '../../models/payment_method.dart';
 import '../../utils/icon_helper.dart';
 import '../../utils/color_helper.dart';
 import '../../providers/profile_provider.dart';
 import 'package:expense_tracker_ai/widgets/custom_date_picker.dart';
 import 'package:provider/provider.dart';
 import 'add_split_item_screen.dart';
+import '../../widgets/payment_selection_bottom_sheet.dart';
+import 'manage_payment_methods_screen.dart';
 
 class EditSplitExpenseScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -27,6 +31,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
   final SplitTransactionService _splitTransactionService =
       SplitTransactionService();
   final CategoryService _categoryService = CategoryService();
+  final PaymentMethodService _paymentMethodService = PaymentMethodService();
 
   late TextEditingController _totalAmountController;
   late TextEditingController _noteController;
@@ -34,6 +39,8 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _splitItems = [];
   Map<int, Category> _categoriesMap = {};
+  List<PaymentMethod> _paymentMethods = [];
+  int _selectedPaymentIndex = 0;
   double _totalAmount = 0.0;
   DateTime _selectedDate = DateTime.now();
 
@@ -65,6 +72,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
     try {
       final transactionId = widget.transaction['id'] as int;
       final userId = widget.transaction['userId'] as int?;
+      final profileId = context.read<ProfileProvider>().activeProfileId;
 
       final results = await Future.wait([
         _splitTransactionService.getSplitItemsByTransaction(transactionId),
@@ -72,11 +80,19 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
           _categoryService.getAllCategories(userId)
         else
           Future.value(<Category>[]),
+        if (userId != null)
+          _paymentMethodService.getAllPaymentMethods(
+            userId,
+            profileId: profileId,
+          )
+        else
+          Future.value(<PaymentMethod>[]),
       ]);
 
       if (mounted) {
         final splitItems = results[0] as List<SplitItem>;
         final categories = results[1] as List<Category>;
+        final paymentMethods = results[2] as List<PaymentMethod>;
 
         // Create category map
         final categoriesMap = <int, Category>{};
@@ -105,6 +121,21 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
         setState(() {
           _splitItems = uiSplitItems;
           _categoriesMap = categoriesMap;
+          _paymentMethods = paymentMethods;
+
+          if (_paymentMethods.isNotEmpty) {
+            final existingId = widget.transaction['paymentMethodId'] as int?;
+            if (existingId != null) {
+              final idx = _paymentMethods.indexWhere(
+                (m) => m.paymentMethodId == existingId,
+              );
+              _selectedPaymentIndex = idx != -1 ? idx : 0;
+            } else {
+              final primaryIdx = _paymentMethods.indexWhere((m) => m.isPrimary);
+              _selectedPaymentIndex = primaryIdx != -1 ? primaryIdx : 0;
+            }
+          }
+
           _isLoading = false;
         });
       }
@@ -229,7 +260,9 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
         transactionId: widget.transaction['id'] as int,
         userId: widget.transaction['userId'] as int,
         categoryId: widget.transaction['categoryId'] as int, // Parent category
-        paymentMethodId: widget.transaction['paymentMethodId'] as int,
+        paymentMethodId: _paymentMethods.isNotEmpty
+            ? _paymentMethods[_selectedPaymentIndex].paymentMethodId
+            : (widget.transaction['paymentMethodId'] as int?),
         amount: _totalAmount,
         transactionDate: _selectedDate,
         note: _noteController.text.isEmpty ? null : _noteController.text,
@@ -524,6 +557,11 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
 
                           const SizedBox(height: 24),
 
+                          // Payment Method
+                          _buildPaymentMethodSection(isDark),
+
+                          const SizedBox(height: 24),
+
                           // Date
                           GestureDetector(
                             onTap: () {
@@ -813,6 +851,183 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPaymentMethodSection(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            'Payment Method',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontSize: 14),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 50,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            itemCount: _paymentMethods.length,
+            itemBuilder: (context, index) {
+              final method = _paymentMethods[index];
+              final isSelected = _selectedPaymentIndex == index;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Material(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : !isDark
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedPaymentIndex = index;
+                              });
+                            },
+                            borderRadius: const BorderRadius.horizontal(
+                              left: Radius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: 16,
+                                top: 12,
+                                bottom: 12,
+                                right: 8,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    IconHelper.getIcon(method.iconName),
+                                    size: 22,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : ColorHelper.fromHex(method.colorHex),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    method.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withOpacity(0.7),
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedPaymentIndex = index;
+                              });
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                isScrollControlled: true,
+                                builder: (context) => PaymentSelectionBottomSheet(
+                                  paymentMethods: _paymentMethods,
+                                  selectedPaymentMethodId:
+                                      method.paymentMethodId,
+                                  onPaymentSelected: (selectedMethod) {
+                                    setState(() {
+                                      final idx = _paymentMethods.indexWhere(
+                                        (m) =>
+                                            m.paymentMethodId ==
+                                            selectedMethod.paymentMethodId,
+                                      );
+                                      if (idx != -1) {
+                                        _selectedPaymentIndex = idx;
+                                      }
+                                    });
+                                  },
+                                  onManageAccounts: () async {
+                                    Navigator.pop(context);
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const ManagePaymentMethodsScreen(),
+                                      ),
+                                    );
+                                    _loadData();
+                                  },
+                                ),
+                              );
+                            },
+                            borderRadius: const BorderRadius.horizontal(
+                              right: Radius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: 4,
+                                right: 12,
+                                top: 12,
+                                bottom: 12,
+                              ),
+                              child: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                size: 20,
+                                color: isSelected
+                                    ? Colors.white.withOpacity(0.9)
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
