@@ -411,6 +411,15 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
   }
 
   Widget _buildMainCard(BuildContext context, bool isDark) {
+    final totalPayable = (_iou?.estimatedTotalPayable ?? 0) > 0
+        ? _iou!.estimatedTotalPayable
+        : (_iou?.amount ?? 0.0);
+    final totalPaid = _iou?.totalPaid ?? 0.0;
+    final remainingAmount = (totalPayable - totalPaid).clamp(
+      0.0,
+      double.infinity,
+    );
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -479,7 +488,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${context.read<ProfileProvider>().currencySymbol}${_iou != null ? NumberFormat.currency(locale: 'en_IN', symbol: '').format(_iou!.amount - _iou!.totalPaid).replaceAll(RegExp(r'\.00$'), '') : '0'}',
+            '${context.read<ProfileProvider>().currencySymbol}${NumberFormat.currency(locale: 'en_IN', symbol: '').format(remainingAmount).replaceAll(RegExp(r'\.00$'), '')}',
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w900,
@@ -514,7 +523,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                 ],
               ),
               Text(
-                'Total: ${NumberFormat.currency(locale: 'en_IN', symbol: context.read<ProfileProvider>().currencySymbol).format(_iou?.amount ?? 0).replaceAll(RegExp(r'\.00$'), '')}',
+                'Total: ${NumberFormat.currency(locale: 'en_IN', symbol: context.read<ProfileProvider>().currencySymbol).format(totalPayable).replaceAll(RegExp(r'\.00$'), '')}',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -537,14 +546,28 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
-              widthFactor: _iou != null && _iou!.amount > 0
-                  ? (_iou!.totalPaid / _iou!.amount).clamp(0.0, 1.0)
+              widthFactor: totalPayable > 0
+                  ? (totalPaid / totalPayable).clamp(0.0, 1.0)
                   : 0.0,
               child: Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(4),
                 ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Total You Will Repay: ${NumberFormat.currency(locale: 'en_IN', symbol: context.read<ProfileProvider>().currencySymbol).format(totalPayable).replaceAll(RegExp(r'\.00$'), '')}',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: isDark
+                    ? const Color(0xFFcbd5e1)
+                    : const Color(0xFF475569),
               ),
             ),
           ),
@@ -698,9 +721,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        ..._payments
-            .map((payment) => _buildPaymentItem(payment, isDark))
-            ,
+        ..._payments.map((payment) => _buildPaymentItem(payment, isDark)),
       ],
     );
   }

@@ -3,6 +3,7 @@ class IOU {
   final int userId;
   final String creditorName;
   final double amount;
+  final double estimatedTotalPayable;
   final String? reason;
   final DateTime? dueDate;
   final double totalPaid;
@@ -17,6 +18,7 @@ class IOU {
     required this.userId,
     required this.creditorName,
     required this.amount,
+    this.estimatedTotalPayable = 0.0,
     this.reason,
     this.dueDate,
     this.totalPaid = 0.0,
@@ -33,6 +35,7 @@ class IOU {
       'user_id': userId,
       'creditor_name': creditorName,
       'amount': amount,
+      'estimated_total_payable': estimatedTotalPayable,
       'reason': reason,
       'due_date': dueDate?.toIso8601String().split('T')[0],
       'total_paid': totalPaid,
@@ -50,6 +53,9 @@ class IOU {
       userId: map['user_id'] as int,
       creditorName: map['creditor_name'] as String,
       amount: (map['amount'] as num).toDouble(),
+      estimatedTotalPayable:
+          (map['estimated_total_payable'] as num?)?.toDouble() ??
+          (map['amount'] as num).toDouble(),
       reason: map['reason'] as String?,
       dueDate: map['due_date'] != null
           ? DateTime.parse(map['due_date'] as String)

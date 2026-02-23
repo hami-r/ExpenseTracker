@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +6,7 @@ import '../models/loan.dart';
 import '../database/services/loan_service.dart';
 import '../providers/profile_provider.dart';
 import 'package:provider/provider.dart';
+import '../utils/loan_calculator.dart';
 
 class EditLoanDetailsScreen extends StatefulWidget {
   final int loanId;
@@ -26,8 +26,11 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
   final TextEditingController _rateController = TextEditingController();
   final TextEditingController _tenureController = TextEditingController();
   String _tenureType = 'Yrs';
+  String _interestType = 'reducing';
   DateTime _startDate = DateTime.now();
   double _calculatedEmi = 0.0;
+  double _calculatedTotalInterest = 0.0;
+  double _calculatedTotalPayable = 0.0;
 
   @override
   void initState() {
@@ -46,27 +49,32 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
 
     if (principal <= 0 || tenureValue <= 0) {
       if (mounted) {
-        setState(() => _calculatedEmi = 0.0);
+        setState(() {
+          _calculatedEmi = 0.0;
+          _calculatedTotalInterest = 0.0;
+          _calculatedTotalPayable = principal > 0 ? principal : 0.0;
+        });
       }
       return;
     }
 
-    int totalMonths = _tenureType == 'Yrs' ? tenureValue * 12 : tenureValue;
-
-    if (totalMonths > 0) {
-      if (annualRate > 0) {
-        double r = annualRate / (12 * 100);
-        double emi =
-            (principal * r * pow(1 + r, totalMonths)) /
-            (pow(1 + r, totalMonths) - 1);
-        if (mounted) {
-          setState(() => _calculatedEmi = emi);
-        }
-      } else {
-        if (mounted) {
-          setState(() => _calculatedEmi = principal / totalMonths);
-        }
-      }
+    final result = LoanCalculator.calculate(
+      LoanCalculationInput(
+        principal: principal,
+        annualRate: annualRate,
+        tenureValue: tenureValue,
+        tenureUnit: _tenureType,
+        interestType: _interestType,
+      ),
+    );
+    if (mounted) {
+      setState(() {
+        _calculatedEmi = result.emi;
+        _calculatedTotalInterest = result.totalInterest;
+        _calculatedTotalPayable = result.isValid
+            ? result.totalPayable
+            : principal;
+      });
     }
   }
 
@@ -80,8 +88,13 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
           _amountController.text = loan.principalAmount.toStringAsFixed(0);
           _lenderController.text = loan.lenderName;
           _rateController.text = loan.interestRate.toStringAsFixed(1);
-          _tenureController.text = loan.tenureValue.toString();
-          _tenureType = loan.tenureUnit == 'years' ? 'Yrs' : 'Mos';
+          _tenureController.text = loan.tenureValue?.toString() ?? '';
+          _tenureType = loan.tenureUnit == 'years' || loan.tenureUnit == 'Yrs'
+              ? 'Yrs'
+              : 'Mos';
+          _interestType = LoanCalculator.normalizeInterestType(
+            loan.interestType,
+          );
           _startDate = loan.startDate;
         });
         _calculateEmi();
@@ -99,6 +112,18 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
     try {
       final updatedPrincipal =
           double.tryParse(_amountController.text) ?? _loan!.principalAmount;
+      final updatedRate =
+          double.tryParse(_rateController.text) ?? _loan!.interestRate;
+      final updatedTenure = int.tryParse(_tenureController.text) ?? 0;
+      final calculation = LoanCalculator.calculate(
+        LoanCalculationInput(
+          principal: updatedPrincipal,
+          annualRate: updatedRate,
+          tenureValue: updatedTenure,
+          tenureUnit: _tenureType,
+          interestType: _interestType,
+        ),
+      );
       final updatedStatus = _loan!.totalPaid >= updatedPrincipal
           ? 'completed'
           : 'active';
@@ -108,13 +133,19 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
         lenderName: _lenderController.text.trim(),
         loanType: _loan!.loanType,
         principalAmount: updatedPrincipal,
-        interestRate:
-            double.tryParse(_rateController.text) ?? _loan!.interestRate,
-        tenureValue: int.tryParse(_tenureController.text) ?? _loan!.tenureValue,
+        interestRate: updatedRate,
+        interestType: _interestType,
+        tenureValue: updatedTenure > 0 ? updatedTenure : _loan!.tenureValue,
         tenureUnit: _tenureType == 'Yrs' ? 'years' : 'months',
+        tenureMonths: calculation.tenureMonths,
         startDate: _startDate,
         dueDate: _loan!.dueDate, // Ideally calculate based on new tenure/start
         totalPaid: _loan!.totalPaid,
+        estimatedEmi: calculation.emi,
+        estimatedTotalInterest: calculation.totalInterest,
+        estimatedTotalPayable: calculation.isValid
+            ? calculation.totalPayable
+            : updatedPrincipal,
         status: updatedStatus,
         notes: _loan!.notes,
         createdAt: _loan!.createdAt,
@@ -639,7 +670,94 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Text(
+            'Interest Type',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF94a3b8),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF334155).withOpacity(0.5)
+                  : const Color(0xFFf8fafc),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildTypeButton(
+                    title: 'Reducing',
+                    isSelected: _interestType == 'reducing',
+                    onTap: () {
+                      setState(() => _interestType = 'reducing');
+                      _calculateEmi();
+                    },
+                    isDark: isDark,
+                  ),
+                ),
+                Expanded(
+                  child: _buildTypeButton(
+                    title: 'Flat',
+                    isSelected: _interestType == 'flat',
+                    onTap: () {
+                      setState(() => _interestType = 'flat');
+                      _calculateEmi();
+                    },
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTypeButton({
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? const Color(0xFF1a2c26) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                  ),
+                ]
+              : null,
+        ),
+        child: Center(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+              color: isSelected
+                  ? (isDark ? Colors.white : const Color(0xFF0f172a))
+                  : (isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b)),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -778,33 +896,29 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                 color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'ESTIMATED MONTHLY EMI',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF20a080),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Based on rate & tenure',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isDark
-                            ? const Color(0xFF94a3b8)
-                            : const Color(0xFF64748b),
-                      ),
-                    ),
-                  ],
+                const Text(
+                  'ESTIMATED MONTHLY EMI',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF20a080),
+                    letterSpacing: 0.5,
+                  ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  'Based on rate & tenure',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Text(
                   _calculatedEmi > 0
                       ? '${context.read<ProfileProvider>().currencySymbol}${_calculatedEmi.toStringAsFixed(0)}'
@@ -814,6 +928,52 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF20a080),
                   ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total Interest',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748b),
+                      ),
+                    ),
+                    Text(
+                      '${context.read<ProfileProvider>().currencySymbol}${_calculatedTotalInterest.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isDark
+                            ? const Color(0xFFcbd5e1)
+                            : const Color(0xFF334155),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total You Will Repay',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF166534),
+                      ),
+                    ),
+                    Text(
+                      '${context.read<ProfileProvider>().currencySymbol}${_calculatedTotalPayable.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF166534),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../utils/loan_calculator.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -18,7 +19,7 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -163,6 +164,97 @@ class DatabaseHelper {
         'CREATE INDEX idx_payment_methods_primary ON payment_methods(user_id, profile_id, is_primary)',
       );
     }
+
+    if (oldVersion < 8) {
+      await db.execute(
+        'ALTER TABLE loans ADD COLUMN interest_type TEXT DEFAULT \'reducing\'',
+      );
+      await db.execute(
+        'ALTER TABLE loans ADD COLUMN tenure_months INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE loans ADD COLUMN estimated_emi REAL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE loans ADD COLUMN estimated_total_interest REAL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE loans ADD COLUMN estimated_total_payable REAL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE ious ADD COLUMN estimated_total_payable REAL DEFAULT 0',
+      );
+
+      await _backfillLoanSnapshots(db);
+      await _backfillIOUTotals(db);
+    }
+  }
+
+  Future<void> _backfillLoanSnapshots(Database db) async {
+    final rows = await db.query(
+      'loans',
+      columns: [
+        'loan_id',
+        'principal_amount',
+        'interest_rate',
+        'interest_type',
+        'tenure_value',
+        'tenure_unit',
+      ],
+    );
+
+    for (final row in rows) {
+      final loanId = row['loan_id'] as int?;
+      if (loanId == null) continue;
+
+      final principal = (row['principal_amount'] as num?)?.toDouble() ?? 0.0;
+      final rate = (row['interest_rate'] as num?)?.toDouble() ?? 0.0;
+      final tenureValue = (row['tenure_value'] as num?)?.toInt() ?? 0;
+      final tenureUnit = (row['tenure_unit'] as String?) ?? 'months';
+      final interestType = LoanCalculator.normalizeInterestType(
+        row['interest_type'] as String?,
+      );
+
+      final result = LoanCalculator.calculate(
+        LoanCalculationInput(
+          principal: principal,
+          annualRate: rate,
+          tenureValue: tenureValue,
+          tenureUnit: tenureUnit,
+          interestType: interestType,
+        ),
+      );
+
+      final estimatedTotalPayable = result.isValid
+          ? result.totalPayable
+          : principal;
+      final estimatedTotalInterest = result.isValid
+          ? result.totalInterest
+          : 0.0;
+      final estimatedEmi = result.isValid ? result.emi : 0.0;
+      final tenureMonths = result.tenureMonths;
+
+      await db.update(
+        'loans',
+        {
+          'interest_type': interestType,
+          'tenure_months': tenureMonths,
+          'estimated_emi': estimatedEmi,
+          'estimated_total_interest': estimatedTotalInterest,
+          'estimated_total_payable': estimatedTotalPayable,
+        },
+        where: 'loan_id = ?',
+        whereArgs: [loanId],
+      );
+    }
+  }
+
+  Future<void> _backfillIOUTotals(Database db) async {
+    await db.rawUpdate('''
+      UPDATE ious
+      SET estimated_total_payable = amount
+      WHERE estimated_total_payable IS NULL OR estimated_total_payable <= 0
+      ''');
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -335,11 +427,16 @@ class DatabaseHelper {
         loan_type TEXT NOT NULL,
         principal_amount REAL NOT NULL,
         interest_rate REAL DEFAULT 0,
+        interest_type TEXT DEFAULT 'reducing',
         tenure_value INTEGER,
         tenure_unit TEXT,
+        tenure_months INTEGER DEFAULT 0,
         start_date TEXT NOT NULL,
         due_date TEXT,
         total_paid REAL DEFAULT 0,
+        estimated_emi REAL DEFAULT 0,
+        estimated_total_interest REAL DEFAULT 0,
+        estimated_total_payable REAL DEFAULT 0,
         status TEXT DEFAULT 'active',
         notes TEXT,
         is_deleted INTEGER DEFAULT 0,
@@ -444,6 +541,7 @@ class DatabaseHelper {
         user_id INTEGER NOT NULL,
         creditor_name TEXT NOT NULL,
         amount REAL NOT NULL,
+        estimated_total_payable REAL DEFAULT 0,
         reason TEXT,
         due_date TEXT,
         total_paid REAL DEFAULT 0,

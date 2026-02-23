@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +9,7 @@ import '../database/services/iou_service.dart';
 import '../database/services/user_service.dart';
 import '../models/loan.dart';
 import '../models/iou.dart';
+import '../utils/loan_calculator.dart';
 
 class AddLoanScreen extends StatefulWidget {
   const AddLoanScreen({super.key});
@@ -26,7 +26,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   final TextEditingController _tenureController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   String _tenureType = 'Yrs';
-  final String _interestType = 'Diminishing';
+  String _interestType = 'reducing';
   DateTime _startDate = DateTime.now();
 
   @override
@@ -41,59 +41,52 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     setState(() {});
   }
 
+  LoanCalculationResult _getLoanCalculation() {
+    final principal = double.tryParse(_amountController.text) ?? 0.0;
+    final rate = double.tryParse(_interestRateController.text) ?? 0.0;
+    final tenureValue = int.tryParse(_tenureController.text) ?? 0;
+    return LoanCalculator.calculate(
+      LoanCalculationInput(
+        principal: principal,
+        annualRate: rate,
+        tenureValue: tenureValue,
+        tenureUnit: _tenureType,
+        interestType: _interestType,
+      ),
+    );
+  }
+
+  String _formatCurrency(double amount, {int decimalDigits = 0}) {
+    return NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: context.read<ProfileProvider>().currencySymbol,
+      decimalDigits: decimalDigits,
+    ).format(amount);
+  }
+
   String _calculateEMI() {
-    if (_amountController.text.isEmpty || _tenureController.text.isEmpty) {
+    final result = _getLoanCalculation();
+    if (!result.isValid) {
       return '${context.read<ProfileProvider>().currencySymbol}0';
     }
+    return _formatCurrency(result.emi);
+  }
 
-    try {
+  String _calculateTotalInterest() {
+    final result = _getLoanCalculation();
+    if (!result.isValid) {
+      return '${context.read<ProfileProvider>().currencySymbol}0';
+    }
+    return _formatCurrency(result.totalInterest);
+  }
+
+  String _calculateTotalPayable() {
+    final result = _getLoanCalculation();
+    if (!result.isValid) {
       final principal = double.tryParse(_amountController.text) ?? 0.0;
-      final rate = double.tryParse(_interestRateController.text) ?? 0.0;
-      int tenure = int.tryParse(_tenureController.text) ?? 0;
-
-      if (principal <= 0 || tenure <= 0) {
-        return '${context.read<ProfileProvider>().currencySymbol}0';
-      }
-
-      // Convert tenure to months if in years
-      if (_tenureType == 'Yrs') {
-        tenure *= 12;
-      }
-
-      // Handle 0% interest case
-      if (rate <= 0) {
-        final emi = principal / tenure;
-        return NumberFormat.currency(
-          locale: 'en_IN',
-          symbol: context.read<ProfileProvider>().currencySymbol,
-          decimalDigits: 0,
-        ).format(emi);
-      }
-
-      double emi = 0;
-
-      if (_interestType == 'Flat') {
-        // Flat Rate Formula: (P + (P * R * T/12)) / T_months
-        // R is annual rate in %.
-        final totalInterest = principal * (rate / 100) * (tenure / 12);
-        emi = (principal + totalInterest) / tenure;
-      } else {
-        // Diminishing Balance (Standard EMI)
-        // Monthly interest rate
-        final monthlyRate = rate / 12 / 100;
-        emi =
-            (principal * monthlyRate * pow(1 + monthlyRate, tenure)) /
-            (pow(1 + monthlyRate, tenure) - 1);
-      }
-
-      return NumberFormat.currency(
-        locale: 'en_IN',
-        symbol: context.read<ProfileProvider>().currencySymbol,
-        decimalDigits: 0,
-      ).format(emi);
-    } catch (e) {
-      return '${context.read<ProfileProvider>().currencySymbol}0';
+      return _formatCurrency(principal);
     }
+    return _formatCurrency(result.totalPayable);
   }
 
   final LoanService _loanService = LoanService();
@@ -109,20 +102,35 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       return;
     }
 
+    if (_isInstitutional && _tenureController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter tenure to calculate total repayment details',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       final user = await _userService.getCurrentUser();
       if (user != null && user.userId != null) {
         if (_isInstitutional) {
+          final calculation = _getLoanCalculation();
+          final principalAmount = double.parse(_amountController.text);
           final loan = Loan(
             userId: user.userId!,
             lenderName: _lenderController.text,
             loanType: 'Institutional',
-            principalAmount: double.parse(_amountController.text),
+            principalAmount: principalAmount,
             interestRate: double.tryParse(_interestRateController.text) ?? 0.0,
+            interestType: _interestType,
             tenureValue: int.tryParse(_tenureController.text),
-            tenureUnit: _tenureType,
+            tenureUnit: _tenureType == 'Yrs' ? 'years' : 'months',
+            tenureMonths: calculation.tenureMonths,
             startDate: _startDate,
             dueDate: _tenureController.text.isNotEmpty
                 ? _startDate.add(
@@ -133,6 +141,11 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                     ),
                   )
                 : _startDate.add(const Duration(days: 365)),
+            estimatedEmi: calculation.emi,
+            estimatedTotalInterest: calculation.totalInterest,
+            estimatedTotalPayable: calculation.isValid
+                ? calculation.totalPayable
+                : principalAmount,
             status: 'active',
             notes: _notesController.text,
             createdAt: DateTime.now(),
@@ -147,6 +160,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
             userId: user.userId!,
             creditorName: _lenderController.text,
             amount: double.parse(_amountController.text),
+            estimatedTotalPayable: double.parse(_amountController.text),
             dueDate: _startDate, // Used as due date in UI
             status: 'active',
             notes: _notesController.text,
@@ -575,6 +589,46 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
 
                           const SizedBox(height: 16),
 
+                          _buildSectionContainer(
+                            title: 'INTEREST TYPE',
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF1e293b).withOpacity(0.5)
+                                    : const Color(0xFFe2e8f0).withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildTypeButton(
+                                      'Reducing',
+                                      _interestType == 'reducing',
+                                      () => setState(
+                                        () => _interestType = 'reducing',
+                                      ),
+                                      isDark,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _buildTypeButton(
+                                      'Flat',
+                                      _interestType == 'flat',
+                                      () => setState(
+                                        () => _interestType = 'flat',
+                                      ),
+                                      isDark,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            isDark: isDark,
+                          ),
+
+                          const SizedBox(height: 16),
+
                           // Repayment (Institutional)
                           _buildSectionContainer(
                             title: 'REPAYMENT',
@@ -699,44 +753,92 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                     ),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      const Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'ESTIMATED MONTHLY EMI',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 0.5,
-                                              color: Color(
-                                                0xFF166534,
-                                              ), // primary-dark
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'ESTIMATED MONTHLY EMI',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 0.5,
+                                                color: Color(0xFF166534),
+                                              ),
                                             ),
-                                          ),
-                                          SizedBox(height: 2),
-                                          Text(
-                                            'Based on rate & tenure',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: Color(0xFF64748b),
+                                            const SizedBox(height: 2),
+                                            const Text(
+                                              'Based on rate & tenure',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Color(0xFF64748b),
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      Text(
-                                        _calculateEMI(),
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w900,
-                                          color: isDark
-                                              ? Theme.of(
-                                                  context,
-                                                ).colorScheme.primary
-                                              : const Color(0xFF15803d),
+                                            const SizedBox(height: 10),
+                                            Text(
+                                              _calculateEMI(),
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w900,
+                                                color: isDark
+                                                    ? Theme.of(
+                                                        context,
+                                                      ).colorScheme.primary
+                                                    : const Color(0xFF15803d),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                const Text(
+                                                  'Total Interest',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0xFF64748b),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  _calculateTotalInterest(),
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF334155),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                const Text(
+                                                  'Total You Will Repay',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF166534),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  _calculateTotalPayable(),
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: Color(0xFF166534),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
@@ -806,104 +908,171 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                           // Repayment (Personal)
                           _buildSectionContainer(
                             title: 'REPAYMENT',
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
                               children: [
                                 Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: const Color(
-                                          0xFFf97316,
-                                        ).withOpacity(0.1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.calendar_today_rounded,
-                                        color: Color(0xFFf97316),
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    Row(
                                       children: [
-                                        Text(
-                                          'Repayment Date',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: isDark
-                                                ? Colors.white
-                                                : const Color(0xFF0f172a),
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: const Color(
+                                              0xFFf97316,
+                                            ).withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.calendar_today_rounded,
+                                            color: Color(0xFFf97316),
+                                            size: 20,
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        const Text(
-                                          'Full payment due',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Color(0xFF94a3b8),
-                                          ),
+                                        const SizedBox(width: 12),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Repayment Date',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : const Color(0xFF0f172a),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            const Text(
+                                              'Full payment due',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Color(0xFF94a3b8),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
+                                    ),
+                                    InkWell(
+                                      onTap: () {
+                                        CustomDatePicker.show(
+                                          context,
+                                          initialDate: _startDate,
+                                          onDateSelected: (date) {
+                                            setState(() {
+                                              _startDate = date;
+                                            });
+                                          },
+                                        );
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? const Color(0xFF1e293b)
+                                              : const Color(0xFFf8fafc),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: isDark
+                                                ? const Color(0xFF334155)
+                                                : const Color(0xFFe2e8f0),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Text(
+                                              DateFormat(
+                                                'MMM dd, yyyy',
+                                              ).format(_startDate),
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: isDark
+                                                    ? const Color(0xFFcbd5e1)
+                                                    : const Color(0xFF334155),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Icon(
+                                              Icons.edit_calendar_rounded,
+                                              size: 16,
+                                              color: Color(0xFF94a3b8),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
-                                InkWell(
-                                  onTap: () {
-                                    CustomDatePicker.show(
-                                      context,
-                                      initialDate: _startDate,
-                                      onDateSelected: (date) {
-                                        setState(() {
-                                          _startDate = date;
-                                        });
-                                      },
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
+                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary
+                                        .withOpacity(isDark ? 0.1 : 0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary.withOpacity(0.1),
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: isDark
-                                          ? const Color(0xFF1e293b)
-                                          : const Color(0xFFf8fafc),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: isDark
-                                            ? const Color(0xFF334155)
-                                            : const Color(0xFFe2e8f0),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          DateFormat(
-                                            'MMM dd, yyyy',
-                                          ).format(_startDate),
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: isDark
-                                                ? const Color(0xFFcbd5e1)
-                                                : const Color(0xFF334155),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'TOTAL YOU WILL REPAY',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                              color: Color(0xFF166534),
+                                            ),
                                           ),
+                                          SizedBox(height: 2),
+                                          Text(
+                                            'Personal IOU (0% interest)',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Color(0xFF64748b),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        _formatCurrency(
+                                          double.tryParse(
+                                                _amountController.text,
+                                              ) ??
+                                              0.0,
                                         ),
-                                        const SizedBox(width: 4),
-                                        const Icon(
-                                          Icons.edit_calendar_rounded,
-                                          size: 16,
-                                          color: Color(0xFF94a3b8),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w900,
+                                          color: isDark
+                                              ? Theme.of(
+                                                  context,
+                                                ).colorScheme.primary
+                                              : const Color(0xFF166534),
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],

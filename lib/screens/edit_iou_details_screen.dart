@@ -64,6 +64,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
         userId: _iou!.userId,
         creditorName: _personController.text.trim(),
         amount: updatedAmount,
+        estimatedTotalPayable: updatedAmount,
         dueDate: _repaymentDate,
         totalPaid: _iou!.totalPaid,
         status: updatedStatus,
@@ -519,6 +520,51 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'TOTAL YOU WILL REPAY',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        color: Color(0xFF166534),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Personal IOU (0% interest)',
+                      style: TextStyle(fontSize: 10, color: Color(0xFF64748b)),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${context.read<ProfileProvider>().currencySymbol}${(double.tryParse(_amountController.text) ?? 0).toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: isDark
+                        ? Theme.of(context).colorScheme.primary
+                        : const Color(0xFF166534),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
