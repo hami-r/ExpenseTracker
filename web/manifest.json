@@ -1,6 +1,6 @@
 {
-    "name": "expense_tracker_ai",
-    "short_name": "expense_tracker_ai",
+    "name": "Expense Tracker",
+    "short_name": "Expense Tracker",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -74,6 +74,249 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     });
   }
 
+  DateTime _clampSelectedDateToCurrentMonth() {
+    final maxDay = _daysInMonth(_currentMonth);
+    final day = _selectedDate.day > maxDay ? maxDay : _selectedDate.day;
+    return DateTime(_currentMonth.year, _currentMonth.month, day);
+  }
+
+  Future<void> _showMonthYearPicker(bool isDark) async {
+    int tempMonth = _currentMonth.month;
+    int tempYear = _currentMonth.year;
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final maxHeight = MediaQuery.of(context).size.height * 0.78;
+            return Container(
+              constraints: BoxConstraints(maxHeight: maxHeight),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1a2c26) : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF334155).withOpacity(0.5)
+                              : const Color(0xFFe2e8f0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Select Month & Year',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF0f172a),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1e293b).withOpacity(0.5)
+                            : const Color(0xFFf8fafc),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              if (tempYear > 1950) {
+                                setModalState(() => tempYear--);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.remove_circle_outline_rounded,
+                                size: 20,
+                                color: Color(0xFF94a3b8),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '$tempYear',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0f172a),
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              if (tempYear < 2150) {
+                                setModalState(() => tempYear++);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.add_circle_outline_rounded,
+                                size: 20,
+                                color: Color(0xFF94a3b8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: 12,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                            childAspectRatio: 2.5,
+                          ),
+                      itemBuilder: (context, index) {
+                        final monthNumber = index + 1;
+                        final isSelected = tempMonth == monthNumber;
+                        final label = _months[index]
+                            .substring(0, 3)
+                            .toUpperCase();
+                        return InkWell(
+                          onTap: () =>
+                              setModalState(() => tempMonth = monthNumber),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.12)
+                                  : (isDark
+                                        ? const Color(
+                                            0xFF1e293b,
+                                          ).withOpacity(0.35)
+                                        : const Color(0xFFf8fafc)),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isSelected
+                                    ? Theme.of(
+                                        context,
+                                      ).colorScheme.primary.withOpacity(0.45)
+                                    : Colors.transparent,
+                                width: 1,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : (isDark
+                                            ? const Color(0xFFcbd5e1)
+                                            : const Color(0xFF334155)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              final now = DateTime.now();
+                              setModalState(() {
+                                tempMonth = now.month;
+                                tempYear = now.year;
+                              });
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.25),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                            ),
+                            child: const Text('Current Month'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _currentMonth = DateTime(tempYear, tempMonth);
+                            _selectedDate = _clampSelectedDateToCurrentMonth();
+                          });
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Apply',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: MediaQuery.of(context).viewPadding.bottom),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   int _daysInMonth(DateTime date) {
     return DateTime(date.year, date.month + 1, 0).day;
   }
@@ -133,12 +376,35 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                   onTap: () => _changeMonth(-1),
                   isDark: isDark,
                 ),
-                Text(
-                  '${_months[_currentMonth.month - 1]} ${_currentMonth.year}',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF0f172a),
+                InkWell(
+                  onTap: () => _showMonthYearPicker(isDark),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${_months[_currentMonth.month - 1]} ${_currentMonth.year}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0f172a),
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 18,
+                          color: Color(0xFF94a3b8),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 _buildNavButton(
