@@ -14,7 +14,9 @@ import 'reimbursement_detail_screen.dart';
 import 'split_expense_detail_screen.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
-  const AllTransactionsScreen({super.key});
+  final int refreshTrigger;
+
+  const AllTransactionsScreen({super.key, this.refreshTrigger = 0});
 
   @override
   State<AllTransactionsScreen> createState() => _AllTransactionsScreenState();
@@ -66,6 +68,14 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AllTransactionsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshTrigger != widget.refreshTrigger) {
+      _loadTransactions(refresh: true);
+    }
   }
 
   void _onScroll() {

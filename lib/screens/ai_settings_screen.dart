@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'ai_history_screen.dart';
 
 class AISettingsScreen extends StatefulWidget {
   const AISettingsScreen({super.key});
@@ -17,9 +16,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   List<Map<String, dynamic>> _apiKeys = [];
   String? _activeKeyId;
 
-  bool _voiceEnabled = true;
-  bool _insightsEnabled = true;
-  bool _receiptEnabled = false;
   bool _isSaving = false;
 
   @override
@@ -44,10 +40,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
         _apiKeys.add({'id': id, 'name': 'Default Key', 'key': oldKey});
         _activeKeyId = id;
       }
-
-      _voiceEnabled = prefs.getBool('ai_voice_enabled') ?? true;
-      _insightsEnabled = prefs.getBool('ai_insights_enabled') ?? true;
-      _receiptEnabled = prefs.getBool('ai_receipt_enabled') ?? false;
     });
   }
 
@@ -65,10 +57,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
       )['key'];
       await prefs.setString('gemini_api_key', activeKey);
     }
-
-    await prefs.setBool('ai_voice_enabled', _voiceEnabled);
-    await prefs.setBool('ai_insights_enabled', _insightsEnabled);
-    await prefs.setBool('ai_receipt_enabled', _receiptEnabled);
 
     if (mounted) {
       setState(() => _isSaving = false);
@@ -249,12 +237,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                         _buildHeroCard(isDark, primaryColor, surfaceColor),
                         const SizedBox(height: 32),
                         _buildKeysListSection(
-                          isDark,
-                          primaryColor,
-                          surfaceColor,
-                        ),
-                        const SizedBox(height: 32),
-                        _buildFeaturesSection(
                           isDark,
                           primaryColor,
                           surfaceColor,
@@ -527,188 +509,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildFeaturesSection(bool isDark, Color primary, Color surface) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            'ENABLED FEATURES',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              color: isDark ? Colors.white38 : Colors.black38,
-            ),
-          ),
-        ),
-        _buildFeatureToggle(
-          'Voice Entry',
-          'Natural language processing',
-          Icons.mic_rounded,
-          Theme.of(context).colorScheme.tertiary,
-          _voiceEnabled,
-          (val) => setState(() => _voiceEnabled = val),
-          isDark,
-          surface,
-        ),
-        const SizedBox(height: 12),
-        _buildFeatureToggle(
-          'Smart Insights',
-          'Spending patterns & advice',
-          Icons.insights_rounded,
-          Colors.purpleAccent,
-          _insightsEnabled,
-          (val) => setState(() => _insightsEnabled = val),
-          isDark,
-          surface,
-        ),
-        const SizedBox(height: 12),
-        _buildFeatureToggle(
-          'Receipt Scanning',
-          'Extract data from photos',
-          Icons.receipt_long_rounded,
-          Theme.of(context).colorScheme.secondary,
-          _receiptEnabled,
-          (val) => setState(() => _receiptEnabled = val),
-          isDark,
-          surface,
-        ),
-        const SizedBox(height: 32),
-        _buildHistoryAccessCard(isDark, primary, surface),
-      ],
-    );
-  }
-
-  Widget _buildHistoryAccessCard(bool isDark, Color primary, Color surface) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: primary.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.history_rounded, color: primary, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Interaction History',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Text(
-                  'View past AI conversations and scans',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white38 : Colors.black45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AIHistoryScreen(),
-                ),
-              );
-            },
-            child: const Text('VIEW'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureToggle(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color iconColor,
-    bool value,
-    Function(bool) onChanged,
-    bool isDark,
-    Color surface,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDark ? Colors.white12 : const Color(0xFFf1f5f9),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white38 : Colors.black45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: Theme.of(context).colorScheme.primary,
-            activeTrackColor: Theme.of(
-              context,
-            ).colorScheme.primary.withValues(alpha: 0.2),
-            inactiveThumbColor: isDark ? Colors.white24 : Colors.white,
-            inactiveTrackColor: isDark
-                ? Colors.white10
-                : const Color(0xFFf1f5f9),
-            trackOutlineColor: WidgetStateProperty.resolveWith<Color>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return Colors.transparent;
-              }
-              return isDark ? Colors.white10 : const Color(0xFFf1f5f9);
-            }),
-          ),
-        ],
-      ),
     );
   }
 

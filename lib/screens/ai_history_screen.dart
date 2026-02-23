@@ -4,6 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../database/services/ai_history_service.dart';
+import '../database/services/category_service.dart';
+import '../database/services/payment_method_service.dart';
+import '../database/services/user_service.dart';
 import '../models/ai_history.dart';
 import '../providers/profile_provider.dart';
 
@@ -16,7 +19,12 @@ class AIHistoryScreen extends StatefulWidget {
 
 class _AIHistoryScreenState extends State<AIHistoryScreen> {
   final _historyService = AIHistoryService();
+  final _categoryService = CategoryService();
+  final _paymentMethodService = PaymentMethodService();
+  final _userService = UserService();
   List<AIHistory> _history = [];
+  Map<int, String> _categoryNames = {};
+  Map<int, String> _paymentMethodNames = {};
   bool _isLoading = true;
   String _filter = 'all';
 
@@ -30,6 +38,7 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
     setState(() => _isLoading = true);
     final profileId = context.read<ProfileProvider>().activeProfileId;
     final history = await _historyService.getHistory(profileId, limit: 100);
+    await _loadReferenceNames(profileId, history);
     if (mounted) {
       setState(() {
         _history = history;
@@ -41,6 +50,145 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
   List<AIHistory> get _filteredHistory {
     if (_filter == 'all') return _history;
     return _history.where((h) => h.feature == _filter).toList();
+  }
+
+  Future<void> _loadReferenceNames(int profileId, List<AIHistory> history) async {
+    final user = await _userService.getCurrentUser();
+    if (user?.userId == null) return;
+
+    final categories = await _categoryService.getAllCategories(user!.userId!);
+    final methods = await _paymentMethodService.getAllPaymentMethods(
+      user.userId!,
+      profileId: profileId,
+    );
+
+    _categoryNames = {
+      for (final c in categories)
+        if (c.categoryId != null) c.categoryId!: c.name,
+    };
+    _paymentMethodNames = {
+      for (final m in methods)
+        if (m.paymentMethodId != null) m.paymentMethodId!: m.name,
+    };
+
+    // Also resolve IDs from history payload that may belong to inactive/deleted items.
+    final missingCategoryIds = <int>{};
+    final missingPaymentMethodIds = <int>{};
+
+    for (final entry in history) {
+      if (entry.payload == null) continue;
+      try {
+        final decoded = jsonDecode(entry.payload!);
+        if (decoded is! Map) continue;
+        final payload = Map<String, dynamic>.from(decoded as Map);
+
+        final categoryId = _toInt(payload['category_id']);
+        if (categoryId != null && !_categoryNames.containsKey(categoryId)) {
+          missingCategoryIds.add(categoryId);
+        }
+
+        final paymentMethodId = _toInt(payload['payment_method_id']);
+        if (paymentMethodId != null &&
+            !_paymentMethodNames.containsKey(paymentMethodId)) {
+          missingPaymentMethodIds.add(paymentMethodId);
+        }
+      } catch (_) {
+        // Ignore malformed payload rows.
+      }
+    }
+
+    for (final categoryId in missingCategoryIds) {
+      final category = await _categoryService.getCategoryById(categoryId);
+      if (category != null) {
+        _categoryNames[categoryId] = category.name;
+      }
+    }
+
+    for (final methodId in missingPaymentMethodIds) {
+      final method = await _paymentMethodService.getPaymentMethodById(methodId);
+      if (method != null) {
+        _paymentMethodNames[methodId] = method.name;
+      }
+    }
+  }
+
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    final asString = value.toString().trim();
+    if (asString.isEmpty) return null;
+    return int.tryParse(asString) ?? double.tryParse(asString)?.toInt();
+  }
+
+  String _formatReadableDate(dynamic value) {
+    DateTime? parsed;
+
+    if (value is DateTime) {
+      parsed = value;
+    } else if (value is num) {
+      final epoch = value.toInt();
+      final isMilliseconds = epoch > 100000000000;
+      parsed = DateTime.fromMillisecondsSinceEpoch(
+        isMilliseconds ? epoch : epoch * 1000,
+        isUtc: true,
+      ).toLocal();
+    } else if (value != null) {
+      final raw = value.toString().trim();
+      if (raw.isNotEmpty) {
+        parsed = DateTime.tryParse(raw) ?? DateTime.tryParse(raw.replaceFirst(' ', 'T'));
+      }
+    }
+
+    if (parsed == null) return value?.toString() ?? '';
+    return DateFormat('dd MMM yyyy, hh:mm a').format(parsed.toLocal());
+  }
+
+  Map<String, dynamic> _getDisplayPayload(AIHistory entry) {
+    if (entry.payload == null) return {};
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(entry.payload!);
+    } catch (_) {
+      return {};
+    }
+    if (decoded is! Map) return {};
+
+    final payload = Map<String, dynamic>.from(decoded as Map);
+    if (entry.feature == 'voice' || entry.feature == 'receipt') {
+      final categoryId = _toInt(payload['category_id']);
+      final paymentMethodId = _toInt(payload['payment_method_id']);
+      final savedCategoryName = payload['category_name']?.toString();
+      final savedPaymentName = payload['payment_method_name']?.toString();
+
+      payload['category'] =
+          savedCategoryName?.isNotEmpty == true
+          ? savedCategoryName
+          : (categoryId != null
+                ? (_categoryNames[categoryId] ?? 'Category #$categoryId')
+                : 'Unknown');
+      payload['payment_method'] =
+          savedPaymentName?.isNotEmpty == true
+          ? savedPaymentName
+          : (paymentMethodId != null
+                ? (_paymentMethodNames[paymentMethodId] ??
+                      'Payment Method #$paymentMethodId')
+                : 'Unknown');
+
+      payload.remove('category_id');
+      payload.remove('payment_method_id');
+      payload.remove('category_name');
+      payload.remove('payment_method_name');
+
+      const dateKeys = {'date', 'timestamp', 'transaction_date'};
+      for (final key in dateKeys) {
+        if (payload.containsKey(key)) {
+          payload[key] = _formatReadableDate(payload[key]);
+        }
+      }
+    }
+
+    return payload;
   }
 
   @override
@@ -303,6 +451,8 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _buildDetailSheet(entry),
     );
@@ -310,9 +460,10 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
 
   Widget _buildDetailSheet(AIHistory entry) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final payload = entry.payload != null ? jsonDecode(entry.payload!) : {};
+    final payload = _getDisplayPayload(entry);
 
     return DraggableScrollableSheet(
+      expand: false,
       initialChildSize: 0.5,
       maxChildSize: 0.8,
       minChildSize: 0.3,

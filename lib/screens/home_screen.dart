@@ -11,8 +11,6 @@ import 'all_transactions_screen.dart';
 import 'budget_screen.dart';
 import 'natural_language_entry_screen.dart';
 import 'scan_receipt_screen.dart';
-import 'financial_therapist_screen.dart';
-import 'ai_history_screen.dart';
 import '../database/services/analytics_service.dart';
 import '../database/services/transaction_service.dart';
 import '../database/services/user_service.dart';
@@ -33,6 +31,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  int _transactionsRefreshTrigger = 0;
 
   // Services
   final AnalyticsService _analyticsService = AnalyticsService();
@@ -54,8 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double _todaySpending = 0.0;
   double _monthSpending = 0.0;
   bool _isLoading = true;
-  bool _isAIMenuOpen =
-      false; // Controls the visibility of the new AI speed dial
+  bool _isQuickAIMenuOpen = false;
 
   @override
   void didChangeDependencies() {
@@ -179,19 +177,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 now,
                 context.watch<ProfileProvider>().currencySymbol,
               ),
-              const AllTransactionsScreen(),
+              AllTransactionsScreen(
+                refreshTrigger: _transactionsRefreshTrigger,
+              ),
               const BudgetScreen(),
               const ProfileScreen(),
             ],
           ),
-
-          // Floating Action Button (Only show on Dashboard)
-          if (_selectedIndex == 0)
-            Positioned(
-              bottom: 112 + MediaQuery.of(context).padding.bottom,
-              right: 24,
-              child: _buildFAB(isDark),
-            ),
 
           // Bottom Navigation Bar
           Positioned(
@@ -232,31 +224,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildNavItem(
-                            Icons.dashboard_rounded,
-                            'Dashboard',
-                            0,
-                            isDark,
+                          Expanded(
+                            child: _buildNavItem(
+                              Icons.dashboard_rounded,
+                              'Dashboard',
+                              0,
+                              isDark,
+                            ),
                           ),
-                          _buildNavItem(
-                            Icons.receipt_long_rounded,
-                            'Transactions',
-                            1,
-                            isDark,
+                          Expanded(
+                            child: _buildNavItem(
+                              Icons.receipt_long_rounded,
+                              'Transactions',
+                              1,
+                              isDark,
+                            ),
                           ),
-                          _buildNavItem(
-                            Icons.account_balance_wallet_rounded,
-                            'Budget',
-                            2,
-                            isDark,
+                          Expanded(child: _buildCenterAddNavItem(isDark)),
+                          Expanded(
+                            child: _buildNavItem(
+                              Icons.account_balance_wallet_rounded,
+                              'Budget',
+                              2,
+                              isDark,
+                            ),
                           ),
-                          _buildNavItem(
-                            Icons.person_rounded,
-                            'Profile',
-                            3,
-                            isDark,
+                          Expanded(
+                            child: _buildNavItem(
+                              Icons.person_rounded,
+                              'Profile',
+                              3,
+                              isDark,
+                            ),
                           ),
                         ],
                       ),
@@ -277,6 +277,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+          ),
+
+          // Quick AI Menu (double-tap on + to toggle)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 94 + MediaQuery.of(context).padding.bottom,
+            child: IgnorePointer(
+              ignoring: !_isQuickAIMenuOpen,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                opacity: _isQuickAIMenuOpen ? 1 : 0,
+                child: AnimatedSlide(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutBack,
+                  offset: _isQuickAIMenuOpen
+                      ? Offset.zero
+                      : const Offset(0, 0.15),
+                  child: Center(child: _buildQuickAIMenu(isDark)),
                 ),
               ),
             ),
@@ -989,158 +1012,150 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFAB(bool isDark) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // The Expandable AI Menu
-        if (_isAIMenuOpen) ...[
-          _buildSpeedDialItem(
+  Widget _buildCenterAddNavItem(bool isDark) {
+    return GestureDetector(
+      onTap: () {
+        if (_isQuickAIMenuOpen) {
+          setState(() => _isQuickAIMenuOpen = false);
+        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
+        ).then((_) {
+          _loadData();
+          if (mounted) {
+            setState(() {
+              _transactionsRefreshTrigger++;
+            });
+          }
+        });
+      },
+      onDoubleTap: () {
+        setState(() => _isQuickAIMenuOpen = !_isQuickAIMenuOpen);
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Center(
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withOpacity(0.35),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAIMenu(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF334155).withOpacity(0.55)
+              : const Color(0xFFe2e8f0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildQuickAIMenuItem(
             icon: Icons.abc_rounded,
             label: 'Text / Voice AI',
-            onTap: () {
-              setState(() => _isAIMenuOpen = false);
-              Navigator.push(
+            isDark: isDark,
+            onTap: () async {
+              setState(() => _isQuickAIMenuOpen = false);
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const NaturalLanguageEntryScreen(),
                 ),
               );
             },
-            isDark: isDark,
           ),
-          const SizedBox(height: 16),
-          _buildSpeedDialItem(
-            icon: Icons.chat_rounded,
-            label: 'AI Therapist',
-            onTap: () {
-              setState(() => _isAIMenuOpen = false);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FinancialTherapistScreen(),
-                ),
-              );
-            },
-            isDark: isDark,
-          ),
-          const SizedBox(height: 16),
-          _buildSpeedDialItem(
+          const SizedBox(width: 10),
+          _buildQuickAIMenuItem(
             icon: Icons.document_scanner_rounded,
-            label: 'Image AI',
-            onTap: () {
-              setState(() => _isAIMenuOpen = false);
-              Navigator.push(
+            label: 'Receipt AI',
+            isDark: isDark,
+            onTap: () async {
+              setState(() => _isQuickAIMenuOpen = false);
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ScanReceiptScreen(),
                 ),
               );
             },
-            isDark: isDark,
           ),
-          const SizedBox(height: 16),
-          _buildSpeedDialItem(
-            icon: Icons.history_rounded,
-            label: 'AI History',
-            onTap: () {
-              setState(() => _isAIMenuOpen = false);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AIHistoryScreen(),
-                ),
-              );
-            },
-            isDark: isDark,
-          ),
-          const SizedBox(height: 16),
         ],
-
-        // The New AI Star Button (Sits above the main Add button)
-        FloatingActionButton(
-          heroTag: 'ai_fab', // Prevent hero animation conflict
-          onPressed: () {
-            setState(() {
-              _isAIMenuOpen = !_isAIMenuOpen;
-            });
-          },
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Icon(
-            _isAIMenuOpen ? Icons.close_rounded : Icons.auto_awesome_rounded,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 16), // Space before the main FAB
-        // The Main Add Button
-        FloatingActionButton(
-          heroTag: 'main_fab',
-          onPressed: () {
-            // Close AI menu if open
-            if (_isAIMenuOpen) setState(() => _isAIMenuOpen = false);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
-            ).then((_) {
-              _loadData();
-            });
-          },
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: const Icon(Icons.add_rounded, size: 32, color: Colors.white),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildSpeedDialItem({
+  Widget _buildQuickAIMenuItem({
     required IconData icon,
     required String label,
-    required VoidCallback onTap,
     required bool isDark,
+    required VoidCallback onTap,
   }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? const Color(0xFFe2e8f0)
+                      : const Color(0xFF334155),
+                ),
               ),
             ],
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
         ),
-        const SizedBox(width: 12),
-        FloatingActionButton.small(
-          heroTag: label, // Unique tag per item
-          onPressed: onTap,
-          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          elevation: 4,
-          child: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        ),
-      ],
+      ),
     );
   }
 
@@ -1151,12 +1166,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return InkWell(
       onTap: () {
         setState(() {
+          _isQuickAIMenuOpen = false;
           _selectedIndex = index;
         });
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        width: 80,
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,

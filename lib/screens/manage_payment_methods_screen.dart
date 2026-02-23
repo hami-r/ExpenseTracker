@@ -227,20 +227,14 @@ class _ManagePaymentMethodsScreenState
                                 : const Color(0xFF66857d),
                           ),
                         ),
-                        TextButton(
-                          onPressed: () {},
-                          style: TextButton.styleFrom(
-                            minimumSize: Size.zero,
-                            padding: EdgeInsets.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(
-                            'Manage',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                        Text(
+                          '${paymentMethods.length}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? const Color(0xFF94a3b8)
+                                : const Color(0xFF64748b),
                           ),
                         ),
                       ],

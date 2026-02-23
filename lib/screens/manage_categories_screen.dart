@@ -20,6 +20,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   bool _isLoading = true;
   final CategoryService _categoryService = CategoryService();
   final UserService _userService = UserService();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -43,6 +45,16 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     } else {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  List<Category> get _filteredCategories {
+    if (_searchQuery.trim().isEmpty) return categories;
+    final q = _searchQuery.trim().toLowerCase();
+    return categories.where((category) {
+      final name = category.name.toLowerCase();
+      final description = (category.description ?? '').toLowerCase();
+      return name.contains(q) || description.contains(q);
+    }).toList();
   }
 
   void _deleteCategory(int index, BuildContext context) async {
@@ -111,6 +123,12 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -162,67 +180,130 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                       children: [
                         const SizedBox(height: 16),
 
-                        // Add New Category Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const EditCategoryScreen(),
-                                ),
-                              );
-                              _loadData(); // Refresh after return
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 4,
-                              shadowColor: Theme.of(
-                                context,
-                              ).colorScheme.primary.withOpacity(0.3),
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_circle_rounded, size: 24),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Add New Category',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
+                        // Add New Category Button (manage mode only)
+                        if (!widget.isSelectionMode)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const EditCategoryScreen(),
                                   ),
+                                );
+                                _loadData(); // Refresh after return
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 4,
+                                shadowColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.3),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_circle_rounded, size: 24),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Add New Category',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                        if (widget.isSelectionMode)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1a2c26)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (value) {
+                                setState(() {
+                                  _searchQuery = value;
+                                });
+                              },
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0f172a),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: 'Search categories',
+                                hintStyle: TextStyle(
+                                  color: isDark
+                                      ? const Color(0xFF64748b)
+                                      : const Color(0xFF94a3b8),
+                                ),
+                                icon: Icon(
+                                  Icons.search_rounded,
+                                  color: isDark
+                                      ? const Color(0xFF94a3b8)
+                                      : const Color(0xFF64748b),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
 
                         const SizedBox(height: 32),
 
                         // Section Header
                         Padding(
                           padding: const EdgeInsets.only(left: 4, bottom: 8),
-                          child: Text(
-                            'ALL CATEGORIES',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1.5,
-                              color: isDark
-                                  ? const Color(0xFF94a3b8)
-                                  : const Color(0xFF9ca3af),
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'ALL CATEGORIES',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1.5,
+                                  color: isDark
+                                      ? const Color(0xFF94a3b8)
+                                      : const Color(0xFF9ca3af),
+                                ),
+                              ),
+                              Text(
+                                '${_filteredCategories.length}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? const Color(0xFF94a3b8)
+                                      : const Color(0xFF64748b),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
@@ -231,7 +312,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                         // Categories List
                         if (_isLoading)
                           const Center(child: CircularProgressIndicator())
-                        else if (categories.isEmpty)
+                        else if (_filteredCategories.isEmpty)
                           Center(
                             child: Padding(
                               padding: const EdgeInsets.all(24.0),
@@ -246,7 +327,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                             ),
                           )
                         else
-                          ...categories.asMap().entries.map(
+                          ..._filteredCategories.asMap().entries.map(
                             (entry) => Builder(
                               builder: (context) => _buildCategoryCard(
                                 entry.value,

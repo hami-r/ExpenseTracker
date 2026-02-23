@@ -15,6 +15,10 @@ import 'monthly_comparison_screen.dart';
 import 'payment_correlation_screen.dart';
 import 'region_currency_screen.dart';
 import 'ai_settings_screen.dart';
+import 'natural_language_entry_screen.dart';
+import 'financial_therapist_screen.dart';
+import 'scan_receipt_screen.dart';
+import 'ai_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -175,6 +179,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             icon: Icons.auto_awesome_rounded,
                             title: 'AI Configuration',
                             color: Theme.of(context).colorScheme.primary,
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.abc_rounded,
+                            title: 'Text / Voice AI',
+                            color: const Color(0xFF3b82f6),
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.chat_rounded,
+                            title: 'AI Therapist',
+                            color: const Color(0xFF22c55e),
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.document_scanner_rounded,
+                            title: 'Image AI',
+                            color: const Color(0xFFf59e0b),
+                            hasBottomBorder: true,
+                          ),
+                          _MenuItemData(
+                            icon: Icons.history_rounded,
+                            title: 'AI History',
+                            color: const Color(0xFF8b5cf6),
                             hasBottomBorder: false,
                           ),
                         ], isDark),
@@ -527,6 +555,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const AISettingsScreen(),
+                    ),
+                  );
+                } else if (item.title == 'Text / Voice AI') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NaturalLanguageEntryScreen(),
+                    ),
+                  );
+                } else if (item.title == 'AI Therapist') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FinancialTherapistScreen(),
+                    ),
+                  );
+                } else if (item.title == 'Image AI') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ScanReceiptScreen(),
+                    ),
+                  );
+                } else if (item.title == 'AI History') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AIHistoryScreen(),
                     ),
                   );
                 }

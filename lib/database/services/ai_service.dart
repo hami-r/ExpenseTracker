@@ -14,6 +14,15 @@ class AIService {
 
   AIService(this._categoryService, this._paymentMethodService);
 
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    final asString = value.toString().trim();
+    if (asString.isEmpty) return null;
+    return int.tryParse(asString) ?? double.tryParse(asString)?.toInt();
+  }
+
   Future<String?> _getActiveApiKey() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -62,6 +71,7 @@ class AIService {
     final categories = await _categoryService.getAllCategories(userId);
     final paymentMethods = await _paymentMethodService.getAllPaymentMethods(
       userId,
+      profileId: profileId,
     );
 
     final categoriesStr = categories
@@ -101,6 +111,24 @@ Respond ONLY with a valid JSON object:
           final result =
               jsonDecode(responseText.substring(startIndex, endIndex))
                   as Map<String, dynamic>;
+          final categoryId = _toInt(result['category_id']);
+          final paymentMethodId = _toInt(result['payment_method_id']);
+          final categoryName = categories
+              .where((c) => c.categoryId == categoryId)
+              .map((c) => c.name)
+              .cast<String?>()
+              .firstWhere((_) => true, orElse: () => null);
+          final paymentMethodName = paymentMethods
+              .where((m) => m.paymentMethodId == paymentMethodId)
+              .map((m) => m.name)
+              .cast<String?>()
+              .firstWhere((_) => true, orElse: () => null);
+          final enrichedResult = <String, dynamic>{
+            ...result,
+            if (categoryName != null) 'category_name': categoryName,
+            if (paymentMethodName != null)
+              'payment_method_name': paymentMethodName,
+          };
 
           // Save to history
           await _historyService.saveEntry(
@@ -109,7 +137,8 @@ Respond ONLY with a valid JSON object:
               profileId: profileId,
               feature: 'voice',
               title: text.length > 30 ? '${text.substring(0, 27)}...' : text,
-              payload: jsonEncode(result),
+              payload: jsonEncode(enrichedResult),
+              timestamp: DateTime.now(),
             ),
           );
 
@@ -141,6 +170,7 @@ Respond ONLY with a valid JSON object:
     final categories = await _categoryService.getAllCategories(userId);
     final paymentMethods = await _paymentMethodService.getAllPaymentMethods(
       userId,
+      profileId: profileId,
     );
 
     final categoriesStr = categories
@@ -181,6 +211,24 @@ Respond ONLY with a valid JSON object:
           final result =
               jsonDecode(responseText.substring(startIndex, endIndex))
                   as Map<String, dynamic>;
+          final categoryId = _toInt(result['category_id']);
+          final paymentMethodId = _toInt(result['payment_method_id']);
+          final categoryName = categories
+              .where((c) => c.categoryId == categoryId)
+              .map((c) => c.name)
+              .cast<String?>()
+              .firstWhere((_) => true, orElse: () => null);
+          final paymentMethodName = paymentMethods
+              .where((m) => m.paymentMethodId == paymentMethodId)
+              .map((m) => m.name)
+              .cast<String?>()
+              .firstWhere((_) => true, orElse: () => null);
+          final enrichedResult = <String, dynamic>{
+            ...result,
+            if (categoryName != null) 'category_name': categoryName,
+            if (paymentMethodName != null)
+              'payment_method_name': paymentMethodName,
+          };
 
           // Save to history
           await _historyService.saveEntry(
@@ -189,7 +237,8 @@ Respond ONLY with a valid JSON object:
               profileId: profileId,
               feature: 'receipt',
               title: 'Scanned Receipt: ${result['note'] ?? 'Expense'}',
-              payload: jsonEncode(result),
+              payload: jsonEncode(enrichedResult),
+              timestamp: DateTime.now(),
             ),
           );
 
@@ -264,6 +313,7 @@ Guidelines:
               ? '${userMessage.substring(0, 37)}...'
               : userMessage,
           payload: jsonEncode({'question': userMessage, 'answer': reply}),
+          timestamp: DateTime.now(),
         ),
       );
 
