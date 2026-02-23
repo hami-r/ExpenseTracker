@@ -12,6 +12,7 @@ class ThemeSelectionScreen extends StatefulWidget {
 class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
   String _selectedTheme = 'Emerald Green';
   String _appliedTheme = 'Emerald Green'; // Track what's actually applied
+  bool _showSmallSquares = true;
 
   @override
   void initState() {
@@ -27,17 +28,8 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
   }
 
   List<ThemeOption> get _allThemes => [
-    ThemeOption(name: 'Emerald Green', color: const Color(0xFF14b8a6)),
-    ThemeOption(name: 'Royal Blue', color: const Color(0xFF2563eb)),
-    ThemeOption(name: 'Sunset Orange', color: const Color(0xFFf97316)),
-    ThemeOption(name: 'Mint Green', color: const Color(0xFF10b981)),
-    ThemeOption(name: 'Deep Purple', color: const Color(0xFF9333ea)),
-    ThemeOption(name: 'Neon Rose', color: const Color(0xFFf43f5e)),
-    ThemeOption(name: 'Midnight Black', color: const Color(0xFF1f2937)),
-    ThemeOption(name: 'Hot Pink', color: const Color(0xFFec4899)),
-    ThemeOption(name: 'Crimson Red', color: const Color(0xFFdc2626)),
-    ThemeOption(name: 'Electric Cyan', color: const Color(0xFF06b6d4)),
-    ThemeOption(name: 'Golden Yellow', color: const Color(0xFFfbbf24)),
+    ...ThemeProvider.themeColors.entries
+        .map((entry) => ThemeOption(name: entry.key, color: entry.value)),
   ];
 
   List<ThemeOption> get _themes {
@@ -81,7 +73,9 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildTitleSection(isDark),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 20),
+                        _buildViewToggle(isDark),
+                        const SizedBox(height: 20),
                         _buildThemeGrid(),
                       ],
                     ),
@@ -198,6 +192,23 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
   }
 
   Widget _buildThemeGrid() {
+    if (_showSmallSquares) {
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: _themes.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1,
+        ),
+        itemBuilder: (context, index) => _buildSmallSquareThemeCard(
+          _themes[index],
+        ),
+      );
+    }
+
     return Column(
       children: _themes.map((theme) {
         return Padding(
@@ -297,6 +308,131 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
       ),
     );
   }
+
+  Widget _buildSmallSquareThemeCard(ThemeOption theme) {
+    final isSelected = _selectedTheme == theme.name;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTheme = theme.name;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: theme.color,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.transparent,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: theme.color.withOpacity(0.28),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Icon(
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
+                  color: Colors.white.withOpacity(isSelected ? 0.95 : 0.55),
+                  size: 18,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                theme.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewToggle(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1f2937) : const Color(0xFFe5e7eb),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildToggleButton(
+              label: 'Small Squares',
+              selected: _showSmallSquares,
+              isDark: isDark,
+              onTap: () => setState(() => _showSmallSquares = true),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _buildToggleButton(
+              label: 'Large Cards',
+              selected: !_showSmallSquares,
+              isDark: isDark,
+              onTap: () => setState(() => _showSmallSquares = false),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleButton({
+    required String label,
+    required bool selected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? (isDark ? const Color(0xFF111827) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: selected
+                ? (isDark ? Colors.white : const Color(0xFF0f172a))
+                : (isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b)),
+          ),
+        ),
+      ),
+    );
+  }
+
 }
 
 class ThemeOption {

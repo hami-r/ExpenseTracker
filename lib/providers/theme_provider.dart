@@ -20,6 +20,16 @@ class ThemeProvider extends ChangeNotifier {
     'Crimson Red': Color(0xFFdc2626),
     'Electric Cyan': Color(0xFF06b6d4),
     'Golden Yellow': Color(0xFFfbbf24),
+    'Ocean Teal': Color(0xFF0ea5a4),
+    'Indigo Night': Color(0xFF4f46e5),
+    'Coral Flame': Color(0xFFfb7185),
+    'Lime Punch': Color(0xFF84cc16),
+    'Violet Storm': Color(0xFF8b5cf6),
+    'Berry Magenta': Color(0xFFd946ef),
+    'Amber Glow': Color(0xFFf59e0b),
+    'Aqua Mint': Color(0xFF2dd4bf),
+    'Steel Blue': Color(0xFF3b82f6),
+    'Ruby Wine': Color(0xFFbe123c),
   };
 
   Color get primaryColor => _primaryColor;
