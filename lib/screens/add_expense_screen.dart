@@ -26,6 +26,8 @@ class AddExpenseScreen extends StatefulWidget {
   final int? initialCategoryId;
   final int? initialPaymentMethodId;
   final DateTime? initialDate;
+  final bool initialIsSplit;
+  final List<Map<String, dynamic>>? initialSplitItems;
 
   const AddExpenseScreen({
     super.key,
@@ -34,6 +36,8 @@ class AddExpenseScreen extends StatefulWidget {
     this.initialCategoryId,
     this.initialPaymentMethodId,
     this.initialDate,
+    this.initialIsSplit = false,
+    this.initialSplitItems,
   });
 
   @override
@@ -63,6 +67,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   DateTime _selectedDate = DateTime.now();
 
   bool _isSplitBill = false;
+  bool _hasAppliedInitialSplitItems = false;
 
   final List<Map<String, dynamic>> _splitItems = [];
 
@@ -78,7 +83,137 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (widget.initialDate != null) {
       _selectedDate = widget.initialDate!;
     }
+    _isSplitBill = widget.initialIsSplit;
     _loadData();
+  }
+
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    final asString = value.toString().trim();
+    if (asString.isEmpty) return null;
+    return int.tryParse(asString) ?? double.tryParse(asString)?.toInt();
+  }
+
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    final asString = value.toString().trim().replaceAll(',', '');
+    if (asString.isEmpty) return null;
+    return double.tryParse(asString);
+  }
+
+  String _formatAmount(double amount) {
+    if (amount == amount.truncateToDouble()) {
+      return amount.toStringAsFixed(0);
+    }
+    return amount.toStringAsFixed(2);
+  }
+
+  Category? _findCategoryById(int? categoryId) {
+    if (categoryId == null) return null;
+    for (final category in _categories) {
+      if (category.categoryId == categoryId) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  Category? _findCategoryByName(String? categoryName) {
+    final normalizedName = categoryName?.trim().toLowerCase();
+    if (normalizedName == null || normalizedName.isEmpty) return null;
+
+    for (final category in _categories) {
+      if (category.name.toLowerCase() == normalizedName) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  Category? _resolveCategoryFromSplitItem(Map<String, dynamic> item) {
+    return _findCategoryById(_toInt(item['categoryId'])) ??
+        _findCategoryById(_toInt(item['category_id'])) ??
+        _findCategoryByName(item['category']?.toString()) ??
+        _findCategoryByName(item['category_name']?.toString()) ??
+        (_categories.isNotEmpty ? _categories.first : null);
+  }
+
+  Map<String, dynamic>? _normalizeSplitItemForUi(
+    Map<String, dynamic> rawItem, {
+    required int fallbackOrder,
+  }) {
+    final amount = _toDouble(rawItem['amount']);
+    if (amount == null || amount <= 0) return null;
+
+    final category = _resolveCategoryFromSplitItem(rawItem);
+    final itemName = rawItem['name']?.toString().trim();
+
+    return {
+      'name': (itemName == null || itemName.isEmpty)
+          ? 'Item $fallbackOrder'
+          : itemName,
+      'amount': _formatAmount(amount),
+      'categoryId': category?.categoryId,
+      'category':
+          category?.name ??
+          rawItem['category']?.toString() ??
+          rawItem['category_name']?.toString() ??
+          'Other',
+      'icon': category != null
+          ? IconHelper.getIcon(category.iconName)
+          : (rawItem['icon'] is IconData
+                ? rawItem['icon'] as IconData
+                : Icons.category),
+      'color': category != null
+          ? ColorHelper.fromHex(category.colorHex)
+          : (rawItem['color'] is Color
+                ? rawItem['color'] as Color
+                : Colors.grey),
+    };
+  }
+
+  void _applyInitialSplitItemsIfNeeded() {
+    if (_hasAppliedInitialSplitItems) return;
+    _hasAppliedInitialSplitItems = true;
+
+    final rawItems = widget.initialSplitItems;
+    if (rawItems == null || rawItems.isEmpty) return;
+
+    final normalizedItems = <Map<String, dynamic>>[];
+    for (var index = 0; index < rawItems.length; index++) {
+      final normalizedItem = _normalizeSplitItemForUi(
+        rawItems[index],
+        fallbackOrder: index + 1,
+      );
+      if (normalizedItem != null) {
+        normalizedItems.add(normalizedItem);
+      }
+    }
+
+    if (normalizedItems.isEmpty || !mounted) return;
+
+    final amountFromInput = _toDouble(_amountController.text);
+    final splitTotal = normalizedItems.fold<double>(
+      0.0,
+      (sum, item) => sum + (_toDouble(item['amount']) ?? 0.0),
+    );
+
+    setState(() {
+      _splitItems
+        ..clear()
+        ..addAll(normalizedItems);
+
+      if (widget.initialIsSplit || normalizedItems.length > 1) {
+        _isSplitBill = true;
+      }
+
+      if ((amountFromInput == null || amountFromInput <= 0) && splitTotal > 0) {
+        _amountController.text = _formatAmount(splitTotal);
+      }
+    });
   }
 
   Future<void> _loadData() async {
@@ -125,6 +260,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               }
             }
           });
+
+          _applyInitialSplitItemsIfNeeded();
         }
       }
     } catch (e) {
@@ -148,20 +285,33 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         return;
       }
 
-      // Determine Category ID (use selected or default for split)
-      // For split bill, we don't have a main category selector, so we default to the first one or 'Food' if found?
-      // Better to pick "Others" if exists, or just the first one.
-      int categoryId = _categories[_selectedCategoryIndex].categoryId!;
+      final safeCategoryIndex =
+          (_selectedCategoryIndex >= 0 &&
+              _selectedCategoryIndex < _categories.length)
+          ? _selectedCategoryIndex
+          : 0;
+      final safePaymentIndex =
+          (_selectedPaymentIndex >= 0 &&
+              _selectedPaymentIndex < _paymentMethods.length)
+          ? _selectedPaymentIndex
+          : 0;
+
+      int categoryId = _categories[safeCategoryIndex].categoryId ?? 1;
       if (_isSplitBill) {
-        // Try to find a generic category or just use the first valid one
-        categoryId = _categories.isNotEmpty ? _categories.first.categoryId! : 1;
+        if (_splitItems.isEmpty) {
+          _showError('Please add at least one split item');
+          return;
+        }
+        categoryId =
+            _resolveCategoryFromSplitItem(_splitItems.first)?.categoryId ??
+            _categories.first.categoryId ??
+            1;
       }
 
       final transaction = model.Transaction(
         userId: _userId!,
         categoryId: categoryId,
-        paymentMethodId:
-            _paymentMethods[_selectedPaymentIndex].paymentMethodId!,
+        paymentMethodId: _paymentMethods[safePaymentIndex].paymentMethodId!,
         amount: amount,
         transactionDate: _selectedDate,
         note: _noteController.text.isEmpty ? null : _noteController.text,
@@ -183,17 +333,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         }
 
         final List<SplitItem> splitItems = _splitItems.map((item) {
-          final catName = item['category'] as String;
-          final cat = _categories.firstWhere(
-            (c) => c.name == catName,
-            orElse: () => _categories.first,
-          );
-
+          final category = _resolveCategoryFromSplitItem(item);
           return SplitItem(
             transactionId: 0, // Will be set by service
             name: item['name'] as String,
-            categoryId: cat.categoryId,
-            amount: double.tryParse(item['amount'].replaceAll(',', '')) ?? 0.0,
+            categoryId: category?.categoryId,
+            amount: _toDouble(item['amount']) ?? 0.0,
             createdAt: DateTime.now(),
           );
         }).toList();
@@ -1307,7 +1452,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               TextButton.icon(
                 onPressed: () async {
-                  final result = await Navigator.push(
+                  final result = await Navigator.push<Map<String, dynamic>>(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const AddSplitItemScreen(),
@@ -1315,9 +1460,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   );
 
                   if (result != null && mounted) {
-                    setState(() {
-                      _splitItems.add(result);
-                    });
+                    final normalizedItem = _normalizeSplitItemForUi(
+                      result,
+                      fallbackOrder: _splitItems.length + 1,
+                    );
+                    if (normalizedItem != null) {
+                      setState(() {
+                        _splitItems.add(normalizedItem);
+                      });
+                    }
                   }
                 },
                 icon: Icon(Icons.add, size: 16, color: primaryColor),
@@ -1349,6 +1500,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           separatorBuilder: (c, i) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final item = _splitItems[index];
+            final itemColor = item['color'] is Color
+                ? item['color'] as Color
+                : Colors.grey;
+            final itemIcon = item['icon'] is IconData
+                ? item['icon'] as IconData
+                : Icons.category;
+
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1371,17 +1529,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: (item['color'] as Color).withOpacity(
-                        isDark ? 0.2 : 0.1,
-                      ),
+                      color: itemColor.withOpacity(isDark ? 0.2 : 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      item['icon'],
+                      itemIcon,
                       size: 20,
-                      color: isDark
-                          ? (item['color'] as Color).withOpacity(0.8)
-                          : item['color'],
+                      color: isDark ? itemColor.withOpacity(0.8) : itemColor,
                     ),
                   ),
                   const SizedBox(width: 12),

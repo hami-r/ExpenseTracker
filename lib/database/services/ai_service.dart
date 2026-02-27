@@ -6,6 +6,8 @@ import '../services/category_service.dart';
 import '../services/payment_method_service.dart';
 import '../services/ai_history_service.dart';
 import '../../models/ai_history.dart';
+import '../../models/category.dart';
+import '../../models/payment_method.dart';
 
 class AIService {
   final CategoryService _categoryService;
@@ -21,6 +23,171 @@ class AIService {
     final asString = value.toString().trim();
     if (asString.isEmpty) return null;
     return int.tryParse(asString) ?? double.tryParse(asString)?.toInt();
+  }
+
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    final asString = value.toString().trim().replaceAll(',', '');
+    if (asString.isEmpty) return null;
+    return double.tryParse(asString);
+  }
+
+  bool _toBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value == null) return false;
+
+    final normalized = value.toString().trim().toLowerCase();
+    return normalized == 'true' || normalized == '1' || normalized == 'yes';
+  }
+
+  Category? _findCategoryById(List<Category> categories, int? categoryId) {
+    if (categoryId == null) return null;
+    for (final category in categories) {
+      if (category.categoryId == categoryId) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  Category? _findCategoryByName(
+    List<Category> categories,
+    String? categoryName,
+  ) {
+    final name = categoryName?.trim().toLowerCase();
+    if (name == null || name.isEmpty) return null;
+
+    for (final category in categories) {
+      if (category.name.toLowerCase() == name) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  PaymentMethod? _findPaymentMethodById(
+    List<PaymentMethod> paymentMethods,
+    int? paymentMethodId,
+  ) {
+    if (paymentMethodId == null) return null;
+    for (final method in paymentMethods) {
+      if (method.paymentMethodId == paymentMethodId) {
+        return method;
+      }
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> _normalizeSplitItems(
+    dynamic rawSplitItems,
+    List<Category> categories,
+  ) {
+    if (rawSplitItems is! List) return [];
+
+    final normalizedItems = <Map<String, dynamic>>[];
+
+    for (final rawItem in rawSplitItems) {
+      if (rawItem is! Map) continue;
+
+      final item = Map<String, dynamic>.from(rawItem);
+      final amount = _toDouble(item['amount']);
+      if (amount == null || amount <= 0) continue;
+
+      final categoryById = _findCategoryById(
+        categories,
+        _toInt(item['category_id']),
+      );
+      final categoryByName = _findCategoryByName(
+        categories,
+        item['category_name']?.toString() ?? item['category']?.toString(),
+      );
+      final category =
+          categoryById ??
+          categoryByName ??
+          (categories.isNotEmpty ? categories.first : null);
+
+      final rawName = item['name']?.toString().trim();
+      final name = (rawName == null || rawName.isEmpty)
+          ? (category?.name ?? 'Item')
+          : rawName;
+
+      normalizedItems.add({
+        'name': name,
+        'amount': amount,
+        if (category?.categoryId != null) 'category_id': category!.categoryId,
+        if (category != null) 'category_name': category.name,
+      });
+    }
+
+    return normalizedItems;
+  }
+
+  Map<String, dynamic> _normalizeParsedExpense(
+    Map<String, dynamic> parsedData,
+    List<Category> categories,
+    List<PaymentMethod> paymentMethods,
+  ) {
+    final splitItems = _normalizeSplitItems(
+      parsedData['split_items'],
+      categories,
+    );
+    final splitTotal = splitItems.fold<double>(
+      0,
+      (sum, item) => sum + ((_toDouble(item['amount']) ?? 0.0)),
+    );
+
+    final hasMultipleSplitItems = splitItems.length > 1;
+    final isSplit = _toBool(parsedData['is_split']) || hasMultipleSplitItems;
+
+    double amount = _toDouble(parsedData['amount']) ?? 0.0;
+    if (isSplit && splitTotal > 0) {
+      if (amount <= 0 || (amount - splitTotal).abs() > 0.01) {
+        amount = splitTotal;
+      }
+    }
+
+    final category =
+        _findCategoryById(categories, _toInt(parsedData['category_id'])) ??
+        _findCategoryByName(
+          categories,
+          parsedData['category_name']?.toString(),
+        ) ??
+        (splitItems.isNotEmpty
+            ? _findCategoryById(
+                categories,
+                _toInt(splitItems.first['category_id']),
+              )
+            : null) ??
+        (categories.isNotEmpty ? categories.first : null);
+
+    final paymentMethod =
+        _findPaymentMethodById(
+          paymentMethods,
+          _toInt(parsedData['payment_method_id']),
+        ) ??
+        (paymentMethods.isNotEmpty ? paymentMethods.first : null);
+
+    final rawNote = parsedData['note']?.toString().trim();
+    final note = (rawNote == null || rawNote.isEmpty)
+        ? (isSplit ? 'Split expense' : 'Expense')
+        : rawNote;
+
+    final rawDate = parsedData['date']?.toString();
+    final parsedDate = rawDate != null ? DateTime.tryParse(rawDate) : null;
+
+    return {
+      'amount': amount,
+      'category_id': category?.categoryId,
+      'payment_method_id': paymentMethod?.paymentMethodId,
+      'note': note,
+      'date': (parsedDate ?? DateTime.now()).toIso8601String(),
+      'is_split': isSplit,
+      'split_items': isSplit ? splitItems : <Map<String, dynamic>>[],
+      if (category != null) 'category_name': category.name,
+      if (paymentMethod != null) 'payment_method_name': paymentMethod.name,
+    };
   }
 
   Future<String?> _getActiveApiKey() async {
@@ -96,9 +263,13 @@ Rules:
 3. "payment_method_id": integer ID of the best matching payment method.
 4. "note": concise title/note for the transaction.
 5. "date": ISO 8601 date (YYYY-MM-DDTHH:mm:ss). Current date/time: ${DateTime.now().toIso8601String()}.
+6. "is_split": boolean. Set true only when the input clearly includes multiple itemized sub-expenses.
+7. "split_items": array of objects, each with "name", "amount", "category_id".
+8. For non-split expenses, return "is_split": false and "split_items": [].
+9. If "is_split" is true, make sure split item amounts add up to "amount".
 
 Respond ONLY with a valid JSON object:
-{"amount": number, "category_id": number, "payment_method_id": number, "note": string, "date": string}
+{"amount": number, "category_id": number, "payment_method_id": number, "note": string, "date": string, "is_split": boolean, "split_items": [{"name": string, "amount": number, "category_id": number}]}
 ''';
 
     try {
@@ -111,24 +282,11 @@ Respond ONLY with a valid JSON object:
           final result =
               jsonDecode(responseText.substring(startIndex, endIndex))
                   as Map<String, dynamic>;
-          final categoryId = _toInt(result['category_id']);
-          final paymentMethodId = _toInt(result['payment_method_id']);
-          final categoryName = categories
-              .where((c) => c.categoryId == categoryId)
-              .map((c) => c.name)
-              .cast<String?>()
-              .firstWhere((_) => true, orElse: () => null);
-          final paymentMethodName = paymentMethods
-              .where((m) => m.paymentMethodId == paymentMethodId)
-              .map((m) => m.name)
-              .cast<String?>()
-              .firstWhere((_) => true, orElse: () => null);
-          final enrichedResult = <String, dynamic>{
-            ...result,
-            if (categoryName != null) 'category_name': categoryName,
-            if (paymentMethodName != null)
-              'payment_method_name': paymentMethodName,
-          };
+          final normalizedResult = _normalizeParsedExpense(
+            result,
+            categories,
+            paymentMethods,
+          );
 
           // Save to history
           await _historyService.saveEntry(
@@ -137,12 +295,12 @@ Respond ONLY with a valid JSON object:
               profileId: profileId,
               feature: 'voice',
               title: text.length > 30 ? '${text.substring(0, 27)}...' : text,
-              payload: jsonEncode(enrichedResult),
+              payload: jsonEncode(normalizedResult),
               timestamp: DateTime.now(),
             ),
           );
 
-          return result;
+          return normalizedResult;
         }
       }
       return null;
@@ -193,9 +351,12 @@ Rules:
 3. "payment_method_id": integer ID of the best matching payment method.
 4. "note": concise vendor/purchase description.
 5. "date": ISO 8601 date from the receipt. If not found, use ${DateTime.now().toIso8601String()}.
+6. "is_split": boolean. Set true only if you can confidently extract multiple purchase items.
+7. "split_items": array of objects with "name", "amount", and "category_id".
+8. If you cannot confidently extract itemized splits, return "is_split": false and "split_items": [].
 
 Respond ONLY with a valid JSON object:
-{"amount": number, "category_id": number, "payment_method_id": number, "note": string, "date": string}
+{"amount": number, "category_id": number, "payment_method_id": number, "note": string, "date": string, "is_split": boolean, "split_items": [{"name": string, "amount": number, "category_id": number}]}
 ''';
 
     try {
@@ -211,24 +372,11 @@ Respond ONLY with a valid JSON object:
           final result =
               jsonDecode(responseText.substring(startIndex, endIndex))
                   as Map<String, dynamic>;
-          final categoryId = _toInt(result['category_id']);
-          final paymentMethodId = _toInt(result['payment_method_id']);
-          final categoryName = categories
-              .where((c) => c.categoryId == categoryId)
-              .map((c) => c.name)
-              .cast<String?>()
-              .firstWhere((_) => true, orElse: () => null);
-          final paymentMethodName = paymentMethods
-              .where((m) => m.paymentMethodId == paymentMethodId)
-              .map((m) => m.name)
-              .cast<String?>()
-              .firstWhere((_) => true, orElse: () => null);
-          final enrichedResult = <String, dynamic>{
-            ...result,
-            if (categoryName != null) 'category_name': categoryName,
-            if (paymentMethodName != null)
-              'payment_method_name': paymentMethodName,
-          };
+          final normalizedResult = _normalizeParsedExpense(
+            result,
+            categories,
+            paymentMethods,
+          );
 
           // Save to history
           await _historyService.saveEntry(
@@ -236,13 +384,14 @@ Respond ONLY with a valid JSON object:
               userId: userId,
               profileId: profileId,
               feature: 'receipt',
-              title: 'Scanned Receipt: ${result['note'] ?? 'Expense'}',
-              payload: jsonEncode(enrichedResult),
+              title:
+                  'Scanned Receipt: ${normalizedResult['note'] ?? 'Expense'}',
+              payload: jsonEncode(normalizedResult),
               timestamp: DateTime.now(),
             ),
           );
 
-          return result;
+          return normalizedResult;
         }
       }
       return null;

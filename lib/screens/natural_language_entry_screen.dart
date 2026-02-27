@@ -100,6 +100,7 @@ class _NaturalLanguageEntryScreenState
       if (user == null || user.userId == null) {
         throw Exception('User not logged in');
       }
+      if (!mounted) return;
 
       final profileId = context.read<ProfileProvider>().activeProfileId;
       final parsedData = await _aiService.parseNaturalLanguageExpense(
@@ -120,6 +121,13 @@ class _NaturalLanguageEntryScreenState
               initialNote: parsedData['note'] as String?,
               initialDate: parsedData['date'] != null
                   ? DateTime.tryParse(parsedData['date'] as String)
+                  : null,
+              initialIsSplit: parsedData['is_split'] == true,
+              initialSplitItems: parsedData['split_items'] is List
+                  ? (parsedData['split_items'] as List)
+                        .whereType<Map>()
+                        .map((item) => Map<String, dynamic>.from(item))
+                        .toList()
                   : null,
             ),
           ),

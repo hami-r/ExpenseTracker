@@ -65,6 +65,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     setState(() => _isProcessing = true);
 
     try {
+      if (!mounted) return;
       final profileId = context.read<ProfileProvider>().activeProfileId;
       final parsedData = await _aiService.parseImageToExpense(
         _pickedImageBytes!,
@@ -84,6 +85,13 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
               initialNote: parsedData['note'] as String?,
               initialDate: parsedData['date'] != null
                   ? DateTime.tryParse(parsedData['date'] as String)
+                  : null,
+              initialIsSplit: parsedData['is_split'] == true,
+              initialSplitItems: parsedData['split_items'] is List
+                  ? (parsedData['split_items'] as List)
+                        .whereType<Map>()
+                        .map((item) => Map<String, dynamic>.from(item))
+                        .toList()
                   : null,
             ),
           ),
