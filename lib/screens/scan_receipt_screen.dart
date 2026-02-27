@@ -75,7 +75,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       if (!mounted) return;
 
       if (parsedData != null) {
-        Navigator.pushReplacement(
+        final saved = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (context) => AddExpenseScreen(
@@ -96,6 +96,9 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
             ),
           ),
         );
+        if (saved == true && mounted) {
+          Navigator.pop(context, true);
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

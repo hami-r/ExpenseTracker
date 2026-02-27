@@ -393,15 +393,17 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             // Map to the structure expected by TransactionDetailsScreen
             final transactionMap = {
               'id': item.id,
-              // 'userId': ... // Not needed for display usually
+              'userId': item.userId,
               'title': item.title,
               'date': item.date,
               'amount': item.amount,
-              'category': item.title, // Usually title is category name
+              'categoryId': item.categoryId,
+              'paymentMethodId': item.paymentMethodId,
+              'category': item.categoryName ?? 'Uncategorized',
               'icon': _getIcon(item),
               'color': _getIconColor(item),
               'note': item.subtitle ?? '',
-              'paymentMethod': 'Unknown', // Not fetched in simple query
+              'paymentMethod': item.paymentMethodName ?? 'Unknown',
             };
 
             if (item.isSplit) {

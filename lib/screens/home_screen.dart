@@ -1014,21 +1014,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCenterAddNavItem(bool isDark) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (_isQuickAIMenuOpen) {
           setState(() => _isQuickAIMenuOpen = false);
         }
-        Navigator.push(
+        final saved = await Navigator.push<bool>(
           context,
           MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
-        ).then((_) {
-          _loadData();
-          if (mounted) {
-            setState(() {
-              _transactionsRefreshTrigger++;
-            });
-          }
-        });
+        );
+        if (saved == true) {
+          _refreshHomeData();
+        }
       },
       onDoubleTap: () {
         setState(() => _isQuickAIMenuOpen = !_isQuickAIMenuOpen);
@@ -1088,12 +1084,15 @@ class _HomeScreenState extends State<HomeScreen> {
             isDark: isDark,
             onTap: () async {
               setState(() => _isQuickAIMenuOpen = false);
-              await Navigator.push(
+              final saved = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const NaturalLanguageEntryScreen(),
                 ),
               );
+              if (saved == true) {
+                _refreshHomeData();
+              }
             },
           ),
           const SizedBox(width: 10),
@@ -1103,17 +1102,29 @@ class _HomeScreenState extends State<HomeScreen> {
             isDark: isDark,
             onTap: () async {
               setState(() => _isQuickAIMenuOpen = false);
-              await Navigator.push(
+              final saved = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ScanReceiptScreen(),
                 ),
               );
+              if (saved == true) {
+                _refreshHomeData();
+              }
             },
           ),
         ],
       ),
     );
+  }
+
+  void _refreshHomeData() {
+    _loadData();
+    if (mounted) {
+      setState(() {
+        _transactionsRefreshTrigger++;
+      });
+    }
   }
 
   Widget _buildQuickAIMenuItem({

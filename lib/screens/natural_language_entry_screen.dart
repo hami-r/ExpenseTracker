@@ -110,8 +110,7 @@ class _NaturalLanguageEntryScreenState
       );
 
       if (parsedData != null && mounted) {
-        // We successfully parsed data, redirect to AddExpenseScreen
-        Navigator.pushReplacement(
+        final saved = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (context) => AddExpenseScreen(
@@ -132,6 +131,9 @@ class _NaturalLanguageEntryScreenState
             ),
           ),
         );
+        if (saved == true && mounted) {
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
       if (!mounted) return;

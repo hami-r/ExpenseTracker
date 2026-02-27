@@ -46,9 +46,8 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
     setState(() => _isLoading = true);
     try {
       final transactionId = widget.transaction['id'] as int;
-      final userId =
-          widget.transaction['userId']
-              as int?; // Ensure userId is passed if needed, or get from transaction
+      final userId = widget.transaction['userId'] as int?;
+      final paymentMethodId = widget.transaction['paymentMethodId'] as int?;
 
       // Parallel data fetching
       final results = await Future.wait([
@@ -57,9 +56,10 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
           _categoryService.getAllCategories(userId)
         else
           Future.value(<Category>[]),
-        _paymentMethodService.getPaymentMethodById(
-          widget.transaction['paymentMethodId'] as int,
-        ),
+        if (paymentMethodId != null)
+          _paymentMethodService.getPaymentMethodById(paymentMethodId)
+        else
+          Future.value(null),
       ]);
 
       if (mounted) {
