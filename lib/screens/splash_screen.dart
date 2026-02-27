@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../database/database_helper.dart';
 import '../database/services/user_service.dart';
 import '../providers/profile_provider.dart';
+import '../services/app_lock_service.dart';
+import 'biometric_lock_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,6 +18,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  final AppLockService _appLockService = AppLockService();
 
   @override
   void initState() {
@@ -48,21 +51,38 @@ class _SplashScreenState extends State<SplashScreen>
       await Future.delayed(const Duration(seconds: 3));
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        await _navigateToNextScreen();
       }
     } catch (e) {
       // Handle error - for now just navigate anyway
       debugPrint('Database initialization error: $e');
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        await _navigateToNextScreen();
       }
     }
+  }
+
+  Future<void> _navigateToNextScreen() async {
+    var biometricEnabled = await _appLockService.isBiometricEnabled();
+
+    if (biometricEnabled) {
+      final available = await _appLockService.isBiometricAvailable();
+      if (!available) {
+        // Prevent lockout if biometrics become unavailable on device.
+        await _appLockService.setBiometricEnabled(false);
+        biometricEnabled = false;
+      }
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            biometricEnabled ? const BiometricLockScreen() : const HomeScreen(),
+      ),
+    );
   }
 
   @override

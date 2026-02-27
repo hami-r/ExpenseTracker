@@ -19,6 +19,7 @@ import 'natural_language_entry_screen.dart';
 import 'financial_therapist_screen.dart';
 import 'scan_receipt_screen.dart';
 import 'ai_history_screen.dart';
+import '../services/app_lock_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -29,13 +30,18 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
+  final AppLockService _appLockService = AppLockService();
   User? _currentUser;
   bool _isLoading = true;
+  bool _isBiometricEnabled = false;
+  bool _isBiometricLoading = true;
+  bool _isBiometricSaving = false;
 
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _loadBiometricSetting();
   }
 
   Future<void> _loadUser() async {
@@ -51,6 +57,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
       debugPrint('Error loading user profile: $e');
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadBiometricSetting() async {
+    final enabled = await _appLockService.isBiometricEnabled();
+    if (!mounted) return;
+    setState(() {
+      _isBiometricEnabled = enabled;
+      _isBiometricLoading = false;
+    });
+  }
+
+  Future<void> _handleBiometricToggle(bool enabled) async {
+    if (_isBiometricSaving) return;
+
+    setState(() => _isBiometricSaving = true);
+
+    if (enabled) {
+      final available = await _appLockService.isBiometricAvailable();
+      if (!available) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Fingerprint authentication is not available on this device.',
+              ),
+            ),
+          );
+          setState(() => _isBiometricSaving = false);
+        }
+        return;
+      }
+
+      final authenticated = await _appLockService.authenticate(
+        reason: 'Authenticate to enable fingerprint app lock',
+      );
+
+      if (!authenticated) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Fingerprint verification failed.')),
+          );
+          setState(() => _isBiometricSaving = false);
+        }
+        return;
+      }
+    }
+
+    await _appLockService.setBiometricEnabled(enabled);
+    if (!mounted) return;
+
+    setState(() {
+      _isBiometricEnabled = enabled;
+      _isBiometricSaving = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          enabled ? 'Fingerprint lock enabled.' : 'Fingerprint lock disabled.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -244,6 +312,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             hasBottomBorder: false,
                           ),
                         ], isDark),
+                        const SizedBox(height: 24),
+
+                        // Security Section
+                        _buildSectionHeader('SECURITY', isDark),
+                        const SizedBox(height: 12),
+                        _buildBiometricCard(isDark),
                         const SizedBox(height: 24),
 
                         // Version
@@ -473,6 +547,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildBiometricCard(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF22c55e).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.fingerprint_rounded,
+              size: 20,
+              color: Color(0xFF22c55e),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Fingerprint Lock',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? const Color(0xFFe2e8f0)
+                        : const Color(0xFF475569),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Require biometric unlock when app opens',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_isBiometricLoading || _isBiometricSaving)
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Switch(
+              value: _isBiometricEnabled,
+              onChanged: _handleBiometricToggle,
+              activeThumbColor: Theme.of(context).colorScheme.primary,
+              trackOutlineColor: WidgetStateProperty.resolveWith<Color?>(
+                (states) => isDark
+                    ? const Color(0xFF64748b).withValues(alpha: 0.5)
+                    : const Color(0xFFcbd5e1),
+              ),
+              trackOutlineWidth: WidgetStateProperty.resolveWith<double?>(
+                (states) => 1,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMenuItem(_MenuItemData item, bool isDark) {
     return Material(
       color: Colors.transparent,
@@ -634,6 +791,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         themeProvider.setDarkMode(value);
                       },
                       activeThumbColor: Theme.of(context).colorScheme.primary,
+                      trackOutlineColor:
+                          WidgetStateProperty.resolveWith<Color?>(
+                            (states) => isDark
+                                ? const Color(0xFF64748b).withValues(alpha: 0.5)
+                                : const Color(0xFFcbd5e1),
+                          ),
+                      trackOutlineWidth:
+                          WidgetStateProperty.resolveWith<double?>(
+                            (states) => 1,
+                          ),
                     );
                   },
                 )

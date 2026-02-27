@@ -53,5 +53,7 @@
 	<string>Allow camera access to scan physical bills and receipts for AI parsing.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow photo library access to upload saved receipts for AI parsing.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use biometric authentication to unlock the app securely.</string>
 </dict>
 </plist>

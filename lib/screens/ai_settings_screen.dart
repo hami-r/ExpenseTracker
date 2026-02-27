@@ -16,8 +16,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   List<Map<String, dynamic>> _apiKeys = [];
   String? _activeKeyId;
 
-  bool _isSaving = false;
-
   @override
   void initState() {
     super.initState();
@@ -44,7 +42,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   }
 
   Future<void> _saveSettings() async {
-    setState(() => _isSaving = true);
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString('ai_api_keys_list', jsonEncode(_apiKeys));
@@ -59,7 +56,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     }
 
     if (mounted) {
-      setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(
@@ -241,20 +237,13 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                           primaryColor,
                           surfaceColor,
                         ),
-                        const SizedBox(height: 120),
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _buildBottomButton(primaryColor, isDark),
           ),
         ],
       ),
@@ -509,71 +498,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildBottomButton(Color primary, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.9),
-            Theme.of(context).scaffoldBackgroundColor,
-          ],
-        ),
-      ),
-      child: Container(
-        width: double.infinity,
-        height: 64,
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: primary.withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: _isSaving ? null : _saveSettings,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primary,
-            foregroundColor: isDark ? Colors.black87 : Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            elevation: 0,
-          ),
-          child: _isSaving
-              ? SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    color: isDark ? Colors.black87 : Colors.white,
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Validate & Save',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.black87 : Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.check_circle_rounded, size: 24),
-                  ],
-                ),
-        ),
-      ),
     );
   }
 }

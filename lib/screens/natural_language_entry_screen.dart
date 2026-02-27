@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../database/services/ai_service.dart';
@@ -23,8 +24,16 @@ class _NaturalLanguageEntryScreenState
     extends State<NaturalLanguageEntryScreen> {
   final TextEditingController _inputController = TextEditingController();
   bool _isListening = false;
+  bool _shouldKeepListening = false;
+  bool _isStartingListening = false;
+  bool _isManualStop = false;
+  bool _restartScheduled = false;
+  Timer? _listenWatchdog;
   bool _isProcessing = false;
   bool _speechEnabled = false;
+  String _committedTranscript = '';
+  String _sessionTranscript = '';
+  DateTime? _lastSpeechEventAt;
 
   final stt.SpeechToText _speechToText = stt.SpeechToText();
   final _aiService = AIService(CategoryService(), PaymentMethodService());
@@ -47,45 +56,212 @@ class _NaturalLanguageEntryScreenState
     if (status.isGranted) {
       _speechEnabled = await _speechToText.initialize(
         onStatus: (val) {
+          final currentlyListening = (val == 'listening');
           if (mounted) {
             setState(() {
               // The plugin emits 'listening' when active, 'notListening' or 'done' when stopped.
-              _isListening = (val == 'listening');
+              _isListening = currentlyListening;
+              if (currentlyListening) {
+                _lastSpeechEventAt = DateTime.now();
+              }
             });
+          }
+          if (!currentlyListening &&
+              _shouldKeepListening &&
+              !_isManualStop &&
+              _speechEnabled) {
+            _commitSessionTranscript();
+            _scheduleListeningRestart();
           }
         },
         onError: (val) {
           debugPrint('Speech recognition error: $val');
           if (mounted) setState(() => _isListening = false);
+          if (_shouldKeepListening && !_isManualStop && _speechEnabled) {
+            _commitSessionTranscript();
+            _scheduleListeningRestart();
+          }
         },
       );
       if (mounted) setState(() {});
     }
   }
 
-  void _startListening() async {
-    if (_speechEnabled && !_isListening) {
+  void _scheduleListeningRestart() {
+    if (_restartScheduled || !_speechEnabled) return;
+    _restartScheduled = true;
+    Future.delayed(const Duration(milliseconds: 450), () {
+      _restartScheduled = false;
+      if (!mounted ||
+          !_shouldKeepListening ||
+          _isManualStop ||
+          _isListening ||
+          _isStartingListening) {
+        return;
+      }
+      _startListening();
+    });
+  }
+
+  String _joinTranscript(String committed, String currentSession) {
+    final left = committed.trim();
+    final right = currentSession.trim();
+    if (left.isEmpty) return right;
+    if (right.isEmpty) return left;
+    return '$left $right';
+  }
+
+  void _syncCommittedFromInput() {
+    _committedTranscript = _inputController.text.trim();
+  }
+
+  void _updateInputFromTranscripts() {
+    final combined = _joinTranscript(_committedTranscript, _sessionTranscript);
+    if (_inputController.text == combined) return;
+    _inputController.value = TextEditingValue(
+      text: combined,
+      selection: TextSelection.collapsed(offset: combined.length),
+      composing: TextRange.empty,
+    );
+  }
+
+  void _commitSessionTranscript() {
+    final chunk = _sessionTranscript.trim();
+    if (chunk.isEmpty) return;
+
+    if (_committedTranscript.isEmpty) {
+      _committedTranscript = chunk;
+    } else if (!_committedTranscript.endsWith(chunk)) {
+      _committedTranscript = '$_committedTranscript $chunk'.trim();
+    }
+
+    _sessionTranscript = '';
+    _updateInputFromTranscripts();
+  }
+
+  void _startListenWatchdog() {
+    _listenWatchdog?.cancel();
+    _listenWatchdog = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (!mounted || !_speechEnabled) return;
+      if (_shouldKeepListening && !_isListening && !_isStartingListening) {
+        _startListening();
+        return;
+      }
+
+      // Some devices report "listening" but stop producing events after silence.
+      final lastEvent = _lastSpeechEventAt;
+      if (_shouldKeepListening &&
+          _isListening &&
+          !_isStartingListening &&
+          lastEvent != null &&
+          DateTime.now().difference(lastEvent) > const Duration(seconds: 7)) {
+        _forceRefreshListeningSession();
+      }
+    });
+  }
+
+  void _stopListenWatchdog() {
+    _listenWatchdog?.cancel();
+    _listenWatchdog = null;
+  }
+
+  Future<void> _forceRefreshListeningSession() async {
+    if (!_shouldKeepListening || _isManualStop || _isStartingListening) return;
+    _isStartingListening = true;
+    try {
+      await _speechToText.cancel();
+    } catch (_) {
+      // Best-effort reset only.
+    } finally {
+      _isStartingListening = false;
+    }
+    _scheduleListeningRestart();
+  }
+
+  Future<void> _startListening() async {
+    if (!_speechEnabled || _isListening || _isStartingListening) return;
+    _isStartingListening = true;
+    _isManualStop = false;
+    _lastSpeechEventAt = DateTime.now();
+    _syncCommittedFromInput();
+    _sessionTranscript = '';
+    if (mounted) {
+      setState(() {
+        _shouldKeepListening = true;
+      });
+    }
+    _startListenWatchdog();
+    try {
       await _speechToText.listen(
         onResult: (result) {
           if (mounted) {
             setState(() {
-              _inputController.text = result.recognizedWords;
+              final recognized = result.recognizedWords.trim();
+              if (recognized.isEmpty) return;
+              _lastSpeechEventAt = DateTime.now();
+              _sessionTranscript = recognized;
+              _updateInputFromTranscripts();
+              if (result.finalResult) {
+                _commitSessionTranscript();
+              }
             });
           }
         },
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 10),
+        // Keep listening until user manually stops (practically long timeout).
+        listenFor: const Duration(hours: 1),
+        pauseFor: const Duration(minutes: 10),
         listenOptions: stt.SpeechListenOptions(
           partialResults: true,
           listenMode: stt.ListenMode.dictation,
         ),
       );
+    } catch (e) {
+      debugPrint('Error starting speech recognition: $e');
+      if (_shouldKeepListening && !_isManualStop) {
+        _scheduleListeningRestart();
+      }
+    } finally {
+      _isStartingListening = false;
     }
   }
 
-  void _stopListening() async {
-    if (_isListening) {
+  Future<void> _stopListening() async {
+    _isManualStop = true;
+    if (mounted) {
+      setState(() {
+        _shouldKeepListening = false;
+      });
+    }
+    _commitSessionTranscript();
+    _stopListenWatchdog();
+    _lastSpeechEventAt = null;
+    if (_isListening || _isStartingListening) {
       await _speechToText.stop();
+    } else {
+      await _speechToText.cancel();
+    }
+  }
+
+  Future<void> _clearInput() async {
+    final shouldResumeListening = _shouldKeepListening || _isListening;
+
+    if (shouldResumeListening) {
+      await _stopListening();
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _inputController.clear();
+      _committedTranscript = '';
+      _sessionTranscript = '';
+      _lastSpeechEventAt = null;
+      _interpretedAmount = null;
+      _interpretedCategory = null;
+      _interpretedMethod = null;
+    });
+
+    if (shouldResumeListening) {
+      await _startListening();
     }
   }
 
@@ -147,6 +323,8 @@ class _NaturalLanguageEntryScreenState
 
   @override
   void dispose() {
+    _stopListenWatchdog();
+    _speechToText.stop();
     _inputController.dispose();
     super.dispose();
   }
@@ -434,7 +612,7 @@ class _NaturalLanguageEntryScreenState
             children: [
               GestureDetector(
                 onTap: () {
-                  if (_isListening) {
+                  if (_shouldKeepListening || _isListening) {
                     _stopListening();
                   } else {
                     _startListening();
@@ -458,7 +636,7 @@ class _NaturalLanguageEntryScreenState
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: _isListening
+                        color: (_shouldKeepListening || _isListening)
                             ? primary.withValues(alpha: 0.8)
                             : primary,
                         shape: BoxShape.circle,
@@ -482,9 +660,11 @@ class _NaturalLanguageEntryScreenState
               const SizedBox(height: 12),
               AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
-                opacity: _isListening ? 1.0 : 0.5,
+                opacity: (_shouldKeepListening || _isListening) ? 1.0 : 0.5,
                 child: Text(
-                  _isListening ? 'Listening...' : 'Tap to speak',
+                  (_shouldKeepListening || _isListening)
+                      ? 'Listening... (tap again to stop)'
+                      : 'Tap to speak',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -493,6 +673,31 @@ class _NaturalLanguageEntryScreenState
                 ),
               ),
             ],
+          ),
+
+          // Confirm Button
+          Positioned(
+            left: 0,
+            bottom: 40,
+            child: Material(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(100),
+              elevation: 8,
+              child: InkWell(
+                onTap: _clearInput,
+                borderRadius: BorderRadius.circular(100),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.clear_rounded,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    size: 26,
+                  ),
+                ),
+              ),
+            ),
           ),
 
           // Confirm Button
