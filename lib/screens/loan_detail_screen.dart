@@ -143,14 +143,17 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
                                   EditLoanDetailsScreen(loanId: widget.loanId),
                             ),
                           );
+                          if (result == true) {
+                            _loadData();
+                          }
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: Row(
@@ -203,14 +206,17 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
                                   UpdateLoanScreen(loanId: widget.loanId),
                             ),
                           );
+                          if (result == true) {
+                            _loadData();
+                          }
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: const Row(
@@ -440,13 +446,22 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     final estimatedTotalPayable = (_loan?.estimatedTotalPayable ?? 0) > 0
         ? _loan!.estimatedTotalPayable
         : principal;
-    final principalProgress = principal > 0 ? (totalPaid / principal) : 0.0;
     final repaymentProgress = estimatedTotalPayable > 0
         ? (totalPaid / estimatedTotalPayable)
         : 0.0;
-    final remainingPrincipal = (principal - totalPaid).clamp(
+    final remainingToPayback = (estimatedTotalPayable - totalPaid).clamp(
       0.0,
       double.infinity,
+    );
+    final amountFormatter = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: context.read<ProfileProvider>().currencySymbol,
+      decimalDigits: 0,
+    );
+    final compactAmountFormatter = NumberFormat.compactCurrency(
+      locale: 'en_IN',
+      symbol: context.read<ProfileProvider>().currencySymbol,
+      decimalDigits: 1,
     );
 
     return Container(
@@ -473,7 +488,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'REMAINING PRINCIPAL',
+                  'REMAINING PAYBACK',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -485,11 +500,22 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${context.read<ProfileProvider>().currencySymbol}${NumberFormat.currency(locale: 'en_IN', symbol: '').format(remainingPrincipal)}',
+                  amountFormatter.format(remainingToPayback),
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: isDark ? Colors.white : const Color(0xFF0f172a),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Includes interest',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -527,7 +553,8 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Repayment Progress (Total Payable): ${(repaymentProgress * 100).clamp(0.0, 100.0).toStringAsFixed(0)}%',
+                  'Paid ${amountFormatter.format(totalPaid)} of ${amountFormatter.format(estimatedTotalPayable)} '
+                  '(${(repaymentProgress * 100).clamp(0.0, 100.0).toStringAsFixed(0)}%)',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -572,7 +599,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                   height: 80,
                   child: CustomPaint(
                     painter: CircularProgressPainter(
-                      progress: principalProgress,
+                      progress: repaymentProgress,
                       color: Theme.of(context).colorScheme.primary,
                       backgroundColor: isDark
                           ? const Color(0xFF334155)
@@ -580,13 +607,28 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                     ),
                   ),
                 ),
-                Text(
-                  '${(principalProgress * 100).clamp(0.0, 100.0).toStringAsFixed(0)}%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF0f172a),
-                  ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      compactAmountFormatter.format(remainingToPayback),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF0f172a),
+                      ),
+                    ),
+                    Text(
+                      'left',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF64748b),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -605,6 +647,20 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     );
 
     final stats = [
+      {
+        'icon': Icons.wallet_rounded,
+        'color': const Color(0xFFf97316),
+        'label': 'Remaining Payback',
+        'value': currencyFormatter
+            .format(
+              ((_loan!.estimatedTotalPayable > 0
+                          ? _loan!.estimatedTotalPayable
+                          : _loan!.principalAmount) -
+                      _loan!.totalPaid)
+                  .clamp(0.0, double.infinity),
+            )
+            .replaceAll(RegExp(r'\.00$'), ''),
+      },
       {
         'icon': Icons.account_balance_wallet_rounded,
         'color': const Color(0xFF6366f1),

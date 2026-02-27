@@ -95,7 +95,7 @@ class AllTransactionsService {
     final loanPaymentsQuery =
         '''
       SELECT 
-        lp.loan_payment_id as id,
+        lp.loan_id as id,
         l.user_id as user_id,
         'loanPayment' as type,
         lp.payment_amount as amount,
@@ -138,7 +138,7 @@ class AllTransactionsService {
     final iouPaymentsQuery =
         '''
       SELECT 
-        ip.iou_payment_id as id,
+        ip.iou_id as id,
         i.user_id as user_id,
         'iouPayment' as type,
         ip.payment_amount as amount,
@@ -181,7 +181,7 @@ class AllTransactionsService {
     final receivablePaymentsQuery =
         '''
       SELECT 
-        rp.receivable_payment_id as id,
+        rp.receivable_id as id,
         r.user_id as user_id,
         'receivablePayment' as type,
         rp.payment_amount as amount,
@@ -224,7 +224,7 @@ class AllTransactionsService {
     final reimbursementPaymentsQuery =
         '''
       SELECT 
-        rp.reimbursement_payment_id as id,
+        rp.reimbursement_id as id,
         r.user_id as user_id,
         'reimbursementPayment' as type,
         rp.payment_amount as amount,

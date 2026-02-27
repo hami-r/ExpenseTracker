@@ -139,14 +139,17 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
                                   EditIOUDetailsScreen(iouId: widget.iouId),
                             ),
                           );
+                          if (result == true) {
+                            _loadData();
+                          }
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: Row(
@@ -199,14 +202,17 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
                                   UpdateIOUProgressScreen(iouId: widget.iouId),
                             ),
                           );
+                          if (result == true) {
+                            _loadData();
+                          }
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: const Row(

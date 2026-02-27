@@ -132,8 +132,8 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (context) => EditReimbursementScreen(
@@ -141,6 +141,9 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                               ),
                             ),
                           );
+                          if (result == true) {
+                            _loadData();
+                          }
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: Row(
@@ -190,8 +193,8 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (context) => UpdateReimbursementScreen(
@@ -199,6 +202,9 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                               ),
                             ),
                           );
+                          if (result == true) {
+                            _loadData();
+                          }
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: const Row(
