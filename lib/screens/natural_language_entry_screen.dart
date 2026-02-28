@@ -1,6 +1,9 @@
 import 'dart:ui';
 import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../database/services/ai_service.dart';
 import '../database/services/category_service.dart';
@@ -9,7 +12,6 @@ import '../database/services/user_service.dart';
 import '../providers/profile_provider.dart';
 import 'package:provider/provider.dart';
 import 'add_expense_screen.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
 
 class NaturalLanguageEntryScreen extends StatefulWidget {
@@ -20,22 +22,26 @@ class NaturalLanguageEntryScreen extends StatefulWidget {
       _NaturalLanguageEntryScreenState();
 }
 
-class _NaturalLanguageEntryScreenState
-    extends State<NaturalLanguageEntryScreen> {
+class _NaturalLanguageEntryScreenState extends State<NaturalLanguageEntryScreen>
+    with SingleTickerProviderStateMixin {
+  static const MethodChannel _speechControlChannel = MethodChannel(
+    'expense_tracker_ai/speech_control',
+  );
+  static const EventChannel _speechEventsChannel = EventChannel(
+    'expense_tracker_ai/speech_events',
+  );
+
   final TextEditingController _inputController = TextEditingController();
   bool _isListening = false;
-  bool _shouldKeepListening = false;
   bool _isStartingListening = false;
-  bool _isManualStop = false;
-  bool _restartScheduled = false;
-  Timer? _listenWatchdog;
+  bool _isMicPressed = false;
   bool _isProcessing = false;
   bool _speechEnabled = false;
   String _committedTranscript = '';
   String _sessionTranscript = '';
-  DateTime? _lastSpeechEventAt;
-
-  final stt.SpeechToText _speechToText = stt.SpeechToText();
+  double _audioLevel = 0;
+  StreamSubscription<dynamic>? _speechEventsSubscription;
+  late final AnimationController _micPulseController;
   final _aiService = AIService(CategoryService(), PaymentMethodService());
   final _userService = UserService();
 
@@ -48,59 +54,121 @@ class _NaturalLanguageEntryScreenState
   @override
   void initState() {
     super.initState();
+    _micPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
     _initSpeech();
   }
 
-  void _initSpeech() async {
-    var status = await Permission.microphone.request();
-    if (status.isGranted) {
-      _speechEnabled = await _speechToText.initialize(
-        onStatus: (val) {
-          final currentlyListening = (val == 'listening');
-          if (mounted) {
-            setState(() {
-              // The plugin emits 'listening' when active, 'notListening' or 'done' when stopped.
-              _isListening = currentlyListening;
-              if (currentlyListening) {
-                _lastSpeechEventAt = DateTime.now();
-              }
-            });
-          }
-          if (!currentlyListening &&
-              _shouldKeepListening &&
-              !_isManualStop &&
-              _speechEnabled) {
-            _commitSessionTranscript();
-            _scheduleListeningRestart();
-          }
-        },
-        onError: (val) {
-          debugPrint('Speech recognition error: $val');
-          if (mounted) setState(() => _isListening = false);
-          if (_shouldKeepListening && !_isManualStop && _speechEnabled) {
-            _commitSessionTranscript();
-            _scheduleListeningRestart();
-          }
-        },
-      );
-      if (mounted) setState(() {});
+  bool get _isActivelyListening => _isMicPressed || _isListening;
+
+  void _syncMicAnimation() {
+    if (_isActivelyListening) {
+      if (!_micPulseController.isAnimating) {
+        _micPulseController.repeat();
+      }
+      return;
+    }
+
+    if (_micPulseController.isAnimating) {
+      _micPulseController.stop();
+    }
+    _micPulseController.value = 0;
+  }
+
+  Future<void> _initSpeech() async {
+    if (!Platform.isAndroid) {
+      if (mounted) {
+        setState(() => _speechEnabled = false);
+      }
+      return;
+    }
+
+    final status = await Permission.microphone.request();
+    if (!status.isGranted) return;
+
+    _speechEventsSubscription?.cancel();
+    _speechEventsSubscription = _speechEventsChannel
+        .receiveBroadcastStream()
+        .listen(
+          _handleSpeechEvent,
+          onError: (error) {
+            debugPrint('Native speech stream error: $error');
+            if (mounted) {
+              setState(() => _isListening = false);
+            }
+          },
+        );
+
+    try {
+      final available =
+          await _speechControlChannel.invokeMethod<bool>('isAvailable') ??
+          false;
+      if (mounted) {
+        setState(() => _speechEnabled = available);
+      }
+    } catch (e) {
+      debugPrint('Native speech init failed: $e');
+      if (mounted) {
+        setState(() => _speechEnabled = false);
+      }
     }
   }
 
-  void _scheduleListeningRestart() {
-    if (_restartScheduled || !_speechEnabled) return;
-    _restartScheduled = true;
-    Future.delayed(const Duration(milliseconds: 450), () {
-      _restartScheduled = false;
-      if (!mounted ||
-          !_shouldKeepListening ||
-          _isManualStop ||
-          _isListening ||
-          _isStartingListening) {
-        return;
-      }
-      _startListening();
-    });
+  void _handleSpeechEvent(dynamic event) {
+    if (event is! Map) return;
+    final data = Map<String, dynamic>.from(event);
+    final type = data['type']?.toString();
+    if (type == null) return;
+
+    switch (type) {
+      case 'status':
+        final status = data['status']?.toString() ?? '';
+        final listening = status == 'listening' || status == 'ready';
+        if (mounted) {
+          setState(() {
+            _isListening = listening;
+            if (!listening) {
+              _audioLevel = 0;
+            }
+          });
+        }
+        _syncMicAnimation();
+        break;
+      case 'result':
+        final recognized = (data['text']?.toString() ?? '').trim();
+        if (recognized.isEmpty || !mounted) return;
+        setState(() {
+          _sessionTranscript = recognized;
+          _updateInputFromTranscripts();
+          if (data['final'] == true) {
+            _commitSessionTranscript();
+          }
+        });
+        break;
+      case 'rms':
+        final nextLevel = ((data['value'] as num?)?.toDouble() ?? 0).clamp(
+          0.0,
+          1.0,
+        );
+        if (!mounted || !_isActivelyListening) return;
+        setState(() {
+          _audioLevel = (_audioLevel * 0.65) + (nextLevel * 0.35);
+        });
+        break;
+      case 'error':
+        final message = data['message']?.toString() ?? 'Speech error';
+        debugPrint('Native speech error: $message');
+        if (mounted) {
+          setState(() {
+            _isListening = false;
+            _audioLevel = 0;
+          });
+        }
+        _syncMicAnimation();
+        break;
+    }
   }
 
   String _joinTranscript(String committed, String currentSession) {
@@ -109,6 +177,14 @@ class _NaturalLanguageEntryScreenState
     if (left.isEmpty) return right;
     if (right.isEmpty) return left;
     return '$left $right';
+  }
+
+  String _normalizeTranscript(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^\w\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   void _syncCommittedFromInput() {
@@ -129,9 +205,18 @@ class _NaturalLanguageEntryScreenState
     final chunk = _sessionTranscript.trim();
     if (chunk.isEmpty) return;
 
+    final normalizedChunk = _normalizeTranscript(chunk);
+    if (normalizedChunk.isEmpty) {
+      _sessionTranscript = '';
+      _updateInputFromTranscripts();
+      return;
+    }
+
+    final normalizedCommitted = _normalizeTranscript(_committedTranscript);
+
     if (_committedTranscript.isEmpty) {
       _committedTranscript = chunk;
-    } else if (!_committedTranscript.endsWith(chunk)) {
+    } else if (!normalizedCommitted.endsWith(normalizedChunk)) {
       _committedTranscript = '$_committedTranscript $chunk'.trim();
     }
 
@@ -139,86 +224,30 @@ class _NaturalLanguageEntryScreenState
     _updateInputFromTranscripts();
   }
 
-  void _startListenWatchdog() {
-    _listenWatchdog?.cancel();
-    _listenWatchdog = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (!mounted || !_speechEnabled) return;
-      if (_shouldKeepListening && !_isListening && !_isStartingListening) {
-        _startListening();
-        return;
-      }
-
-      // Some devices report "listening" but stop producing events after silence.
-      final lastEvent = _lastSpeechEventAt;
-      if (_shouldKeepListening &&
-          _isListening &&
-          !_isStartingListening &&
-          lastEvent != null &&
-          DateTime.now().difference(lastEvent) > const Duration(seconds: 7)) {
-        _forceRefreshListeningSession();
-      }
-    });
-  }
-
-  void _stopListenWatchdog() {
-    _listenWatchdog?.cancel();
-    _listenWatchdog = null;
-  }
-
-  Future<void> _forceRefreshListeningSession() async {
-    if (!_shouldKeepListening || _isManualStop || _isStartingListening) return;
-    _isStartingListening = true;
-    try {
-      await _speechToText.cancel();
-    } catch (_) {
-      // Best-effort reset only.
-    } finally {
-      _isStartingListening = false;
-    }
-    _scheduleListeningRestart();
-  }
-
   Future<void> _startListening() async {
-    if (!_speechEnabled || _isListening || _isStartingListening) return;
+    if (!_speechEnabled || _isStartingListening) return;
     _isStartingListening = true;
-    _isManualStop = false;
-    _lastSpeechEventAt = DateTime.now();
     _syncCommittedFromInput();
     _sessionTranscript = '';
-    if (mounted) {
-      setState(() {
-        _shouldKeepListening = true;
-      });
-    }
-    _startListenWatchdog();
+    _syncMicAnimation();
     try {
-      await _speechToText.listen(
-        onResult: (result) {
-          if (mounted) {
-            setState(() {
-              final recognized = result.recognizedWords.trim();
-              if (recognized.isEmpty) return;
-              _lastSpeechEventAt = DateTime.now();
-              _sessionTranscript = recognized;
-              _updateInputFromTranscripts();
-              if (result.finalResult) {
-                _commitSessionTranscript();
-              }
-            });
-          }
-        },
-        // Keep listening until user manually stops (practically long timeout).
-        listenFor: const Duration(hours: 1),
-        pauseFor: const Duration(minutes: 10),
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          listenMode: stt.ListenMode.dictation,
-        ),
-      );
+      final locale = Localizations.maybeLocaleOf(context)?.toLanguageTag();
+      await _speechControlChannel.invokeMethod('startListening', {
+        if (locale != null) 'locale': locale,
+      });
     } catch (e) {
-      debugPrint('Error starting speech recognition: $e');
-      if (_shouldKeepListening && !_isManualStop) {
-        _scheduleListeningRestart();
+      debugPrint('Error starting native speech recognition: $e');
+      if (mounted) {
+        setState(() {
+          _isListening = false;
+          _audioLevel = 0;
+        });
+      }
+      _syncMicAnimation();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to start voice recognition')),
+        );
       }
     } finally {
       _isStartingListening = false;
@@ -226,26 +255,51 @@ class _NaturalLanguageEntryScreenState
   }
 
   Future<void> _stopListening() async {
-    _isManualStop = true;
     if (mounted) {
       setState(() {
-        _shouldKeepListening = false;
+        _audioLevel = 0;
       });
     }
     _commitSessionTranscript();
-    _stopListenWatchdog();
-    _lastSpeechEventAt = null;
-    if (_isListening || _isStartingListening) {
-      await _speechToText.stop();
-    } else {
-      await _speechToText.cancel();
+    try {
+      await _speechControlChannel.invokeMethod('stopListening');
+    } catch (e) {
+      debugPrint('Error stopping native speech recognition: $e');
     }
+    if (mounted) {
+      setState(() {
+        _isListening = false;
+      });
+    }
+    _syncMicAnimation();
+  }
+
+  Future<void> _handleMicPressStart() async {
+    if (_isMicPressed || _isProcessing) return;
+    if (mounted) {
+      setState(() {
+        _isMicPressed = true;
+      });
+    }
+    await HapticFeedback.lightImpact();
+    await SystemSound.play(SystemSoundType.click);
+    await _startListening();
+  }
+
+  Future<void> _handleMicPressEnd() async {
+    if (!_isMicPressed) return;
+    if (mounted) {
+      setState(() {
+        _isMicPressed = false;
+      });
+    }
+    await HapticFeedback.selectionClick();
+    await SystemSound.play(SystemSoundType.click);
+    await _stopListening();
   }
 
   Future<void> _clearInput() async {
-    final shouldResumeListening = _shouldKeepListening || _isListening;
-
-    if (shouldResumeListening) {
+    if (_isActivelyListening) {
       await _stopListening();
     }
 
@@ -254,15 +308,11 @@ class _NaturalLanguageEntryScreenState
       _inputController.clear();
       _committedTranscript = '';
       _sessionTranscript = '';
-      _lastSpeechEventAt = null;
+      _audioLevel = 0;
       _interpretedAmount = null;
       _interpretedCategory = null;
       _interpretedMethod = null;
     });
-
-    if (shouldResumeListening) {
-      await _startListening();
-    }
   }
 
   Future<void> _processText() async {
@@ -323,8 +373,11 @@ class _NaturalLanguageEntryScreenState
 
   @override
   void dispose() {
-    _stopListenWatchdog();
-    _speechToText.stop();
+    _speechEventsSubscription?.cancel();
+    if (Platform.isAndroid) {
+      _speechControlChannel.invokeMethod('destroy');
+    }
+    _micPulseController.dispose();
     _inputController.dispose();
     super.dispose();
   }
@@ -601,7 +654,7 @@ class _NaturalLanguageEntryScreenState
 
   Widget _buildBottomActions(Color primary, bool isDark) {
     return SizedBox(
-      height: 160,
+      height: 200,
       width: double.infinity,
       child: Stack(
         alignment: Alignment.center,
@@ -610,61 +663,19 @@ class _NaturalLanguageEntryScreenState
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GestureDetector(
-                onTap: () {
-                  if (_shouldKeepListening || _isListening) {
-                    _stopListening();
-                  } else {
-                    _startListening();
-                  }
-                },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Outer Glow
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    // Inner Circle/Button
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: (_shouldKeepListening || _isListening)
-                            ? primary.withValues(alpha: 0.8)
-                            : primary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: primary.withValues(alpha: 0.3),
-                            blurRadius: 30,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.mic_rounded,
-                        size: 36,
-                        color: Color(0xFF102217),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildMicButton(primary, isDark),
+              const SizedBox(height: 8),
+              _buildVoiceBars(primary, isDark),
               const SizedBox(height: 12),
               AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
-                opacity: (_shouldKeepListening || _isListening) ? 1.0 : 0.5,
+                opacity: _isActivelyListening ? 1.0 : 0.5,
                 child: Text(
-                  (_shouldKeepListening || _isListening)
-                      ? 'Listening... (tap again to stop)'
-                      : 'Tap to speak',
+                  _isMicPressed
+                      ? 'Recording... release to add text'
+                      : _isActivelyListening
+                      ? 'Listening... (release to stop)'
+                      : 'Hold to speak',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -735,6 +746,148 @@ class _NaturalLanguageEntryScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMicButton(Color primary, bool isDark) {
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (_) => _handleMicPressStart(),
+      onPointerUp: (_) => _handleMicPressEnd(),
+      onPointerCancel: (_) => _handleMicPressEnd(),
+      child: SizedBox(
+        width: 132,
+        height: 132,
+        child: AnimatedBuilder(
+          animation: _micPulseController,
+          builder: (context, child) {
+            final pulse = _micPulseController.value;
+            final delayedPulse = (pulse + 0.45) % 1.0;
+            final level = _isActivelyListening ? _audioLevel : 0;
+            final baseButtonSize = 82.0;
+            final sizeBoost = level * 16;
+
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                _buildPulseRing(
+                  color: primary,
+                  pulse: pulse,
+                  baseSize: 94,
+                  maxGrowth: 34,
+                  maxOpacity: 0.26,
+                ),
+                _buildPulseRing(
+                  color: primary,
+                  pulse: delayedPulse,
+                  baseSize: 84,
+                  maxGrowth: 26,
+                  maxOpacity: 0.18,
+                ),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  curve: Curves.easeOutCubic,
+                  width: baseButtonSize + sizeBoost,
+                  height: baseButtonSize + sizeBoost,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: _isActivelyListening
+                          ? [primary.withValues(alpha: 0.85), primary]
+                          : [primary, primary.withValues(alpha: 0.88)],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: primary.withValues(
+                          alpha: _isActivelyListening ? 0.45 : 0.28,
+                        ),
+                        blurRadius: _isActivelyListening ? 34 : 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.white.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: AnimatedScale(
+                    duration: const Duration(milliseconds: 120),
+                    scale: _isMicPressed ? 0.92 : 1.0,
+                    child: Icon(
+                      _isActivelyListening
+                          ? Icons.graphic_eq_rounded
+                          : Icons.mic_rounded,
+                      size: 36,
+                      color: const Color(0xFF102217),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPulseRing({
+    required Color color,
+    required double pulse,
+    required double baseSize,
+    required double maxGrowth,
+    required double maxOpacity,
+  }) {
+    final isActive = _isActivelyListening;
+    final easedPulse = Curves.easeOut.transform(pulse);
+    final size = baseSize + (easedPulse * maxGrowth);
+    final opacity = (isActive ? (1 - easedPulse) * maxOpacity : 0.0)
+        .clamp(0.0, 1.0)
+        .toDouble();
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: opacity),
+      ),
+    );
+  }
+
+  Widget _buildVoiceBars(Color primary, bool isDark) {
+    return SizedBox(
+      height: 18,
+      width: 72,
+      child: AnimatedBuilder(
+        animation: _micPulseController,
+        builder: (context, child) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(5, (index) {
+              final phase =
+                  (_micPulseController.value + (index * 0.13)) * 2 * math.pi;
+              final wave = (math.sin(phase) + 1) / 2;
+              final liveFactor = _isActivelyListening ? _audioLevel : 0;
+              final height = 4 + ((wave * 7) + (liveFactor * 7));
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 110),
+                width: 6,
+                height: height,
+                decoration: BoxDecoration(
+                  color: _isActivelyListening
+                      ? primary.withValues(alpha: 0.9)
+                      : (isDark ? Colors.white30 : Colors.black26),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              );
+            }),
+          );
+        },
       ),
     );
   }
