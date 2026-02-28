@@ -7,6 +7,7 @@ import '../models/iou.dart';
 import '../models/iou_payment.dart';
 import 'edit_iou_details_screen.dart';
 import 'update_iou_progress_screen.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class IOUDetailScreen extends StatefulWidget {
   final int iouId;
@@ -56,6 +57,17 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
     } catch (e) {
       debugPrint('Error deleting IOU: $e');
     }
+  }
+
+  Future<void> _confirmDeleteIOU() async {
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete IOU?',
+      message:
+          'Are you sure you want to delete this IOU?\nThis action cannot be undone.',
+    );
+    if (!confirmed) return;
+    await _deleteIOU();
   }
 
   @override
@@ -402,11 +414,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
             ),
           ),
           IconButton(
-            onPressed: () {
-              setState(() {
-                _isDeleteDialogVisible = true;
-              });
-            },
+            onPressed: _confirmDeleteIOU,
             icon: Icon(
               Icons.delete_outline_rounded,
               color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),

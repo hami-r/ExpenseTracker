@@ -7,6 +7,7 @@ import '../models/reimbursement_payment.dart';
 import '../database/services/reimbursement_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class ReimbursementDetailScreen extends StatefulWidget {
   final int reimbursementId;
@@ -66,6 +67,17 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
     } catch (e) {
       debugPrint('Error deleting reimbursement: $e');
     }
+  }
+
+  Future<void> _confirmDeleteReimbursement() async {
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete Reimbursement?',
+      message:
+          'Are you sure you want to delete this expected reimbursement?\nThis action cannot be undone.',
+    );
+    if (!confirmed) return;
+    await _deleteReimbursement();
   }
 
   @override
@@ -385,9 +397,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
             ),
           ),
           IconButton(
-            onPressed: () {
-              setState(() => _isDeleteDialogVisible = true);
-            },
+            onPressed: _confirmDeleteReimbursement,
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
           ),
         ],

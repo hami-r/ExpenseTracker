@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class AISettingsScreen extends StatefulWidget {
   const AISettingsScreen({super.key});
@@ -177,7 +178,14 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     );
   }
 
-  void _deleteKey(String id) {
+  Future<void> _deleteKey(String id) async {
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete API Key',
+      message: 'Are you sure you want to delete this API key?',
+    );
+    if (!confirmed) return;
+
     setState(() {
       _apiKeys.removeWhere((k) => k['id'] == id);
       if (_activeKeyId == id) {

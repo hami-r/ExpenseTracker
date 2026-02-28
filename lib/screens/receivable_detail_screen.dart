@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../providers/profile_provider.dart';
 import 'edit_lent_details_screen.dart';
 import 'update_receivable_screen.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class ReceivableDetailScreen extends StatefulWidget {
   final int receivableId;
@@ -62,6 +63,17 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
     } catch (e) {
       debugPrint('Error deleting receivable: $e');
     }
+  }
+
+  Future<void> _confirmDeleteReceivable() async {
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete Receivable?',
+      message:
+          'Are you sure you want to delete this lent amount?\nThis action cannot be undone.',
+    );
+    if (!confirmed) return;
+    await _deleteReceivable();
   }
 
   @override
@@ -383,9 +395,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
             ),
           ),
           IconButton(
-            onPressed: () {
-              setState(() => _isDeleteDialogVisible = true);
-            },
+            onPressed: _confirmDeleteReceivable,
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
           ),
         ],

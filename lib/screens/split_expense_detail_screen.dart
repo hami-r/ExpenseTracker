@@ -12,6 +12,7 @@ import '../../utils/icon_helper.dart';
 import '../../utils/color_helper.dart';
 import '../../providers/profile_provider.dart';
 import 'package:provider/provider.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class SplitExpenseDetailScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -107,6 +108,17 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
         );
       }
     }
+  }
+
+  Future<void> _confirmDeleteTransaction() async {
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete Transaction?',
+      message:
+          'Are you sure you want to delete this split expense? This action cannot be undone.',
+    );
+    if (!confirmed) return;
+    await _deleteTransaction();
   }
 
   @override
@@ -279,11 +291,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isDeleteDialogVisible = true;
-                        });
-                      },
+                      onPressed: _confirmDeleteTransaction,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,

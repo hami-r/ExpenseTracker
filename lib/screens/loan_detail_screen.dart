@@ -9,6 +9,7 @@ import '../models/loan_payment.dart';
 import 'update_loan_screen.dart';
 import 'loan_payment_history_screen.dart';
 import 'edit_loan_details_screen.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class LoanDetailScreen extends StatefulWidget {
   final int loanId;
@@ -58,6 +59,17 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     } catch (e) {
       debugPrint('Error deleting loan: $e');
     }
+  }
+
+  Future<void> _confirmDeleteLoan() async {
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete Loan?',
+      message:
+          'Are you sure you want to delete this loan?\nThis action cannot be undone.',
+    );
+    if (!confirmed) return;
+    await _deleteLoan();
   }
 
   @override
@@ -426,11 +438,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
 
           // More button / Delete button
           IconButton(
-            onPressed: () {
-              setState(() {
-                _isDeleteDialogVisible = true;
-              });
-            },
+            onPressed: _confirmDeleteLoan,
             icon: Icon(
               Icons.delete_outline_rounded,
               color: isDark ? const Color(0xFFe5e7eb) : const Color(0xFF374151),

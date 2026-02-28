@@ -5,6 +5,7 @@ import '../database/services/user_service.dart';
 import '../models/profile.dart';
 import '../providers/profile_provider.dart';
 import 'edit_region_profile_screen.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class RegionCurrencyScreen extends StatefulWidget {
   const RegionCurrencyScreen({super.key});
@@ -84,28 +85,13 @@ class _RegionCurrencyScreenState extends State<RegionCurrencyScreen> {
       _showSnack('You must have at least one profile.');
       return;
     }
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Profile'),
-        content: Text(
+    final confirm = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete Profile',
+      message:
           'Delete "${profile.name}"? All transactions, budgets, and loans in this profile will be lost.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
-    if (confirm == true) {
+    if (confirm) {
       await _profileService.deleteProfile(profile.profileId!);
       await _loadProfiles();
     }

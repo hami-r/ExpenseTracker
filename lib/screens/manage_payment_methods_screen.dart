@@ -7,6 +7,7 @@ import '../utils/icon_helper.dart';
 import '../utils/color_helper.dart';
 import '../providers/profile_provider.dart';
 import 'package:provider/provider.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class ManagePaymentMethodsScreen extends StatefulWidget {
   const ManagePaymentMethodsScreen({super.key});
@@ -51,67 +52,18 @@ class _ManagePaymentMethodsScreenState
   }
 
   void _deletePaymentMethod(int index, BuildContext context) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final method = paymentMethods[index];
     final methodName = method.name;
 
     // if (method.isPrimary) { ... } // Model logic for primary not yet fully integrated, skipping check or implementing if field exists (it doesn't in model, checking implicit rules if any)
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Delete Payment Method',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF111827),
-            ),
-          ),
-          content: Text(
-            'Are you sure you want to delete "$methodName"?',
-            style: TextStyle(
-              color: isDark ? const Color(0xFFd1d5db) : const Color(0xFF6b7280),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: isDark
-                      ? const Color(0xFF9ca3af)
-                      : const Color(0xFF6b7280),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFef4444),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Delete',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete Payment Method',
+      message: 'Are you sure you want to delete "$methodName"?',
     );
 
-    if (confirmed == true && method.paymentMethodId != null) {
+    if (confirmed && method.paymentMethodId != null) {
       await _paymentMethodService.deactivatePaymentMethod(
         method.paymentMethodId!,
       );

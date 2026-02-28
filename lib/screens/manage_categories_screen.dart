@@ -5,6 +5,7 @@ import '../database/services/category_service.dart';
 import '../database/services/user_service.dart';
 import '../utils/icon_helper.dart';
 import '../utils/color_helper.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   final bool isSelectionMode;
@@ -58,65 +59,17 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   }
 
   void _deleteCategory(int index, BuildContext context) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final category = categories[index];
     final categoryName = category.name;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Delete Category',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF111827),
-            ),
-          ),
-          content: Text(
-            'Are you sure you want to delete "$categoryName"? This action cannot be undone.',
-            style: TextStyle(
-              color: isDark ? const Color(0xFFd1d5db) : const Color(0xFF6b7280),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: isDark
-                      ? const Color(0xFF9ca3af)
-                      : const Color(0xFF6b7280),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFef4444),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Delete',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete Category',
+      message:
+          'Are you sure you want to delete "$categoryName"? This action cannot be undone.',
     );
 
-    if (confirmed == true && category.categoryId != null) {
+    if (confirmed && category.categoryId != null) {
       await _categoryService.deactivateCategory(category.categoryId!);
       _loadData();
     }

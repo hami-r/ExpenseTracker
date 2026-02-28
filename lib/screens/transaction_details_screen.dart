@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../utils/icon_helper.dart';
 import '../../utils/color_helper.dart';
 import '../../models/payment_method.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> transaction;
@@ -63,6 +64,17 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         );
       }
     }
+  }
+
+  Future<void> _confirmDeleteTransaction() async {
+    final confirmed = await showDeleteConfirmationDialog(
+      context,
+      title: 'Delete Expense?',
+      message:
+          'Are you sure you want to delete this transaction?\nThis action cannot be undone.',
+    );
+    if (!confirmed) return;
+    await _deleteTransaction();
   }
 
   @override
@@ -347,11 +359,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isDeleteDialogVisible = true;
-                        });
-                      },
+                      onPressed: _confirmDeleteTransaction,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red.shade500,
                         foregroundColor: Colors.white,

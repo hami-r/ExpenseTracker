@@ -9,6 +9,7 @@ import '../database/services/payment_method_service.dart';
 import '../database/services/user_service.dart';
 import '../models/ai_history.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/delete_confirmation_dialog.dart';
 
 class AIHistoryScreen extends StatefulWidget {
   const AIHistoryScreen({super.key});
@@ -546,33 +547,20 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
   }
 
   void _showClearDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear History?'),
-        content: const Text(
-          'This will delete all AI interaction records for this profile.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final profileId = context.read<ProfileProvider>().activeProfileId;
-              await _historyService.clearHistory(profileId);
-              if (!mounted) return;
-              Navigator.of(this.context).pop();
-              _loadHistory();
-            },
-            child: const Text(
-              'Clear',
-              style: TextStyle(color: Colors.redAccent),
-            ),
-          ),
-        ],
-      ),
-    );
+    () async {
+      final confirmed = await showDeleteConfirmationDialog(
+        context,
+        title: 'Clear History?',
+        message:
+            'This will delete all AI interaction records for this profile.',
+        confirmLabel: 'Clear',
+      );
+      if (!confirmed) return;
+      if (!mounted) return;
+      final profileId = context.read<ProfileProvider>().activeProfileId;
+      await _historyService.clearHistory(profileId);
+      if (!mounted) return;
+      _loadHistory();
+    }();
   }
 }
