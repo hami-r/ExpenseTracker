@@ -311,7 +311,7 @@ class _ManagePaymentMethodsScreenState
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'CREDIT', // Or determine from type if possible
+                      (method.cardSubtype ?? 'credit').toUpperCase(),
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,

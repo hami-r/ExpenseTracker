@@ -27,6 +27,31 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
   List<LoanPayment> _payments = [];
   bool _isLoading = true;
 
+  String _getOrdinal(int value) {
+    if (value >= 11 && value <= 13) return '${value}th';
+    switch (value % 10) {
+      case 1:
+        return '${value}st';
+      case 2:
+        return '${value}nd';
+      case 3:
+        return '${value}rd';
+      default:
+        return '${value}th';
+    }
+  }
+
+  String _monthlyDueLabel() {
+    final recurringDay = _loan?.repaymentDayOfMonth;
+    if (recurringDay != null && recurringDay >= 1 && recurringDay <= 31) {
+      return 'Every month • ${_getOrdinal(recurringDay)}';
+    }
+    if (_loan?.dueDate != null) {
+      return DateFormat('MMM dd, yyyy').format(_loan!.dueDate!);
+    }
+    return 'N/A';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -692,6 +717,12 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
       },
       {
         'icon': Icons.calendar_month_rounded,
+        'color': const Color(0xFF0ea5e9),
+        'label': 'Monthly Due',
+        'value': _monthlyDueLabel(),
+      },
+      {
+        'icon': Icons.timelapse_rounded,
         'color': const Color(0xFF0ea5e9),
         'label': 'Tenure',
         'value': _loan!.tenureValue != null

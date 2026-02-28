@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'add_loan_screen.dart';
+import 'credit_card_bill_pay_screen.dart';
+import 'credit_card_bill_history_screen.dart';
 import 'loan_detail_screen.dart';
 import 'iou_detail_screen.dart';
 import 'liabilities_history_screen.dart';
@@ -30,6 +32,32 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
   double _totalDebt = 0.0;
   bool _isLoading = true;
   int? _userId;
+  int _selectedTabIndex = 0;
+
+  String _getOrdinal(int value) {
+    if (value >= 11 && value <= 13) return '${value}th';
+    switch (value % 10) {
+      case 1:
+        return '${value}st';
+      case 2:
+        return '${value}nd';
+      case 3:
+        return '${value}rd';
+      default:
+        return '${value}th';
+    }
+  }
+
+  String _formatLoanDueLabel(Loan loan) {
+    final recurringDay = loan.repaymentDayOfMonth;
+    if (recurringDay != null && recurringDay >= 1 && recurringDay <= 31) {
+      return 'Every month • ${_getOrdinal(recurringDay)}';
+    }
+    if (loan.dueDate != null) {
+      return DateFormat('MMM d').format(loan.dueDate!);
+    }
+    return 'No due date';
+  }
 
   @override
   void initState() {
@@ -38,45 +66,69 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
   }
 
   Future<void> _loadData() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
     final user = await _userService.getCurrentUser();
-    if (user != null) {
+    if (user == null || user.userId == null) {
       if (mounted) {
         setState(() {
-          _userId = user.userId;
+          _userId = null;
+          _loans = [];
+          _ious = [];
+          _totalDebt = 0.0;
+          _isLoading = false;
         });
+      }
+      return;
+    }
 
-        try {
-          final profileId = context.read<ProfileProvider>().activeProfileId;
-          final loans = await _loanService.getActiveLoans(
-            _userId!,
-            profileId: profileId,
-          );
-          final ious = await _iouService.getActiveIOUs(
-            _userId!,
-            profileId: profileId,
-          );
+    if (mounted) {
+      setState(() {
+        _userId = user.userId;
+      });
+    }
 
-          double totalDebt = 0;
-          for (var loan in loans) {
-            totalDebt += (loan.principalAmount - loan.totalPaid);
-          }
+    try {
+      if (!mounted) return;
+      final profileId = context.read<ProfileProvider>().activeProfileId;
+      final loans = await _loanService.getActiveLoans(
+        _userId!,
+        profileId: profileId,
+      );
+      final ious = await _iouService.getActiveIOUs(
+        _userId!,
+        profileId: profileId,
+      );
 
-          for (var iou in ious) {
-            totalDebt += (iou.amount - iou.totalPaid);
-          }
+      double totalDebt = 0;
+      for (var loan in loans) {
+        totalDebt += (loan.principalAmount - loan.totalPaid);
+      }
 
-          if (mounted) {
-            setState(() {
-              _loans = loans;
-              _ious = ious;
-              _totalDebt = totalDebt;
-              _isLoading = false;
-            });
-          }
-        } catch (e) {
-          debugPrint('Error loading liabilities data: $e');
-          if (mounted) setState(() => _isLoading = false);
-        }
+      for (var iou in ious) {
+        totalDebt += (iou.amount - iou.totalPaid);
+      }
+
+      if (mounted) {
+        setState(() {
+          _loans = loans;
+          _ious = ious;
+          _totalDebt = totalDebt;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading liabilities data: $e');
+      if (mounted) {
+        setState(() {
+          _loans = [];
+          _ious = [];
+          _totalDebt = 0.0;
+          _isLoading = false;
+        });
       }
     }
   }
@@ -128,17 +180,30 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                       ),
                       IconButton(
                         onPressed: () async {
+                          if (_selectedTabIndex == 0) {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const LiabilitiesHistoryScreen(),
+                              ),
+                            );
+                            _loadData();
+                            return;
+                          }
+
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  const LiabilitiesHistoryScreen(),
+                                  const CreditCardBillHistoryScreen(),
                             ),
                           );
-                          _loadData();
                         },
                         icon: Icon(
-                          Icons.history_rounded,
+                          _selectedTabIndex == 0
+                              ? Icons.history_rounded
+                              : Icons.calendar_month_rounded,
                           color: isDark
                               ? const Color(0xFFe5e7eb)
                               : const Color(0xFF374151),
@@ -148,280 +213,361 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                   ),
                 ),
 
-                // Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1a2c26)
+                          : const Color(0xFFe2e8f0).withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
                       children: [
-                        // Total Debt Card
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 32,
-                            horizontal: 24,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: isDark
-                                  ? [
-                                      const Color(0xFF1a2c26),
-                                      const Color(0xFF131f17),
-                                    ]
-                                  : [
-                                      const Color(0xFFfff7ed),
-                                      const Color(0xFFffedd5),
-                                    ],
-                            ),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isDark
-                                  ? const Color(
-                                      0xFF7c2d12,
-                                    ).withValues(alpha: 0.3)
-                                  : const Color(0xFFffedd5),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 40,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'TOTAL DEBT',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
-                                  color: isDark
-                                      ? const Color(0xFFfb923c)
-                                      : const Color(
-                                          0xFFea580c,
-                                        ).withValues(alpha: 0.8),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                currencyFormat.format(_totalDebt),
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w900,
-                                  color: isDark
-                                      ? const Color(0xFFfb923c)
-                                      : const Color(0xFFea580c),
-                                ),
-                              ),
-                            ],
+                        Expanded(
+                          child: _buildTopTabButton(
+                            title: 'Loans & IOUs',
+                            isSelected: _selectedTabIndex == 0,
+                            onTap: () => setState(() => _selectedTabIndex = 0),
+                            isDark: isDark,
                           ),
                         ),
-
-                        const SizedBox(height: 32),
-
-                        // Active Loans Section
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Active Loans',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (_loans.isNotEmpty)
-                              Text(
-                                '${_loans.length}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                          ],
+                        Expanded(
+                          child: _buildTopTabButton(
+                            title: 'Card Bills',
+                            isSelected: _selectedTabIndex == 1,
+                            onTap: () => setState(() => _selectedTabIndex = 1),
+                            isDark: isDark,
+                          ),
                         ),
-                        const SizedBox(height: 16),
-
-                        if (_isLoading)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_loans.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              child: Text(
-                                'No active loans',
-                                style: TextStyle(
-                                  color: isDark
-                                      ? Colors.grey[600]
-                                      : Colors.grey[400],
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          ..._loans.map((loan) {
-                            final progress = loan.principalAmount > 0
-                                ? loan.totalPaid / loan.principalAmount
-                                : 0.0;
-                            final formattedNextDue = loan.dueDate != null
-                                ? DateFormat('MMM d').format(loan.dueDate!)
-                                : 'No due date';
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _buildLoanCard(
-                                context: context,
-                                icon: Icons.account_balance_wallet_rounded,
-                                title: loan.lenderName,
-                                subtitle:
-                                    '${loan.loanType} • ${loan.interestRate}%',
-                                amount: currencyFormat.format(
-                                  loan.principalAmount,
-                                ),
-                                repaidAmount: currencyFormat.format(
-                                  loan.totalPaid,
-                                ),
-                                progress: progress,
-                                nextDue: formattedNextDue,
-                                color:
-                                    Colors.blue, // Dynamic color could be added
-                                isDark: isDark,
-                                onTap: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => LoanDetailScreen(
-                                        loanId: loan.loanId!,
-                                      ),
-                                    ),
-                                  );
-                                  _loadData(); // Refresh on return
-                                },
-                              ),
-                            );
-                          }),
-
-                        const SizedBox(height: 32),
-
-                        // Personal IOUs Section
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Personal IOUs',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (_ious.isNotEmpty)
-                              Text(
-                                '${_ious.length}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        if (_isLoading)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_ious.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              child: Text(
-                                'No personal IOUs',
-                                style: TextStyle(
-                                  color: isDark
-                                      ? Colors.grey[600]
-                                      : Colors.grey[400],
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          ..._ious.map((iou) {
-                            final progress = iou.amount > 0
-                                ? iou.totalPaid / iou.amount
-                                : 0.0;
-                            final formattedNextDue = iou.dueDate != null
-                                ? DateFormat('MMM d').format(iou.dueDate!)
-                                : 'No due date';
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _buildLoanCard(
-                                context: context,
-                                icon: Icons.handshake_rounded,
-                                title: iou.creditorName,
-                                subtitle: 'Personal',
-                                amount: currencyFormat.format(iou.amount),
-                                repaidAmount: currencyFormat.format(
-                                  iou.totalPaid,
-                                ),
-                                progress: progress,
-                                nextDue: formattedNextDue,
-                                color: Colors.teal,
-                                isDark: isDark,
-                                onTap: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          IOUDetailScreen(iouId: iou.iouId!),
-                                    ),
-                                  );
-                                  _loadData();
-                                },
-                              ),
-                            );
-                          }),
                       ],
                     ),
                   ),
+                ),
+                const SizedBox(height: 8),
+
+                // Content
+                Expanded(
+                  child: _selectedTabIndex == 0
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Total Debt Card
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 32,
+                                  horizontal: 24,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: isDark
+                                        ? [
+                                            const Color(0xFF1a2c26),
+                                            const Color(0xFF131f17),
+                                          ]
+                                        : [
+                                            const Color(0xFFfff7ed),
+                                            const Color(0xFFffedd5),
+                                          ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? const Color(
+                                            0xFF7c2d12,
+                                          ).withValues(alpha: 0.3)
+                                        : const Color(0xFFffedd5),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.05,
+                                      ),
+                                      blurRadius: 40,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'TOTAL DEBT',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.5,
+                                        color: isDark
+                                            ? const Color(0xFFfb923c)
+                                            : const Color(
+                                                0xFFea580c,
+                                              ).withValues(alpha: 0.8),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      currencyFormat.format(_totalDebt),
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark
+                                            ? const Color(0xFFfb923c)
+                                            : const Color(0xFFea580c),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 32),
+
+                              // Active Loans Section
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Active Loans',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (_loans.isNotEmpty)
+                                    Text(
+                                      '${_loans.length}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              if (_isLoading)
+                                const Center(child: CircularProgressIndicator())
+                              else if (_loans.isEmpty)
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                    child: Text(
+                                      'No active loans',
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.grey[600]
+                                            : Colors.grey[400],
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else
+                                ..._loans.map((loan) {
+                                  final progress = loan.principalAmount > 0
+                                      ? loan.totalPaid / loan.principalAmount
+                                      : 0.0;
+                                  final formattedNextDue = _formatLoanDueLabel(
+                                    loan,
+                                  );
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _buildLoanCard(
+                                      context: context,
+                                      icon:
+                                          Icons.account_balance_wallet_rounded,
+                                      title: loan.lenderName,
+                                      subtitle:
+                                          '${loan.loanType} • ${loan.interestRate}%',
+                                      amount: currencyFormat.format(
+                                        loan.principalAmount,
+                                      ),
+                                      repaidAmount: currencyFormat.format(
+                                        loan.totalPaid,
+                                      ),
+                                      progress: progress,
+                                      nextDue: formattedNextDue,
+                                      color: Colors
+                                          .blue, // Dynamic color could be added
+                                      isDark: isDark,
+                                      onTap: () async {
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                LoanDetailScreen(
+                                                  loanId: loan.loanId!,
+                                                ),
+                                          ),
+                                        );
+                                        _loadData(); // Refresh on return
+                                      },
+                                    ),
+                                  );
+                                }),
+
+                              const SizedBox(height: 32),
+
+                              // Personal IOUs Section
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Personal IOUs',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (_ious.isNotEmpty)
+                                    Text(
+                                      '${_ious.length}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              if (_isLoading)
+                                const Center(child: CircularProgressIndicator())
+                              else if (_ious.isEmpty)
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                    child: Text(
+                                      'No personal IOUs',
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.grey[600]
+                                            : Colors.grey[400],
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else
+                                ..._ious.map((iou) {
+                                  final progress = iou.amount > 0
+                                      ? iou.totalPaid / iou.amount
+                                      : 0.0;
+                                  final formattedNextDue = iou.dueDate != null
+                                      ? DateFormat('MMM d').format(iou.dueDate!)
+                                      : 'No due date';
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _buildLoanCard(
+                                      context: context,
+                                      icon: Icons.handshake_rounded,
+                                      title: iou.creditorName,
+                                      subtitle: 'Personal',
+                                      amount: currencyFormat.format(iou.amount),
+                                      repaidAmount: currencyFormat.format(
+                                        iou.totalPaid,
+                                      ),
+                                      progress: progress,
+                                      nextDue: formattedNextDue,
+                                      color: Colors.teal,
+                                      isDark: isDark,
+                                      onTap: () async {
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                IOUDetailScreen(
+                                                  iouId: iou.iouId!,
+                                                ),
+                                          ),
+                                        );
+                                        _loadData();
+                                      },
+                                    ),
+                                  );
+                                }),
+                            ],
+                          ),
+                        )
+                      : const CreditCardBillPayScreen(embedded: true),
                 ),
               ],
             ),
 
             // FAB
-            Positioned(
-              bottom: 24,
-              right: 24,
-              child: FloatingActionButton(
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddLoanScreen(),
-                    ),
-                  );
-                  _loadData();
-                },
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                elevation: 4,
-                shape: const CircleBorder(),
-                child: const Icon(
-                  Icons.add_rounded,
-                  color: Colors.white,
-                  size: 28,
+            if (_selectedTabIndex == 0)
+              Positioned(
+                bottom: 24,
+                right: 24,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddLoanScreen(),
+                      ),
+                    );
+                    _loadData();
+                  },
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  elevation: 4,
+                  shape: const CircleBorder(),
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
               ),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopTabButton({
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? const Color(0xFF243b34) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: isSelected
+                ? (isDark ? Colors.white : const Color(0xFF0f172a))
+                : const Color(0xFF64748b),
+          ),
         ),
       ),
     );

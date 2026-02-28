@@ -28,10 +28,12 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   String _tenureType = 'Yrs';
   String _interestType = 'reducing';
   DateTime _startDate = DateTime.now();
+  int _repaymentDayOfMonth = DateTime.now().day;
 
   @override
   void initState() {
     super.initState();
+    _repaymentDayOfMonth = _startDate.day;
     _amountController.addListener(_updateEMI);
     _interestRateController.addListener(_updateEMI);
     _tenureController.addListener(_updateEMI);
@@ -54,6 +56,21 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         interestType: _interestType,
       ),
     );
+  }
+
+  DateTime _addMonths(DateTime date, int monthsToAdd) {
+    final targetYear = date.year + ((date.month - 1 + monthsToAdd) ~/ 12);
+    final targetMonth = ((date.month - 1 + monthsToAdd) % 12) + 1;
+    final lastDay = DateTime(targetYear, targetMonth + 1, 0).day;
+    final day = date.day <= lastDay ? date.day : lastDay;
+    return DateTime(targetYear, targetMonth, day);
+  }
+
+  DateTime _calculateLoanEndDate(int tenureMonths) {
+    if (tenureMonths <= 0) {
+      return _addMonths(_startDate, 12);
+    }
+    return _addMonths(_startDate, tenureMonths);
   }
 
   String _formatCurrency(double amount, {int decimalDigits = 0}) {
@@ -121,6 +138,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         if (_isInstitutional) {
           final calculation = _getLoanCalculation();
           final principalAmount = double.parse(_amountController.text);
+          final tenureMonths = calculation.tenureMonths;
           final loan = Loan(
             userId: user.userId!,
             lenderName: _lenderController.text,
@@ -130,17 +148,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
             interestType: _interestType,
             tenureValue: int.tryParse(_tenureController.text),
             tenureUnit: _tenureType == 'Yrs' ? 'years' : 'months',
-            tenureMonths: calculation.tenureMonths,
+            tenureMonths: tenureMonths,
             startDate: _startDate,
-            dueDate: _tenureController.text.isNotEmpty
-                ? _startDate.add(
-                    Duration(
-                      days:
-                          (int.tryParse(_tenureController.text) ?? 0) *
-                          (_tenureType == 'Yrs' ? 365 : 30),
-                    ),
-                  )
-                : _startDate.add(const Duration(days: 365)),
+            dueDate: _calculateLoanEndDate(tenureMonths),
+            repaymentDayOfMonth: _repaymentDayOfMonth,
             estimatedEmi: calculation.emi,
             estimatedTotalInterest: calculation.totalInterest,
             estimatedTotalPayable: calculation.isValid
@@ -740,6 +751,75 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                               color: Color(0xFF94a3b8),
                                             ),
                                           ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Monthly due day',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? const Color(0xFFcbd5e1)
+                                            : const Color(0xFF334155),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF1e293b)
+                                            : const Color(0xFFf8fafc),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isDark
+                                              ? const Color(0xFF334155)
+                                              : const Color(0xFFe2e8f0),
+                                        ),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<int>(
+                                          value: _repaymentDayOfMonth,
+                                          onChanged: (value) {
+                                            if (value == null) return;
+                                            setState(
+                                              () =>
+                                                  _repaymentDayOfMonth = value,
+                                            );
+                                          },
+                                          items:
+                                              List.generate(
+                                                31,
+                                                (index) => index + 1,
+                                              ).map((day) {
+                                                return DropdownMenuItem<int>(
+                                                  value: day,
+                                                  child: Text(
+                                                    'Day $day',
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: isDark
+                                                          ? const Color(
+                                                              0xFFcbd5e1,
+                                                            )
+                                                          : const Color(
+                                                              0xFF334155,
+                                                            ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
                                         ),
                                       ),
                                     ),

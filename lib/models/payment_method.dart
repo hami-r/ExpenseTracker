@@ -6,6 +6,9 @@ class PaymentMethod {
   final String? iconName;
   final String? colorHex;
   final String? accountNumber;
+  final String? cardSubtype;
+  final DateTime? cardIssuedOn;
+  final int? billGenerationDay;
   final bool isPrimary;
   final bool isActive;
   final int displayOrder;
@@ -20,6 +23,9 @@ class PaymentMethod {
     this.iconName,
     this.colorHex,
     this.accountNumber,
+    this.cardSubtype,
+    this.cardIssuedOn,
+    this.billGenerationDay,
     this.isPrimary = false,
     this.isActive = true,
     this.displayOrder = 0,
@@ -36,6 +42,9 @@ class PaymentMethod {
       'icon_name': iconName,
       'color_hex': colorHex,
       'account_number': accountNumber,
+      'card_subtype': cardSubtype,
+      'card_issued_on': cardIssuedOn?.toIso8601String().split('T')[0],
+      'bill_generation_day': billGenerationDay,
       'is_primary': isPrimary ? 1 : 0,
       'is_active': isActive ? 1 : 0,
       'display_order': displayOrder,
@@ -53,6 +62,11 @@ class PaymentMethod {
       iconName: map['icon_name'] as String?,
       colorHex: map['color_hex'] as String?,
       accountNumber: map['account_number'] as String?,
+      cardSubtype: map['card_subtype'] as String?,
+      cardIssuedOn: map['card_issued_on'] != null
+          ? DateTime.parse(map['card_issued_on'] as String)
+          : null,
+      billGenerationDay: (map['bill_generation_day'] as num?)?.toInt(),
       isPrimary: (map['is_primary'] as int?) == 1,
       isActive: (map['is_active'] as int?) == 1,
       displayOrder: map['display_order'] as int? ?? 0,

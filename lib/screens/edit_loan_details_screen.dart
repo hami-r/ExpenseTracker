@@ -28,6 +28,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
   String _tenureType = 'Yrs';
   String _interestType = 'reducing';
   DateTime _startDate = DateTime.now();
+  int _repaymentDayOfMonth = DateTime.now().day;
   double _calculatedEmi = 0.0;
   double _calculatedTotalInterest = 0.0;
   double _calculatedTotalPayable = 0.0;
@@ -78,6 +79,14 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
     }
   }
 
+  DateTime _addMonths(DateTime date, int monthsToAdd) {
+    final targetYear = date.year + ((date.month - 1 + monthsToAdd) ~/ 12);
+    final targetMonth = ((date.month - 1 + monthsToAdd) % 12) + 1;
+    final lastDay = DateTime(targetYear, targetMonth + 1, 0).day;
+    final day = date.day <= lastDay ? date.day : lastDay;
+    return DateTime(targetYear, targetMonth, day);
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
@@ -96,6 +105,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
             loan.interestType,
           );
           _startDate = loan.startDate;
+          _repaymentDayOfMonth = loan.repaymentDayOfMonth ?? loan.startDate.day;
         });
         _calculateEmi();
       }
@@ -127,6 +137,10 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
       final updatedStatus = _loan!.totalPaid >= updatedPrincipal
           ? 'completed'
           : 'active';
+      final updatedTenureMonths = calculation.tenureMonths;
+      final updatedDueDate = updatedTenureMonths > 0
+          ? _addMonths(_startDate, updatedTenureMonths)
+          : _loan!.dueDate;
       final updatedLoan = Loan(
         loanId: _loan!.loanId,
         userId: _loan!.userId,
@@ -137,9 +151,10 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
         interestType: _interestType,
         tenureValue: updatedTenure > 0 ? updatedTenure : _loan!.tenureValue,
         tenureUnit: _tenureType == 'Yrs' ? 'years' : 'months',
-        tenureMonths: calculation.tenureMonths,
+        tenureMonths: updatedTenureMonths,
         startDate: _startDate,
-        dueDate: _loan!.dueDate, // Ideally calculate based on new tenure/start
+        dueDate: updatedDueDate,
+        repaymentDayOfMonth: _repaymentDayOfMonth,
         totalPaid: _loan!.totalPaid,
         estimatedEmi: calculation.emi,
         estimatedTotalInterest: calculation.totalInterest,
@@ -881,6 +896,60 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                             : const Color(0xFF94a3b8),
                       ),
                     ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Monthly due day',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? const Color(0xFFcbd5e1)
+                      : const Color(0xFF334155),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF334155).withValues(alpha: 0.5)
+                      : const Color(0xFFf8fafc),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFe2e8f0),
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: _repaymentDayOfMonth,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() => _repaymentDayOfMonth = value);
+                    },
+                    items: List.generate(31, (index) => index + 1).map((day) {
+                      return DropdownMenuItem<int>(
+                        value: day,
+                        child: Text(
+                          'Day $day',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? const Color(0xFFcbd5e1)
+                                : const Color(0xFF334155),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ),

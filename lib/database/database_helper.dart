@@ -19,10 +19,19 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 8,
+      version: 12,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
+  }
+
+  Future<bool> _columnExists(
+    DatabaseExecutor db,
+    String tableName,
+    String columnName,
+  ) async {
+    final columns = await db.rawQuery('PRAGMA table_info($tableName)');
+    return columns.any((column) => column['name'] == columnName);
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -188,6 +197,73 @@ class DatabaseHelper {
       await _backfillLoanSnapshots(db);
       await _backfillIOUTotals(db);
     }
+
+    if (oldVersion < 9) {
+      await db.execute(
+        'ALTER TABLE loans ADD COLUMN repayment_day_of_month INTEGER',
+      );
+    }
+
+    if (oldVersion < 10) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS credit_card_bills (
+          credit_card_bill_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          profile_id INTEGER DEFAULT 1,
+          payment_method_id INTEGER NOT NULL,
+          bill_month TEXT NOT NULL,
+          due_date TEXT NOT NULL,
+          amount REAL,
+          status TEXT DEFAULT 'pending',
+          paid_at TEXT,
+          paid_payment_method_id INTEGER,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+          FOREIGN KEY (payment_method_id) REFERENCES payment_methods(payment_method_id) ON DELETE CASCADE,
+          UNIQUE(user_id, profile_id, payment_method_id, bill_month)
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_credit_card_bills_month ON credit_card_bills(user_id, profile_id, bill_month)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_credit_card_bills_method ON credit_card_bills(payment_method_id, bill_month)',
+      );
+    }
+
+    if (oldVersion >= 10 && oldVersion < 11) {
+      if (!await _columnExists(
+        db,
+        'credit_card_bills',
+        'paid_payment_method_id',
+      )) {
+        await db.execute(
+          'ALTER TABLE credit_card_bills ADD COLUMN paid_payment_method_id INTEGER',
+        );
+      }
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_credit_card_bills_paid_method ON credit_card_bills(paid_payment_method_id)',
+      );
+    }
+
+    if (oldVersion < 12) {
+      if (!await _columnExists(db, 'payment_methods', 'card_subtype')) {
+        await db.execute(
+          'ALTER TABLE payment_methods ADD COLUMN card_subtype TEXT',
+        );
+      }
+      if (!await _columnExists(db, 'payment_methods', 'card_issued_on')) {
+        await db.execute(
+          'ALTER TABLE payment_methods ADD COLUMN card_issued_on TEXT',
+        );
+      }
+      if (!await _columnExists(db, 'payment_methods', 'bill_generation_day')) {
+        await db.execute(
+          'ALTER TABLE payment_methods ADD COLUMN bill_generation_day INTEGER',
+        );
+      }
+    }
   }
 
   Future<void> _backfillLoanSnapshots(Database db) async {
@@ -334,6 +410,9 @@ class DatabaseHelper {
         icon_name TEXT,
         color_hex TEXT,
         account_number TEXT,
+        card_subtype TEXT,
+        card_issued_on TEXT,
+        bill_generation_day INTEGER,
         is_primary INTEGER DEFAULT 0,
         is_active INTEGER DEFAULT 1,
         display_order INTEGER DEFAULT 0,
@@ -355,6 +434,38 @@ class DatabaseHelper {
     );
     await db.execute(
       'CREATE INDEX idx_payment_methods_primary ON payment_methods(user_id, profile_id, is_primary)',
+    );
+
+    // 4A. Credit Card Bills Table
+    await db.execute('''
+      CREATE TABLE credit_card_bills (
+        credit_card_bill_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        profile_id INTEGER DEFAULT 1,
+        payment_method_id INTEGER NOT NULL,
+        bill_month TEXT NOT NULL,
+        due_date TEXT NOT NULL,
+        amount REAL,
+        status TEXT DEFAULT 'pending',
+        paid_at TEXT,
+        paid_payment_method_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        FOREIGN KEY (payment_method_id) REFERENCES payment_methods(payment_method_id) ON DELETE CASCADE,
+        FOREIGN KEY (paid_payment_method_id) REFERENCES payment_methods(payment_method_id) ON DELETE SET NULL,
+        UNIQUE(user_id, profile_id, payment_method_id, bill_month)
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX idx_credit_card_bills_month ON credit_card_bills(user_id, profile_id, bill_month)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_credit_card_bills_method ON credit_card_bills(payment_method_id, bill_month)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_credit_card_bills_paid_method ON credit_card_bills(paid_payment_method_id)',
     );
 
     // 5. Transactions Table
@@ -433,6 +544,7 @@ class DatabaseHelper {
         tenure_months INTEGER DEFAULT 0,
         start_date TEXT NOT NULL,
         due_date TEXT,
+        repayment_day_of_month INTEGER,
         total_paid REAL DEFAULT 0,
         estimated_emi REAL DEFAULT 0,
         estimated_total_interest REAL DEFAULT 0,

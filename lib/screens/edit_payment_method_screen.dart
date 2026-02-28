@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 import '../models/payment_method.dart';
 import '../database/services/payment_method_service.dart';
@@ -7,6 +8,7 @@ import '../database/services/user_service.dart';
 import '../utils/icon_helper.dart';
 import '../utils/color_helper.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/custom_date_picker.dart';
 import 'package:provider/provider.dart';
 
 class EditPaymentMethodScreen extends StatefulWidget {
@@ -23,6 +25,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
   String _selectedType = 'Card';
   bool _isPrimary = false;
   String _linkedBank = 'HDFC Bank';
+  String _cardSubtype = 'credit';
+  DateTime? _cardIssuedOn;
+  int _billGenerationDay = 5;
 
   Color _selectedCardColor = const Color(0xFF14b8a6);
   late TextEditingController _nameController;
@@ -90,6 +95,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
 
     _selectedType = widget.paymentMethod?.type ?? 'Card';
     _isPrimary = widget.paymentMethod?.isPrimary ?? false;
+    _cardSubtype = widget.paymentMethod?.cardSubtype ?? 'credit';
+    _cardIssuedOn = widget.paymentMethod?.cardIssuedOn;
+    _billGenerationDay = widget.paymentMethod?.billGenerationDay ?? 5;
 
     _selectedCardColor =
         ColorHelper.fromHex(widget.paymentMethod?.colorHex) == Colors.blue
@@ -656,6 +664,102 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                         // Card-specific fields
                         if (_selectedType == 'Card') ...[
                           const SizedBox(height: 24),
+                          _buildLabel('Card Type', isDark),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => _cardSubtype = 'credit');
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _cardSubtype == 'credit'
+                                          ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withValues(alpha: 0.12)
+                                          : (isDark
+                                                ? const Color(0xFF25282c)
+                                                : const Color(0xFFf2f5f4)),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _cardSubtype == 'credit'
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : Colors.transparent,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Credit',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: _cardSubtype == 'credit'
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : (isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF111827)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => _cardSubtype = 'debit');
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _cardSubtype == 'debit'
+                                          ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withValues(alpha: 0.12)
+                                          : (isDark
+                                                ? const Color(0xFF25282c)
+                                                : const Color(0xFFf2f5f4)),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _cardSubtype == 'debit'
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : Colors.transparent,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Debit',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: _cardSubtype == 'debit'
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                            : (isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF111827)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
                           _buildLabel('Last 4 Digits', isDark),
                           const SizedBox(height: 8),
                           TextField(
@@ -706,6 +810,111 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                               counterText: '',
                             ),
                           ),
+                          if (_cardSubtype == 'credit') ...[
+                            const SizedBox(height: 24),
+                            _buildLabel('Card Issued On', isDark),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () {
+                                CustomDatePicker.show(
+                                  context,
+                                  initialDate: _cardIssuedOn ?? DateTime.now(),
+                                  onDateSelected: (value) {
+                                    setState(() => _cardIssuedOn = value);
+                                  },
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF25282c)
+                                      : const Color(0xFFf2f5f4),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _cardIssuedOn == null
+                                          ? 'Select issued date'
+                                          : DateFormat(
+                                              'MMM dd, yyyy',
+                                            ).format(_cardIssuedOn!),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: _cardIssuedOn == null
+                                            ? (isDark
+                                                  ? const Color(0xFF9ca3af)
+                                                  : const Color(0xFF6b7280))
+                                            : (isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF111827)),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.calendar_month_rounded,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            _buildLabel('Bill Generated Day (Monthly)', isDark),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF25282c)
+                                    : const Color(0xFFf2f5f4),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: DropdownButtonFormField<int>(
+                                initialValue: _billGenerationDay,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                dropdownColor: isDark
+                                    ? const Color(0xFF2c3035)
+                                    : Colors.white,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF111827),
+                                ),
+                                items: List.generate(31, (index) => index + 1)
+                                    .map((day) {
+                                      return DropdownMenuItem<int>(
+                                        value: day,
+                                        child: Text('Day $day'),
+                                      );
+                                    })
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  setState(() => _billGenerationDay = value);
+                                },
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 24),
                           _buildLabel('Card Skin', isDark),
                           const SizedBox(height: 12),
@@ -1143,7 +1352,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
   String _getSubtitle() {
     switch (_selectedType) {
       case 'Card':
-        return 'Credit/Debit Card';
+        return _cardSubtype == 'debit' ? 'Debit Card' : 'Credit Card';
       case 'Cash':
         return 'Cash on Hand';
       case 'Bank':
@@ -1160,6 +1369,15 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please enter a name')));
+      return;
+    }
+
+    if (_selectedType == 'Card' &&
+        _cardSubtype == 'credit' &&
+        _cardIssuedOn == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select card issued date')),
+      );
       return;
     }
 
@@ -1188,6 +1406,13 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
           ),
           colorHex: ColorHelper.toHex(_selectedCardColor),
           accountNumber: accountNumber,
+          cardSubtype: _selectedType == 'Card' ? _cardSubtype : null,
+          cardIssuedOn: _selectedType == 'Card' && _cardSubtype == 'credit'
+              ? _cardIssuedOn
+              : null,
+          billGenerationDay: _selectedType == 'Card' && _cardSubtype == 'credit'
+              ? _billGenerationDay
+              : null,
           isPrimary: _isPrimary,
           isActive: true,
           displayOrder: widget.paymentMethod?.displayOrder ?? 0,
