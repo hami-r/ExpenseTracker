@@ -112,12 +112,12 @@ class _SplashScreenState extends State<SplashScreen>
                 shape: BoxShape.circle,
                 color: Theme.of(
                   context,
-                ).colorScheme.primary.withOpacity(isDark ? 0.02 : 0.08),
+                ).colorScheme.primary.withValues(alpha: isDark ? 0.02 : 0.08),
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.1),
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     blurRadius: 140,
                   ),
                 ],
@@ -134,12 +134,12 @@ class _SplashScreenState extends State<SplashScreen>
                 shape: BoxShape.circle,
                 color: Theme.of(
                   context,
-                ).colorScheme.primary.withOpacity(isDark ? 0.02 : 0.08),
+                ).colorScheme.primary.withValues(alpha: isDark ? 0.02 : 0.08),
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.1),
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     blurRadius: 140,
                   ),
                 ],
@@ -164,12 +164,12 @@ class _SplashScreenState extends State<SplashScreen>
                         shape: BoxShape.circle,
                         color: Theme.of(
                           context,
-                        ).colorScheme.primary.withOpacity(0.2),
+                        ).colorScheme.primary.withValues(alpha: 0.2),
                         boxShadow: [
                           BoxShadow(
                             color: Theme.of(
                               context,
-                            ).colorScheme.primary.withOpacity(0.2),
+                            ).colorScheme.primary.withValues(alpha: 0.2),
                             blurRadius: 40,
                             spreadRadius: 10,
                           ),
@@ -192,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                           BoxShadow(
                             color: Theme.of(
                               context,
-                            ).colorScheme.primary.withOpacity(0.35),
+                            ).colorScheme.primary.withValues(alpha: 0.35),
                             blurRadius: 60,
                             spreadRadius: -10,
                           ),

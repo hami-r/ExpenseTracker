@@ -406,7 +406,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    primaryColor.withOpacity(isDark ? 0.1 : 0.4),
+                    primaryColor.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -423,7 +423,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    tertiaryColor.withOpacity(isDark ? 0.1 : 0.3),
+                    tertiaryColor.withValues(alpha: isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -496,7 +496,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Theme.of(context).scaffoldBackgroundColor.withOpacity(0),
+                    Theme.of(
+                      context,
+                    ).scaffoldBackgroundColor.withValues(alpha: 0),
                     Theme.of(context).scaffoldBackgroundColor,
                     Theme.of(context).scaffoldBackgroundColor,
                   ],
@@ -519,7 +521,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 8,
-                  shadowColor: primaryColor.withOpacity(0.3),
+                  shadowColor: primaryColor.withValues(alpha: 0.3),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -586,7 +588,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       fontSize: 36,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.5),
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -615,7 +617,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       hintStyle: TextStyle(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.2),
+                        ).colorScheme.onSurface.withValues(alpha: 0.2),
                       ),
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
@@ -717,7 +719,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     decoration: BoxDecoration(
                       color: ColorHelper.fromHex(
                         selectedCategory.colorHex,
-                      ).withOpacity(isDark ? 0.25 : 0.12),
+                      ).withValues(alpha: isDark ? 0.25 : 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -726,7 +728,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       color: isDark
                           ? ColorHelper.fromHex(
                               selectedCategory.colorHex,
-                            ).withOpacity(0.9)
+                            ).withValues(alpha: 0.9)
                           : ColorHelper.fromHex(selectedCategory.colorHex),
                     ),
                   ),
@@ -794,7 +796,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           boxShadow: !isDark
                               ? [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -814,7 +816,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                   decoration: BoxDecoration(
                                     color: ColorHelper.fromHex(
                                       category.colorHex,
-                                    ).withOpacity(isDark ? 0.2 : 0.1),
+                                    ).withValues(alpha: isDark ? 0.2 : 0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   alignment: Alignment.center,
@@ -824,7 +826,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                     color: isDark
                                         ? ColorHelper.fromHex(
                                             category.colorHex,
-                                          ).withOpacity(0.8)
+                                          ).withValues(alpha: 0.8)
                                         : ColorHelper.fromHex(
                                             category.colorHex,
                                           ),
@@ -852,7 +854,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                               : Theme.of(context)
                                                     .colorScheme
                                                     .onSurface
-                                                    .withOpacity(0.6),
+                                                    .withValues(alpha: 0.6),
                                           letterSpacing: 0,
                                         ),
                                     textAlign: TextAlign.center,
@@ -938,7 +940,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               BoxShadow(
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.primary.withOpacity(0.25),
+                                ).colorScheme.primary.withValues(alpha: 0.25),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -946,7 +948,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           : !isDark
                           ? [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -998,7 +1000,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                               : Theme.of(context)
                                                     .colorScheme
                                                     .onSurface
-                                                    .withOpacity(0.7),
+                                                    .withValues(alpha: 0.7),
                                         ),
                                   ),
                                 ],
@@ -1062,10 +1064,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 Icons.keyboard_arrow_down_rounded,
                                 size: 20,
                                 color: isSelected
-                                    ? Colors.white.withOpacity(0.9)
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.4),
+                                    ? Colors.white.withValues(alpha: 0.9)
+                                    : Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.4),
                               ),
                             ),
                           ),
@@ -1096,7 +1097,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   ? []
                   : [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -1142,7 +1143,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           size: 20,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -1172,7 +1173,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         Icons.chevron_right_rounded,
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.4),
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ],
                   ),
@@ -1190,7 +1191,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   ? []
                   : [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -1212,7 +1213,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     size: 20,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1230,7 +1231,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       hintStyle: TextStyle(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.4),
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
@@ -1253,7 +1254,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(100),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           ),
         ),
         child: Row(
@@ -1287,7 +1288,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           boxShadow: isSelected && !isDark
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -1300,7 +1301,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             fontWeight: FontWeight.bold,
             color: isSelected
                 ? Theme.of(context).colorScheme.onSecondary
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ),
@@ -1336,7 +1339,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       fontWeight: FontWeight.bold,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.5),
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -1362,7 +1365,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       hintStyle: TextStyle(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.2),
+                        ).colorScheme.onSurface.withValues(alpha: 0.2),
                       ),
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
@@ -1391,10 +1394,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isOver
-                        ? Colors.red.withOpacity(0.1)
+                        ? Colors.red.withValues(alpha: 0.1)
                         : (isComplete
-                              ? Colors.green.withOpacity(0.1)
-                              : primaryColor.withOpacity(0.1)),
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : primaryColor.withValues(alpha: 0.1)),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Row(
@@ -1517,7 +1520,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ? []
                     : [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -1529,13 +1532,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: itemColor.withOpacity(isDark ? 0.2 : 0.1),
+                      color: itemColor.withValues(alpha: isDark ? 0.2 : 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       itemIcon,
                       size: 20,
-                      color: isDark ? itemColor.withOpacity(0.8) : itemColor,
+                      color: isDark
+                          ? itemColor.withValues(alpha: 0.8)
+                          : itemColor,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1561,7 +1566,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             hintStyle: TextStyle(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.4),
+                              ).colorScheme.onSurface.withValues(alpha: 0.4),
                             ),
                           ),
                         ),
@@ -1574,7 +1579,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.5),
+                                ).colorScheme.onSurface.withValues(alpha: 0.5),
                                 letterSpacing: 0.5,
                               ),
                         ),
@@ -1600,7 +1605,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.5),
+                                ).colorScheme.onSurface.withValues(alpha: 0.5),
                               ),
                         ),
                         const SizedBox(width: 4),
@@ -1640,7 +1645,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     },
                     icon: Icon(
                       Icons.remove_circle_outline_rounded,
-                      color: Colors.red.withOpacity(0.7),
+                      color: Colors.red.withValues(alpha: 0.7),
                       size: 20,
                     ),
                     visualDensity: VisualDensity.compact,
@@ -1675,7 +1680,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ? []
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -1717,7 +1722,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           size: 20,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -1742,7 +1747,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         Icons.chevron_right_rounded,
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.4),
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ],
                   ),
@@ -1759,7 +1764,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ? []
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -1779,7 +1784,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         size: 20,
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -1794,7 +1799,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           hintStyle: TextStyle(
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.4),
+                            ).colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                           border: InputBorder.none,
                           isDense: true,

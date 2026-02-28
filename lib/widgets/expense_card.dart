@@ -24,7 +24,7 @@ class ExpenseCard extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: expense.category.color.withOpacity(0.15),
+              color: expense.category.color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(expense.category.icon, color: expense.category.color),

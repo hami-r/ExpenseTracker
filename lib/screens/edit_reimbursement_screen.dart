@@ -168,7 +168,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -185,9 +185,9 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -244,7 +244,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
-                        .withOpacity(0),
+                        .withValues(alpha: 0),
                     (isDark
                         ? const Color(0xFF131f17)
                         : const Color(0xFFf6f8f7)),
@@ -269,7 +269,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
                       elevation: 8,
                       shadowColor: Theme.of(
                         context,
-                      ).colorScheme.primary.withOpacity(0.3),
+                      ).colorScheme.primary.withValues(alpha: 0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -333,7 +333,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
             letterSpacing: 1.5,
             color: isDark
                 ? const Color(0xFF34d399)
-                : const Color(0xFF059669).withOpacity(0.8),
+                : const Color(0xFF059669).withValues(alpha: 0.8),
           ),
         ),
         const SizedBox(height: 8),
@@ -370,7 +370,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
                   hintText: '0',
                   hintStyle: TextStyle(
                     color: isDark
-                        ? const Color(0xFF334155).withOpacity(0.5)
+                        ? const Color(0xFF334155).withValues(alpha: 0.5)
                         : const Color(0xFFe2e8f0),
                   ),
                 ),
@@ -407,7 +407,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -492,7 +492,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -591,7 +591,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -649,7 +649,7 @@ class _EditReimbursementScreenState extends State<EditReimbursementScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

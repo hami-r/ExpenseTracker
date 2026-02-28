@@ -52,7 +52,10 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
     return _history.where((h) => h.feature == _filter).toList();
   }
 
-  Future<void> _loadReferenceNames(int profileId, List<AIHistory> history) async {
+  Future<void> _loadReferenceNames(
+    int profileId,
+    List<AIHistory> history,
+  ) async {
     final user = await _userService.getCurrentUser();
     if (user?.userId == null) return;
 
@@ -80,7 +83,7 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
       try {
         final decoded = jsonDecode(entry.payload!);
         if (decoded is! Map) continue;
-        final payload = Map<String, dynamic>.from(decoded as Map);
+        final payload = Map<String, dynamic>.from(decoded);
 
         final categoryId = _toInt(payload['category_id']);
         if (categoryId != null && !_categoryNames.containsKey(categoryId)) {
@@ -136,7 +139,9 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
     } else if (value != null) {
       final raw = value.toString().trim();
       if (raw.isNotEmpty) {
-        parsed = DateTime.tryParse(raw) ?? DateTime.tryParse(raw.replaceFirst(' ', 'T'));
+        parsed =
+            DateTime.tryParse(raw) ??
+            DateTime.tryParse(raw.replaceFirst(' ', 'T'));
       }
     }
 
@@ -154,21 +159,19 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
     }
     if (decoded is! Map) return {};
 
-    final payload = Map<String, dynamic>.from(decoded as Map);
+    final payload = Map<String, dynamic>.from(decoded);
     if (entry.feature == 'voice' || entry.feature == 'receipt') {
       final categoryId = _toInt(payload['category_id']);
       final paymentMethodId = _toInt(payload['payment_method_id']);
       final savedCategoryName = payload['category_name']?.toString();
       final savedPaymentName = payload['payment_method_name']?.toString();
 
-      payload['category'] =
-          savedCategoryName?.isNotEmpty == true
+      payload['category'] = savedCategoryName?.isNotEmpty == true
           ? savedCategoryName
           : (categoryId != null
                 ? (_categoryNames[categoryId] ?? 'Category #$categoryId')
                 : 'Unknown');
-      payload['payment_method'] =
-          savedPaymentName?.isNotEmpty == true
+      payload['payment_method'] = savedPaymentName?.isNotEmpty == true
           ? savedPaymentName
           : (paymentMethodId != null
                 ? (_paymentMethodNames[paymentMethodId] ??
@@ -559,7 +562,8 @@ class _AIHistoryScreenState extends State<AIHistoryScreen> {
             onPressed: () async {
               final profileId = context.read<ProfileProvider>().activeProfileId;
               await _historyService.clearHistory(profileId);
-              Navigator.pop(context);
+              if (!mounted) return;
+              Navigator.of(this.context).pop();
               _loadHistory();
             },
             child: const Text(

@@ -70,6 +70,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   Future<void> _loadData() async {
     final user = await _userService.getCurrentUser();
     if (user != null) {
+      if (!mounted) return;
       setState(() {
         _userId = user.userId;
       });
@@ -141,6 +142,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       transactionId,
     );
     if (originalTransaction == null) return;
+    if (!mounted) return;
 
     final updatedTransaction = model.Transaction(
       transactionId: transactionId,
@@ -161,9 +163,8 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       updatedTransaction,
       profileId: profileId,
     );
-    if (mounted) {
-      Navigator.pop(context, true); // Return true to indicate update
-    }
+    if (!mounted) return;
+    Navigator.pop(context, true); // Return true to indicate update
   }
 
   @override
@@ -194,7 +195,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    primaryColor.withOpacity(isDark ? 0.1 : 0.4),
+                    primaryColor.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -211,7 +212,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    tertiaryColor.withOpacity(isDark ? 0.1 : 0.3),
+                    tertiaryColor.withValues(alpha: isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -254,7 +255,9 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Theme.of(context).scaffoldBackgroundColor.withOpacity(0),
+                    Theme.of(
+                      context,
+                    ).scaffoldBackgroundColor.withValues(alpha: 0),
                     Theme.of(context).scaffoldBackgroundColor,
                     Theme.of(context).scaffoldBackgroundColor,
                   ],
@@ -277,7 +280,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 8,
-                  shadowColor: primaryColor.withOpacity(0.3),
+                  shadowColor: primaryColor.withValues(alpha: 0.3),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -344,7 +347,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                       fontSize: 36,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.5),
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -373,7 +376,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                       hintStyle: TextStyle(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.2),
+                        ).colorScheme.onSurface.withValues(alpha: 0.2),
                       ),
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
@@ -475,7 +478,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                     decoration: BoxDecoration(
                       color: ColorHelper.fromHex(
                         selectedCategory.colorHex,
-                      ).withOpacity(isDark ? 0.25 : 0.12),
+                      ).withValues(alpha: isDark ? 0.25 : 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -484,7 +487,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                       color: isDark
                           ? ColorHelper.fromHex(
                               selectedCategory.colorHex,
-                            ).withOpacity(0.9)
+                            ).withValues(alpha: 0.9)
                           : ColorHelper.fromHex(selectedCategory.colorHex),
                     ),
                   ),
@@ -552,7 +555,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                           boxShadow: !isDark
                               ? [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -572,7 +575,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                                   decoration: BoxDecoration(
                                     color: ColorHelper.fromHex(
                                       category.colorHex,
-                                    ).withOpacity(isDark ? 0.2 : 0.1),
+                                    ).withValues(alpha: isDark ? 0.2 : 0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   alignment: Alignment.center,
@@ -582,7 +585,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                                     color: isDark
                                         ? ColorHelper.fromHex(
                                             category.colorHex,
-                                          ).withOpacity(0.8)
+                                          ).withValues(alpha: 0.8)
                                         : ColorHelper.fromHex(
                                             category.colorHex,
                                           ),
@@ -610,7 +613,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                                               : Theme.of(context)
                                                     .colorScheme
                                                     .onSurface
-                                                    .withOpacity(0.6),
+                                                    .withValues(alpha: 0.6),
                                           letterSpacing: 0,
                                         ),
                                     textAlign: TextAlign.center,
@@ -695,7 +698,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                             BoxShadow(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.primary.withOpacity(0.25),
+                              ).colorScheme.primary.withValues(alpha: 0.25),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -703,7 +706,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                         : !isDark
                         ? [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -753,7 +756,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                                             : Theme.of(context)
                                                   .colorScheme
                                                   .onSurface
-                                                  .withOpacity(0.7),
+                                                  .withValues(alpha: 0.7),
                                       ),
                                 ),
                               ],
@@ -813,10 +816,9 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                               Icons.keyboard_arrow_down_rounded,
                               size: 20,
                               color: isSelected
-                                  ? Colors.white.withOpacity(0.9)
-                                  : Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.4),
+                                  ? Colors.white.withValues(alpha: 0.9)
+                                  : Theme.of(context).colorScheme.onSurface
+                                        .withValues(alpha: 0.4),
                             ),
                           ),
                         ),
@@ -845,7 +847,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                   ? []
                   : [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -882,7 +884,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                           size: 20,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -912,7 +914,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                         Icons.chevron_right_rounded,
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.4),
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ],
                   ),
@@ -929,7 +931,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                   ? []
                   : [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -951,7 +953,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                     size: 20,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -969,7 +971,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                       hintStyle: TextStyle(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.4),
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                       isDense: true,
                       contentPadding: EdgeInsets.zero,

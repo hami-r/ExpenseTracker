@@ -345,9 +345,9 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                      Theme.of(context).colorScheme.primary.withValues(
+                        alpha: isDark ? 0.1 : 0.4,
+                      ),
                       Colors.transparent,
                     ],
                   ),
@@ -364,9 +364,9 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      Theme.of(
-                        context,
-                      ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                      Theme.of(context).colorScheme.tertiary.withValues(
+                        alpha: isDark ? 0.1 : 0.3,
+                      ),
                       Colors.transparent,
                     ],
                   ),
@@ -456,7 +456,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                                   (isBalanced
                                           ? const Color(0xFF10b981)
                                           : Colors.red)
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -648,7 +648,10 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [backgroundColor.withOpacity(0), backgroundColor],
+                    colors: [
+                      backgroundColor.withValues(alpha: 0),
+                      backgroundColor,
+                    ],
                     stops: const [0.0, 0.3],
                   ),
                 ),
@@ -662,7 +665,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 8,
-                    shadowColor: primaryColor.withOpacity(0.3),
+                    shadowColor: primaryColor.withValues(alpha: 0.3),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -730,7 +733,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -743,15 +746,17 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
             height: 48,
             decoration: BoxDecoration(
               color:
-                  (item['color'] as Color?)?.withOpacity(isDark ? 0.2 : 0.1) ??
-                  Colors.grey.withOpacity(0.1),
+                  (item['color'] as Color?)?.withValues(
+                    alpha: isDark ? 0.2 : 0.1,
+                  ) ??
+                  Colors.grey.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               item['icon'] as IconData? ?? Icons.category,
               size: 20,
               color: isDark
-                  ? (item['color'] as Color?)?.withOpacity(0.8)
+                  ? (item['color'] as Color?)?.withValues(alpha: 0.8)
                   : (item['color'] as Color?),
             ),
           ),
@@ -774,7 +779,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                     hintStyle: TextStyle(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.4),
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 ),
@@ -786,7 +791,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                     fontWeight: FontWeight.bold,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.5),
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -808,7 +813,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                     fontWeight: FontWeight.bold,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.5),
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -841,7 +846,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
             onPressed: () => _removeItem(index),
             icon: Icon(
               Icons.remove_circle_outline_rounded,
-              color: Colors.red.withOpacity(0.7),
+              color: Colors.red.withValues(alpha: 0.7),
               size: 20,
             ),
             visualDensity: VisualDensity.compact,
@@ -892,7 +897,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                               BoxShadow(
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.primary.withOpacity(0.25),
+                                ).colorScheme.primary.withValues(alpha: 0.25),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -900,7 +905,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                           : !isDark
                           ? [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -951,7 +956,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                                               : Theme.of(context)
                                                     .colorScheme
                                                     .onSurface
-                                                    .withOpacity(0.7),
+                                                    .withValues(alpha: 0.7),
                                         ),
                                   ),
                                 ],
@@ -1011,10 +1016,9 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                                 Icons.keyboard_arrow_down_rounded,
                                 size: 20,
                                 color: isSelected
-                                    ? Colors.white.withOpacity(0.9)
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.4),
+                                    ? Colors.white.withValues(alpha: 0.9)
+                                    : Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.4),
                               ),
                             ),
                           ),
@@ -1048,7 +1052,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

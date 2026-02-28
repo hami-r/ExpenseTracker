@@ -145,7 +145,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -162,9 +162,9 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -236,7 +236,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     (isDark ? const Color(0xFF131f17) : Colors.white)
-                        .withOpacity(0),
+                        .withValues(alpha: 0),
                     isDark ? const Color(0xFF131f17) : Colors.white,
                     isDark ? const Color(0xFF131f17) : Colors.white,
                   ],
@@ -263,7 +263,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                     elevation: 4,
                     shadowColor: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.3),
+                    ).colorScheme.primary.withValues(alpha: 0.3),
                   ),
                   child: const Text(
                     'Confirm Update',
@@ -348,7 +348,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -461,7 +461,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -476,7 +476,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366f1).withOpacity(0.1),
+                  color: const Color(0xFF6366f1).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -623,7 +623,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
             thumbColor: Theme.of(context).colorScheme.primary,
             overlayColor: Theme.of(
               context,
-            ).colorScheme.primary.withOpacity(0.2),
+            ).colorScheme.primary.withValues(alpha: 0.2),
           ),
           child: Slider(
             value: _progressPercentage,
@@ -680,7 +680,7 @@ class _UpdateLoanScreenState extends State<UpdateLoanScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF334155).withOpacity(0.3)
+            ? const Color(0xFF334155).withValues(alpha: 0.3)
             : const Color(0xFFf8fafc),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(

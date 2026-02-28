@@ -163,8 +163,8 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
           : const Color(0xFFf6f8f7),
       appBar: AppBar(
         backgroundColor: isDark
-            ? const Color(0xFF131f17).withOpacity(0.8)
-            : const Color(0xFFf6f8f7).withOpacity(0.8),
+            ? const Color(0xFF131f17).withValues(alpha: 0.8)
+            : const Color(0xFFf6f8f7).withValues(alpha: 0.8),
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -206,7 +206,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                     buttonText: 'Create Backup',
                     onTap: _handleBackup,
                     isDark: isDark,
-                    gradientStart: const Color(0xFF10b981).withOpacity(0.1),
+                    gradientStart: const Color(
+                      0xFF10b981,
+                    ).withValues(alpha: 0.1),
                     iconBg: const Color(0xFFecfdf5),
                     iconBgDark: const Color(0xFF064e3b),
                   ),
@@ -222,7 +224,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                     buttonText: 'Select File',
                     onTap: _handleRestore,
                     isDark: isDark,
-                    gradientStart: const Color(0xFF3b82f6).withOpacity(0.1),
+                    gradientStart: const Color(
+                      0xFF3b82f6,
+                    ).withValues(alpha: 0.1),
                     iconBg: const Color(0xFFeff6ff),
                     iconBgDark: const Color(0xFF1e3a8a),
                   ),
@@ -238,7 +242,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                     buttonText: 'Generate Report',
                     onTap: _handleExportReport,
                     isDark: isDark,
-                    gradientStart: const Color(0xFFa855f7).withOpacity(0.1),
+                    gradientStart: const Color(
+                      0xFFa855f7,
+                    ).withValues(alpha: 0.1),
                     iconBg: const Color(0xFFfaf5ff),
                     iconBgDark: const Color(0xFF581c87),
                   ),
@@ -278,7 +284,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),

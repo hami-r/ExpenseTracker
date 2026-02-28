@@ -150,7 +150,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -167,9 +167,9 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -221,7 +221,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
-                        .withOpacity(0),
+                        .withValues(alpha: 0),
                     (isDark
                         ? const Color(0xFF131f17)
                         : const Color(0xFFf6f8f7)),
@@ -246,7 +246,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                       elevation: 8,
                       shadowColor: Theme.of(
                         context,
-                      ).colorScheme.primary.withOpacity(0.3),
+                      ).colorScheme.primary.withValues(alpha: 0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -345,7 +345,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                   hintText: '0',
                   hintStyle: TextStyle(
                     color: isDark
-                        ? const Color(0xFF334155).withOpacity(0.5)
+                        ? const Color(0xFF334155).withValues(alpha: 0.5)
                         : const Color(0xFFe2e8f0),
                   ),
                 ),
@@ -380,7 +380,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -464,7 +464,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -537,7 +537,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -607,12 +607,12 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF064e3b).withOpacity(0.3)
+              ? const Color(0xFF064e3b).withValues(alpha: 0.3)
               : const Color(0xFFd1fae5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -693,8 +693,8 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
           const SizedBox(height: 16),
           Divider(
             color: isDark
-                ? const Color(0xFF064e3b).withOpacity(0.5)
-                : const Color(0xFFa7f3d0).withOpacity(0.5),
+                ? const Color(0xFF064e3b).withValues(alpha: 0.5)
+                : const Color(0xFFa7f3d0).withValues(alpha: 0.5),
           ),
           const SizedBox(height: 12),
           Row(
@@ -766,7 +766,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
             activeThumbColor: Theme.of(context).colorScheme.primary,
             activeTrackColor: Theme.of(
               context,
-            ).colorScheme.primary.withOpacity(0.2),
+            ).colorScheme.primary.withValues(alpha: 0.2),
           ),
         ],
       ),

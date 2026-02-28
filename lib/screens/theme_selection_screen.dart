@@ -28,8 +28,9 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
   }
 
   List<ThemeOption> get _allThemes => [
-    ...ThemeProvider.themeColors.entries
-        .map((entry) => ThemeOption(name: entry.key, color: entry.value)),
+    ...ThemeProvider.themeColors.entries.map(
+      (entry) => ThemeOption(name: entry.key, color: entry.value),
+    ),
   ];
 
   List<ThemeOption> get _themes {
@@ -203,9 +204,8 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
           crossAxisSpacing: 12,
           childAspectRatio: 1,
         ),
-        itemBuilder: (context, index) => _buildSmallSquareThemeCard(
-          _themes[index],
-        ),
+        itemBuilder: (context, index) =>
+            _buildSmallSquareThemeCard(_themes[index]),
       );
     }
 
@@ -234,7 +234,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: theme.color.withOpacity(0.3),
+              color: theme.color.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -260,9 +260,9 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.white.withOpacity(0.15),
-                      Colors.white.withOpacity(0.02),
-                      Colors.black.withOpacity(0.02),
+                      Colors.white.withValues(alpha: 0.15),
+                      Colors.white.withValues(alpha: 0.02),
+                      Colors.black.withValues(alpha: 0.02),
                     ],
                     stops: const [0.0, 0.5, 1.0],
                   ),
@@ -290,7 +290,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -329,7 +329,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: theme.color.withOpacity(0.28),
+              color: theme.color.withValues(alpha: 0.28),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -346,7 +346,9 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                   isSelected
                       ? Icons.check_circle_rounded
                       : Icons.circle_outlined,
-                  color: Colors.white.withOpacity(isSelected ? 0.95 : 0.55),
+                  color: Colors.white.withValues(
+                    alpha: isSelected ? 0.95 : 0.55,
+                  ),
                   size: 18,
                 ),
               ),
@@ -432,7 +434,6 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
       ),
     );
   }
-
 }
 
 class ThemeOption {

@@ -102,7 +102,7 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -119,9 +119,9 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),

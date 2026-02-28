@@ -119,7 +119,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -180,7 +180,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                         BoxShadow(
                           color: Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.4),
+                          ).colorScheme.primary.withValues(alpha: 0.4),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -232,7 +232,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
 
           // Delete Dialog Overlay
           if (_isDeleteDialogVisible) ...[
-            Container(color: Colors.black.withOpacity(0.5)),
+            Container(color: Colors.black.withValues(alpha: 0.5)),
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -242,11 +242,13 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                     color: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Theme.of(context).dividerColor.withOpacity(0.1),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.1),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 40,
                         offset: const Offset(0, 20),
                       ),
@@ -258,11 +260,11 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.1),
+                              color: Colors.red.withValues(alpha: 0.1),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -290,7 +292,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.7),
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -311,7 +313,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                                 side: BorderSide(
                                   color: Theme.of(
                                     context,
-                                  ).dividerColor.withOpacity(0.2),
+                                  ).dividerColor.withValues(alpha: 0.2),
                                 ),
                               ),
                               child: Text(
@@ -415,12 +417,12 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF334155).withOpacity(0.5)
+              ? const Color(0xFF334155).withValues(alpha: 0.5)
               : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -434,12 +436,12 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
             height: 64,
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF1d4ed8).withOpacity(0.2)
+                  ? const Color(0xFF1d4ed8).withValues(alpha: 0.2)
                   : const Color(0xFFeff6ff),
               shape: BoxShape.circle,
               border: Border.all(
                 color: isDark
-                    ? const Color(0xFF1e3a8a).withOpacity(0.3)
+                    ? const Color(0xFF1e3a8a).withValues(alpha: 0.3)
                     : const Color(0xFFdbeafe),
               ),
             ),
@@ -529,7 +531,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF334155).withOpacity(0.5)
+                          ? const Color(0xFF334155).withValues(alpha: 0.5)
                           : const Color(0xFFf1f5f9),
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -648,12 +650,12 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF334155).withOpacity(0.5)
+              ? const Color(0xFF334155).withValues(alpha: 0.5)
               : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -779,7 +781,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -800,7 +802,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isDark
-                        ? const Color(0xFF334155).withOpacity(0.5)
+                        ? const Color(0xFF334155).withValues(alpha: 0.5)
                         : const Color(0xFFf1f5f9),
                   ),
                 ),

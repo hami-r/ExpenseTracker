@@ -121,7 +121,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                     decoration: BoxDecoration(
                       color: isDark
                           ? const Color(0xFF1a2c26)
-                          : Colors.white.withOpacity(0.95),
+                          : Colors.white.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isDark
@@ -130,7 +130,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -193,7 +193,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                         BoxShadow(
                           color: Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.4),
+                          ).colorScheme.primary.withValues(alpha: 0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -244,7 +244,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
 
           // Delete Dialog Overlay
           if (_isDeleteDialogVisible) ...[
-            Container(color: Colors.black.withOpacity(0.5)),
+            Container(color: Colors.black.withValues(alpha: 0.5)),
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -254,11 +254,13 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                     color: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Theme.of(context).dividerColor.withOpacity(0.1),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.1),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 40,
                         offset: const Offset(0, 20),
                       ),
@@ -270,11 +272,11 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.1),
+                              color: Colors.red.withValues(alpha: 0.1),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -302,7 +304,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                           height: 1.5,
                         ),
                       ),
@@ -323,7 +325,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 elevation: 8,
-                                shadowColor: Colors.red.withOpacity(0.3),
+                                shadowColor: Colors.red.withValues(alpha: 0.3),
                               ),
                               child: const Text(
                                 'Delete',
@@ -350,7 +352,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                                   side: BorderSide(
                                     color: Theme.of(
                                       context,
-                                    ).dividerColor.withOpacity(0.1),
+                                    ).dividerColor.withValues(alpha: 0.1),
                                   ),
                                 ),
                               ),
@@ -359,9 +361,8 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.7),
                                 ),
                               ),
                             ),
@@ -436,7 +437,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -449,12 +450,12 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
             height: 64,
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF14b8a6).withOpacity(0.1)
+                  ? const Color(0xFF14b8a6).withValues(alpha: 0.1)
                   : const Color(0xFFf0fdf9),
               shape: BoxShape.circle,
               border: Border.all(
                 color: isDark
-                    ? const Color(0xFF14b8a6).withOpacity(0.2)
+                    ? const Color(0xFF14b8a6).withValues(alpha: 0.2)
                     : const Color(0xFFccfbf1),
               ),
             ),
@@ -546,7 +547,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
             width: double.infinity,
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF334155).withOpacity(0.5)
+                  ? const Color(0xFF334155).withValues(alpha: 0.5)
                   : const Color(0xFFf1f5f9),
               borderRadius: BorderRadius.circular(4),
             ),
@@ -653,7 +654,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
@@ -695,7 +696,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
             style: TextStyle(
               fontSize: 10,
               color: isPrimary
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.7)
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
                   : const Color(0xFF94a3b8),
             ),
           ),
@@ -747,7 +748,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -762,7 +763,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10b981).withOpacity(0.1),
+                  color: const Color(0xFF10b981).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

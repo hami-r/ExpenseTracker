@@ -54,7 +54,7 @@ class _PaymentSelectionBottomSheetState
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 30,
             offset: const Offset(0, -8),
           ),
@@ -158,7 +158,7 @@ class _PaymentSelectionBottomSheetState
               border: Border(
                 top: BorderSide(
                   color: isDark
-                      ? const Color(0xFF1e293b).withOpacity(0.5)
+                      ? const Color(0xFF1e293b).withValues(alpha: 0.5)
                       : const Color(0xFFf8fafc),
                 ),
               ),
@@ -204,8 +204,8 @@ class _PaymentSelectionBottomSheetState
       child: Material(
         color: isSelected
             ? (isDark
-                  ? const Color(0xFF2bb961).withOpacity(0.1)
-                  : const Color(0xFF2bb961).withOpacity(0.05))
+                  ? const Color(0xFF2bb961).withValues(alpha: 0.1)
+                  : const Color(0xFF2bb961).withValues(alpha: 0.05))
             : (isDark ? const Color(0xFF1a2c26) : Colors.white),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
@@ -240,12 +240,12 @@ class _PaymentSelectionBottomSheetState
                         ? Colors.white
                         : (isDark
                               ? const Color(0xFF1e293b)
-                              : color.withOpacity(0.1)),
+                              : color.withValues(alpha: 0.1)),
                     shape: BoxShape.circle,
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 4,
                             ),
                           ]
@@ -256,7 +256,7 @@ class _PaymentSelectionBottomSheetState
                     size: 20,
                     color: isSelected
                         ? const Color(0xFF2bb961)
-                        : (isDark ? color.withOpacity(0.8) : color),
+                        : (isDark ? color.withValues(alpha: 0.8) : color),
                   ),
                 ),
                 const SizedBox(width: 16),

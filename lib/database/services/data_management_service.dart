@@ -40,9 +40,12 @@ class DataManagementService {
       // Copy to temp dir to rename and share
       await sourceFile.copy(backupPath);
 
-      await Share.shareXFiles([
-        XFile(backupPath),
-      ], text: 'Expense Tracker Backup ($timestamp)');
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(backupPath)],
+          text: 'Expense Tracker Backup ($timestamp)',
+        ),
+      );
     } catch (e) {
       debugPrint('Error creating backup: $e');
       rethrow;

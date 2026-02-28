@@ -283,7 +283,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Container(
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF0f172a).withOpacity(0.5)
+                  ? const Color(0xFF0f172a).withValues(alpha: 0.5)
                   : const Color(0xFFf8fafc),
               borderRadius: BorderRadius.circular(16),
             ),

@@ -33,6 +33,7 @@ class _ManagePaymentMethodsScreenState
     setState(() => _isLoading = true);
     final user = await _userService.getCurrentUser();
     if (user != null) {
+      if (!mounted) return;
       final profileId = context.read<ProfileProvider>().activeProfileId;
       final loadedMethods = await _paymentMethodService.getAllPaymentMethods(
         user.userId!,
@@ -190,7 +191,7 @@ class _ManagePaymentMethodsScreenState
                           elevation: 4,
                           shadowColor: Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.3),
+                          ).colorScheme.primary.withValues(alpha: 0.3),
                         ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -296,7 +297,7 @@ class _ManagePaymentMethodsScreenState
         border: Border.all(color: Colors.transparent),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 4),
           ),
@@ -316,7 +317,7 @@ class _ManagePaymentMethodsScreenState
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: color.withOpacity(0.2), blurRadius: 4),
+                BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 4),
               ],
             ),
             child: Icon(icon, color: Colors.white, size: 24),
@@ -354,7 +355,7 @@ class _ManagePaymentMethodsScreenState
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3b82f6).withOpacity(0.1),
+                      color: const Color(0xFF3b82f6).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -412,7 +413,7 @@ class _ManagePaymentMethodsScreenState
                 padding: EdgeInsets.zero,
                 style: IconButton.styleFrom(
                   backgroundColor: isDark
-                      ? Colors.white.withOpacity(0.05)
+                      ? Colors.white.withValues(alpha: 0.05)
                       : const Color(0xFFf3f4f6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
@@ -434,7 +435,9 @@ class _ManagePaymentMethodsScreenState
                   ),
                   padding: EdgeInsets.zero,
                   style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFef4444).withOpacity(0.1),
+                    backgroundColor: const Color(
+                      0xFFef4444,
+                    ).withValues(alpha: 0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),

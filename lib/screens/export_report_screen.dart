@@ -75,7 +75,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     return Scaffold(
       backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: scaffoldBg.withOpacity(0.95),
+        backgroundColor: scaffoldBg.withValues(alpha: 0.95),
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -147,7 +147,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
@@ -224,7 +224,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
@@ -255,7 +255,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
@@ -350,7 +350,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       color: surfaceColor,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, -4),
                         ),
@@ -374,7 +374,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               elevation: 4,
-                              shadowColor: primaryColor.withOpacity(0.4),
+                              shadowColor: primaryColor.withValues(alpha: 0.4),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -449,7 +449,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -466,7 +466,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(icon, color: color, size: 28),
@@ -544,7 +544,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: iconColor, size: 20),
@@ -627,7 +627,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF334155).withOpacity(0.5)
+                  ? const Color(0xFF334155).withValues(alpha: 0.5)
                   : const Color(0xFFf8fafc),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -682,7 +682,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             height: 40,
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF334155).withOpacity(0.5)
+                  ? const Color(0xFF334155).withValues(alpha: 0.5)
                   : const Color(0xFFf1f5f9),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -711,7 +711,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF2bb961),
+            activeThumbColor: const Color(0xFF2bb961),
           ),
         ],
       ),
@@ -727,7 +727,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.sort, color: Colors.blue, size: 20),
@@ -811,7 +811,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.1),
+                color: Colors.purple.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.category, color: Colors.purple, size: 20),
@@ -1003,7 +1003,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
       indent: 16,
       endIndent: 16,
       color: isDark
-          ? const Color(0xFF334155).withOpacity(0.5)
+          ? const Color(0xFF334155).withValues(alpha: 0.5)
           : const Color(0xFFf1f5f9),
     );
   }
@@ -1126,9 +1126,12 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        Share.shareXFiles([
-                          XFile(filePath),
-                        ], text: 'Expense Report');
+                        SharePlus.instance.share(
+                          ShareParams(
+                            files: [XFile(filePath)],
+                            text: 'Expense Report',
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.share),
                       label: const Text('Share'),

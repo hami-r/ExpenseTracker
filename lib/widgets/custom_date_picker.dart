@@ -111,7 +111,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                         height: 4,
                         decoration: BoxDecoration(
                           color: isDark
-                              ? const Color(0xFF334155).withOpacity(0.5)
+                              ? const Color(0xFF334155).withValues(alpha: 0.5)
                               : const Color(0xFFe2e8f0),
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -134,7 +134,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                       ),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? const Color(0xFF1e293b).withOpacity(0.5)
+                            ? const Color(0xFF1e293b).withValues(alpha: 0.5)
                             : const Color(0xFFf8fafc),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -213,20 +213,18 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                           child: Container(
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.12)
+                                  ? Theme.of(context).colorScheme.primary
+                                        .withValues(alpha: 0.12)
                                   : (isDark
                                         ? const Color(
                                             0xFF1e293b,
-                                          ).withOpacity(0.35)
+                                          ).withValues(alpha: 0.35)
                                         : const Color(0xFFf8fafc)),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: isSelected
-                                    ? Theme.of(
-                                        context,
-                                      ).colorScheme.primary.withOpacity(0.45)
+                                    ? Theme.of(context).colorScheme.primary
+                                          .withValues(alpha: 0.45)
                                     : Colors.transparent,
                                 width: 1,
                               ),
@@ -265,7 +263,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                               side: BorderSide(
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.primary.withOpacity(0.25),
+                                ).colorScheme.primary.withValues(alpha: 0.25),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -341,7 +339,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 40,
             offset: const Offset(0, -10),
           ),
@@ -358,7 +356,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
               height: 6,
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF334155).withOpacity(0.5)
+                    ? const Color(0xFF334155).withValues(alpha: 0.5)
                     : const Color(0xFFe2e8f0),
                 borderRadius: BorderRadius.circular(3),
               ),
@@ -500,7 +498,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 4,
-                  shadowColor: primaryColor.withOpacity(0.3),
+                  shadowColor: primaryColor.withValues(alpha: 0.3),
                 ),
                 child: const Text(
                   'Apply',
@@ -584,7 +582,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: primaryColor.withOpacity(0.4),
+                              color: primaryColor.withValues(alpha: 0.4),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -637,13 +635,13 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
-              ? primaryColor.withOpacity(0.1)
+              ? primaryColor.withValues(alpha: 0.1)
               : (isDark
-                    ? const Color(0xFF1e293b).withOpacity(0.5)
+                    ? const Color(0xFF1e293b).withValues(alpha: 0.5)
                     : const Color(0xFFf1f5f9)),
           borderRadius: BorderRadius.circular(20),
           border: isSelected
-              ? Border.all(color: primaryColor.withOpacity(0.2))
+              ? Border.all(color: primaryColor.withValues(alpha: 0.2))
               : Border.all(color: Colors.transparent),
         ),
         child: Text(

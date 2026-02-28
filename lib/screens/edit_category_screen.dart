@@ -102,7 +102,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -119,9 +119,9 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -265,14 +265,14 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                                   shape: BoxShape.circle,
                                   border: isSelected
                                       ? Border.all(
-                                          color: color.withOpacity(0.3),
+                                          color: color.withValues(alpha: 0.3),
                                           width: 4,
                                         )
                                       : null,
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: color.withOpacity(0.3),
+                                            color: color.withValues(alpha: 0.3),
                                             blurRadius: 8,
                                             spreadRadius: 2,
                                           ),
@@ -334,7 +334,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .primary
-                                                .withOpacity(0.2),
+                                                .withValues(alpha: 0.2),
                                             blurRadius: 8,
                                           ),
                                         ]
@@ -374,7 +374,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
-                        .withOpacity(0),
+                        .withValues(alpha: 0),
                     (isDark
                         ? const Color(0xFF131f17)
                         : const Color(0xFFf6f8f7)),
@@ -398,7 +398,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
                     elevation: 0,
                     shadowColor: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.4),
+                    ).colorScheme.primary.withValues(alpha: 0.4),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

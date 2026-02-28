@@ -80,7 +80,7 @@ class AIHistory {
       final fractional = sqliteMatch.group(7) ?? '';
       final micros = fractional.isEmpty
           ? 0
-          : int.parse((fractional + '000000').substring(0, 6));
+          : int.parse('${fractional}000000'.substring(0, 6));
 
       final parsedUtc = DateTime.utc(
         year,

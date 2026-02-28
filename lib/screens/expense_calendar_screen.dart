@@ -180,10 +180,14 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     // Create heatmap gradient based on theme's primary color
-    if (amount < 300) return primaryColor.withOpacity(0.2); // heatmap-low (20%)
-    if (amount < 600) return primaryColor.withOpacity(0.5); // heatmap-med (50%)
+    if (amount < 300) {
+      return primaryColor.withValues(alpha: 0.2); // heatmap-low (20%)
+    }
+    if (amount < 600) {
+      return primaryColor.withValues(alpha: 0.5); // heatmap-med (50%)
+    }
     if (amount < 900) {
-      return primaryColor.withOpacity(0.75); // heatmap-high (75%)
+      return primaryColor.withValues(alpha: 0.75); // heatmap-high (75%)
     }
     return primaryColor; // heatmap-max (100%)
   }
@@ -400,7 +404,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
           child: Container(
             decoration: BoxDecoration(
               color: isSelected
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                   : _getHeatmapColor(_expensesByDay[day], context),
               borderRadius: BorderRadius.circular(12),
               border: isSelected
@@ -448,7 +452,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 40,
             offset: const Offset(0, -10),
           ),
@@ -653,7 +657,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                                     width: 48,
                                     height: 48,
                                     decoration: BoxDecoration(
-                                      color: color.withOpacity(0.1),
+                                      color: color.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                     child: Icon(icon, color: color, size: 24),
@@ -743,7 +747,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 30,
               spreadRadius: 5,
             ),
@@ -756,14 +760,16 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
             gradient: LinearGradient(
               colors: [
                 Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.4),
                 blurRadius: 20,
               ),
             ],
@@ -777,7 +783,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     width: 3,
                   ),
                 ),

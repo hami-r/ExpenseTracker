@@ -55,7 +55,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    primaryColor.withOpacity(isDark ? 0.1 : 0.4),
+                    primaryColor.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -72,7 +72,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    tertiaryColor.withOpacity(isDark ? 0.1 : 0.3),
+                    tertiaryColor.withValues(alpha: isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -137,7 +137,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
-                                            .withOpacity(0.5),
+                                            .withValues(alpha: 0.5),
                                       ),
                                 ),
                               ),
@@ -172,9 +172,10 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                                     focusedBorder: InputBorder.none,
                                     hintText: '0',
                                     hintStyle: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.2),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.2),
                                     ),
                                     isDense: true,
                                     contentPadding: EdgeInsets.zero,
@@ -242,7 +243,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                               borderRadius: BorderRadius.circular(32),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -266,9 +267,10 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                                   child: Icon(
                                     Icons.edit,
                                     size: 20,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(0.5),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.5),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -288,7 +290,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
-                                            .withOpacity(0.4),
+                                            .withValues(alpha: 0.4),
                                       ),
                                       isDense: true,
                                       contentPadding: EdgeInsets.zero,
@@ -325,7 +327,9 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Theme.of(context).scaffoldBackgroundColor.withOpacity(0),
+                    Theme.of(
+                      context,
+                    ).scaffoldBackgroundColor.withValues(alpha: 0),
                     Theme.of(context).scaffoldBackgroundColor,
                     Theme.of(context).scaffoldBackgroundColor,
                   ],
@@ -342,7 +346,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 8,
-                  shadowColor: primaryColor.withOpacity(0.3),
+                  shadowColor: primaryColor.withValues(alpha: 0.3),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -398,20 +402,22 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: isSelected
-                    ? color.withOpacity(0.3)
-                    : Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                    ? color.withValues(alpha: 0.3)
+                    : Theme.of(
+                        context,
+                      ).colorScheme.outline.withValues(alpha: 0.1),
                 width: isSelected ? 4 : 1,
               ),
               boxShadow: [
                 if (isSelected)
                   BoxShadow(
-                    color: color.withOpacity(0.3),
+                    color: color.withValues(alpha: 0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
                 else if (!isDark)
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -422,7 +428,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
               size: 28,
               color: isSelected
                   ? Colors.white
-                  : (isDark ? color.withOpacity(0.8) : color),
+                  : (isDark ? color.withValues(alpha: 0.8) : color),
             ),
           ),
           const SizedBox(height: 8),
@@ -433,7 +439,9 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
               color: isSelected
                   ? Theme.of(context).colorScheme.onSurface
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],

@@ -91,7 +91,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -108,9 +108,9 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -159,7 +159,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
-                        .withOpacity(0),
+                        .withValues(alpha: 0),
                     (isDark
                         ? const Color(0xFF131f17)
                         : const Color(0xFFf6f8f7)),
@@ -184,7 +184,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                       elevation: 8,
                       shadowColor: Theme.of(
                         context,
-                      ).colorScheme.primary.withOpacity(0.3),
+                      ).colorScheme.primary.withValues(alpha: 0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -248,7 +248,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
             height: 56,
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF3b82f6).withOpacity(0.2)
+                  ? const Color(0xFF3b82f6).withValues(alpha: 0.2)
                   : const Color(0xFFdbeafe),
               shape: BoxShape.circle,
               border: Border.all(
@@ -257,7 +257,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -346,7 +346,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                   hintText: '0',
                   hintStyle: TextStyle(
                     color: isDark
-                        ? const Color(0xFF334155).withOpacity(0.5)
+                        ? const Color(0xFF334155).withValues(alpha: 0.5)
                         : const Color(0xFFe2e8f0),
                   ),
                 ),
@@ -385,7 +385,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -460,7 +460,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -534,7 +534,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                 activeThumbColor: Theme.of(context).colorScheme.primary,
                 activeTrackColor: Theme.of(
                   context,
-                ).colorScheme.primary.withOpacity(0.2),
+                ).colorScheme.primary.withValues(alpha: 0.2),
               ),
             ],
           ),
@@ -569,12 +569,12 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF064e3b).withOpacity(0.3)
+              ? const Color(0xFF064e3b).withValues(alpha: 0.3)
               : const Color(0xFFd1fae5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -658,8 +658,8 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
               const SizedBox(height: 16),
               Divider(
                 color: isDark
-                    ? const Color(0xFF064e3b).withOpacity(0.5)
-                    : const Color(0xFFa7f3d0).withOpacity(0.5),
+                    ? const Color(0xFF064e3b).withValues(alpha: 0.5)
+                    : const Color(0xFFa7f3d0).withValues(alpha: 0.5),
               ),
               const SizedBox(height: 12),
               Row(
@@ -736,6 +736,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
       }
     } catch (e) {
       debugPrint('Error creating receivable payment: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error saving repayment. Please try again.'),

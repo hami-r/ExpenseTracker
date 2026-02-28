@@ -179,12 +179,14 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: isDark
-                                  ? const Color(0xFF7c2d12).withOpacity(0.3)
+                                  ? const Color(
+                                      0xFF7c2d12,
+                                    ).withValues(alpha: 0.3)
                                   : const Color(0xFFffedd5),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 40,
                                 offset: const Offset(0, 10),
                               ),
@@ -202,7 +204,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                                       ? const Color(0xFFfb923c)
                                       : const Color(
                                           0xFFea580c,
-                                        ).withOpacity(0.8),
+                                        ).withValues(alpha: 0.8),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -450,7 +452,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -472,7 +474,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
+                          color: color.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(icon, color: color, size: 20),
@@ -559,7 +561,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                 child: LinearProgressIndicator(
                   value: progress,
                   backgroundColor: isDark
-                      ? const Color(0xFF334155).withOpacity(0.5)
+                      ? const Color(0xFF334155).withValues(alpha: 0.5)
                       : const Color(0xFFf1f5f9),
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                   minHeight: 8,
@@ -575,7 +577,7 @@ class _LiabilitiesLoansScreenState extends State<LiabilitiesLoansScreen> {
                   border: Border(
                     top: BorderSide(
                       color: isDark
-                          ? const Color(0xFF334155).withOpacity(0.5)
+                          ? const Color(0xFF334155).withValues(alpha: 0.5)
                           : const Color(0xFFf8fafc),
                     ),
                   ),

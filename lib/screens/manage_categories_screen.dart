@@ -207,7 +207,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                                 elevation: 4,
                                 shadowColor: Theme.of(
                                   context,
-                                ).colorScheme.primary.withOpacity(0.3),
+                                ).colorScheme.primary.withValues(alpha: 0.3),
                               ),
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -237,7 +237,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -379,7 +379,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                       (isDark
                               ? const Color(0xFF131f17)
                               : const Color(0xFFf6f8f7))
-                          .withOpacity(0),
+                          .withValues(alpha: 0),
                       (isDark
                           ? const Color(0xFF131f17)
                           : const Color(0xFFf6f8f7)),
@@ -411,7 +411,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
         border: Border.all(color: Colors.transparent),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -436,7 +436,10 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                   color: color,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
-                    BoxShadow(color: color.withOpacity(0.3), blurRadius: 4),
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                    ),
                   ],
                 ),
                 child: Icon(icon, color: Colors.white, size: 24),
@@ -506,7 +509,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                       padding: EdgeInsets.zero,
                       style: IconButton.styleFrom(
                         backgroundColor: isDark
-                            ? Colors.white.withOpacity(0.1)
+                            ? Colors.white.withValues(alpha: 0.1)
                             : const Color(0xFFf1f5f9),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
@@ -529,7 +532,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(
                           0xFFef4444,
-                        ).withOpacity(0.1),
+                        ).withValues(alpha: 0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),

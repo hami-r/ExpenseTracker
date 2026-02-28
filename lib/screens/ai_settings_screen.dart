@@ -422,79 +422,84 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                 color: isDark ? Colors.white12 : const Color(0xFFf1f5f9),
               ),
             ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _apiKeys.length,
-              separatorBuilder: (context, index) => Divider(
-                height: 1,
-                color: isDark ? Colors.white10 : Colors.black12,
-                indent: 16,
-                endIndent: 16,
-              ),
-              itemBuilder: (context, index) {
-                final keyData = _apiKeys[index];
-                final keyStr = keyData['key'] as String;
-                final maskedKey = keyStr.length > 8
-                    ? '${keyStr.substring(0, 4)}••••${keyStr.substring(keyStr.length - 4)}'
-                    : '••••••••';
-
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  leading: Radio<String>(
-                    value: keyData['id'],
-                    groupValue: _activeKeyId,
-                    activeColor: primary,
-                    fillColor: WidgetStateProperty.resolveWith<Color>((states) {
-                      if (states.contains(WidgetState.selected)) return primary;
-                      return isDark ? Colors.white24 : Colors.black12;
-                    }),
-                    onChanged: (val) {
-                      setState(() => _activeKeyId = val);
-                      _saveSettings();
-                    },
-                  ),
-                  title: Text(
-                    keyData['name'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  subtitle: Text(
-                    maskedKey,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      color: isDark ? Colors.white54 : Colors.black54,
-                      fontSize: 12,
-                    ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.edit_outlined,
-                          color: isDark ? Colors.white38 : Colors.black38,
-                          size: 20,
-                        ),
-                        onPressed: () => _showKeyDialog(keyToEdit: keyData),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: Colors.redAccent,
-                          size: 20,
-                        ),
-                        onPressed: () => _deleteKey(keyData['id']),
-                      ),
-                    ],
-                  ),
-                );
+            child: RadioGroup<String>(
+              groupValue: _activeKeyId,
+              onChanged: (val) {
+                setState(() => _activeKeyId = val);
+                _saveSettings();
               },
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _apiKeys.length,
+                separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  color: isDark ? Colors.white10 : Colors.black12,
+                  indent: 16,
+                  endIndent: 16,
+                ),
+                itemBuilder: (context, index) {
+                  final keyData = _apiKeys[index];
+                  final keyStr = keyData['key'] as String;
+                  final maskedKey = keyStr.length > 8
+                      ? '${keyStr.substring(0, 4)}••••${keyStr.substring(keyStr.length - 4)}'
+                      : '••••••••';
+
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    leading: Radio<String>(
+                      value: keyData['id'],
+                      fillColor: WidgetStateProperty.resolveWith<Color>((
+                        states,
+                      ) {
+                        if (states.contains(WidgetState.selected)) {
+                          return primary;
+                        }
+                        return isDark ? Colors.white24 : Colors.black12;
+                      }),
+                    ),
+                    title: Text(
+                      keyData['name'],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Text(
+                      maskedKey,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        color: isDark ? Colors.white54 : Colors.black54,
+                        fontSize: 12,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.edit_outlined,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                            size: 20,
+                          ),
+                          onPressed: () => _showKeyDialog(keyToEdit: keyData),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
+                          onPressed: () => _deleteKey(keyData['id']),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
       ],

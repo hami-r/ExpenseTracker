@@ -66,7 +66,7 @@ class ThemeProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
         'theme_color',
-        _primaryColor.value.toRadixString(16),
+        _primaryColor.toARGB32().toRadixString(16),
       );
       await prefs.setBool('dark_mode', _isDarkMode);
     } catch (e) {

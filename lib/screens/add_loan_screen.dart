@@ -219,7 +219,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -236,9 +236,9 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -288,8 +288,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? const Color(0xFF1e293b).withOpacity(0.5)
-                                : const Color(0xFFe2e8f0).withOpacity(0.5),
+                                ? const Color(0xFF1e293b).withValues(alpha: 0.5)
+                                : const Color(
+                                    0xFFe2e8f0,
+                                  ).withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -510,7 +512,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                           color: isDark
                                               ? const Color(
                                                   0xFF1e293b,
-                                                ).withOpacity(0.5)
+                                                ).withValues(alpha: 0.5)
                                               : const Color(0xFFf8fafc),
                                           borderRadius: BorderRadius.circular(
                                             12,
@@ -595,8 +597,12 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF1e293b).withOpacity(0.5)
-                                    : const Color(0xFFe2e8f0).withOpacity(0.5),
+                                    ? const Color(
+                                        0xFF1e293b,
+                                      ).withValues(alpha: 0.5)
+                                    : const Color(
+                                        0xFFe2e8f0,
+                                      ).withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Row(
@@ -646,7 +652,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                           decoration: BoxDecoration(
                                             color: const Color(
                                               0xFFf97316,
-                                            ).withOpacity(0.1),
+                                            ).withValues(alpha: 0.1),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(
@@ -744,12 +750,13 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).colorScheme.primary
-                                        .withOpacity(isDark ? 0.1 : 0.05),
+                                        .withValues(alpha: isDark ? 0.1 : 0.05),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary.withOpacity(0.1),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.1),
                                     ),
                                   ),
                                   child: Row(
@@ -922,7 +929,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                           decoration: BoxDecoration(
                                             color: const Color(
                                               0xFFf97316,
-                                            ).withOpacity(0.1),
+                                            ).withValues(alpha: 0.1),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(
@@ -1020,12 +1027,13 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                   padding: const EdgeInsets.all(14),
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).colorScheme.primary
-                                        .withOpacity(isDark ? 0.1 : 0.05),
+                                        .withValues(alpha: isDark ? 0.1 : 0.05),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary.withOpacity(0.1),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.1),
                                     ),
                                   ),
                                   child: Row(
@@ -1102,7 +1110,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                         elevation: 4,
                         shadowColor: Theme.of(
                           context,
-                        ).colorScheme.primary.withOpacity(0.3),
+                        ).colorScheme.primary.withValues(alpha: 0.3),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1157,7 +1165,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                   ),
                 ]
@@ -1193,12 +1201,12 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF334155).withOpacity(0.5)
+              ? const Color(0xFF334155).withValues(alpha: 0.5)
               : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1233,7 +1241,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       hintStyle: const TextStyle(color: Color(0xFF94a3b8)),
       filled: true,
       fillColor: isDark
-          ? const Color(0xFF1e293b).withOpacity(0.5)
+          ? const Color(0xFF1e293b).withValues(alpha: 0.5)
           : const Color(0xFFf8fafc),
       contentPadding: const EdgeInsets.all(14),
       isDense: true,

@@ -134,7 +134,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -151,9 +151,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -221,14 +221,16 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                       end: Alignment.bottomRight,
                                       colors: [
                                         _selectedCardColor,
-                                        _selectedCardColor.withOpacity(0.85),
+                                        _selectedCardColor.withValues(
+                                          alpha: 0.85,
+                                        ),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: _selectedCardColor.withOpacity(
-                                          0.4,
+                                        color: _selectedCardColor.withValues(
+                                          alpha: 0.4,
                                         ),
                                         blurRadius: 35,
                                         offset: const Offset(0, 15),
@@ -246,8 +248,8 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                           width: 160,
                                           height: 160,
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(
-                                              0.1,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.1,
                                             ),
                                             shape: BoxShape.circle,
                                           ),
@@ -260,8 +262,8 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                           width: 128,
                                           height: 128,
                                           decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(
-                                              0.1,
+                                            color: Colors.black.withValues(
+                                              alpha: 0.1,
                                             ),
                                             shape: BoxShape.circle,
                                           ),
@@ -293,7 +295,9 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                                         fontWeight:
                                                             FontWeight.w600,
                                                         color: Colors.white
-                                                            .withOpacity(0.8),
+                                                            .withValues(
+                                                              alpha: 0.8,
+                                                            ),
                                                         letterSpacing: 1.2,
                                                       ),
                                                     ),
@@ -331,7 +335,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                                   decoration: BoxDecoration(
                                                     color: const Color(
                                                       0xFFfbbf24,
-                                                    ).withOpacity(0.9),
+                                                    ).withValues(alpha: 0.9),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           4,
@@ -342,9 +346,12 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                                       width: 24,
                                                       height: 2,
                                                       decoration: BoxDecoration(
-                                                        color: const Color(
-                                                          0xFFb45309,
-                                                        ).withOpacity(0.5),
+                                                        color:
+                                                            const Color(
+                                                              0xFFb45309,
+                                                            ).withValues(
+                                                              alpha: 0.5,
+                                                            ),
                                                       ),
                                                     ),
                                                   ),
@@ -379,7 +386,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.white
-                                                        .withOpacity(0.8),
+                                                        .withValues(alpha: 0.8),
                                                     letterSpacing: 1,
                                                   ),
                                                 ),
@@ -402,9 +409,10 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                       width: 144,
                                       height: 144,
                                       decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.2),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.2),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Center(
@@ -434,8 +442,8 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                             ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.black.withOpacity(
-                                                  0.08,
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.08,
                                                 ),
                                                 blurRadius: 30,
                                                 offset: const Offset(0, 8),
@@ -474,8 +482,8 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.05,
+                                              color: Colors.black.withValues(
+                                                alpha: 0.05,
                                               ),
                                               blurRadius: 4,
                                             ),
@@ -549,9 +557,8 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.1)
+                                      ? Theme.of(context).colorScheme.primary
+                                            .withValues(alpha: 0.1)
                                       : (isDark
                                             ? const Color(0xFF25282c)
                                             : const Color(0xFFf2f5f4)),
@@ -641,7 +648,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                   (isDark
                                           ? const Color(0xFF9ca3af)
                                           : const Color(0xFF6b7280))
-                                      .withOpacity(0.5),
+                                      .withValues(alpha: 0.5),
                             ),
                           ),
                         ),
@@ -689,7 +696,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     (isDark
                                             ? const Color(0xFF9ca3af)
                                             : const Color(0xFF6b7280))
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                               ),
                               prefixIcon: Icon(
                                 Icons.password_rounded,
@@ -721,14 +728,16 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     shape: BoxShape.circle,
                                     border: isSelected
                                         ? Border.all(
-                                            color: color.withOpacity(0.3),
+                                            color: color.withValues(alpha: 0.3),
                                             width: 4,
                                           )
                                         : null,
                                     boxShadow: isSelected
                                         ? [
                                             BoxShadow(
-                                              color: color.withOpacity(0.3),
+                                              color: color.withValues(
+                                                alpha: 0.3,
+                                              ),
                                               blurRadius: 8,
                                               spreadRadius: 2,
                                             ),
@@ -790,7 +799,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     (isDark
                                             ? const Color(0xFF9ca3af)
                                             : const Color(0xFF6b7280))
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                               ),
                               prefixIcon: Icon(
                                 Icons.numbers_rounded,
@@ -834,7 +843,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     (isDark
                                             ? const Color(0xFF9ca3af)
                                             : const Color(0xFF6b7280))
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                               ),
                               prefixIcon: Icon(
                                 Icons.pin_rounded,
@@ -883,7 +892,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                     (isDark
                                             ? const Color(0xFF9ca3af)
                                             : const Color(0xFF6b7280))
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                               ),
                               prefixIcon: Icon(
                                 Icons.qr_code_scanner_rounded,
@@ -1038,7 +1047,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
-                        .withOpacity(0),
+                        .withValues(alpha: 0),
                     (isDark
                         ? const Color(0xFF131f17)
                         : const Color(0xFFf6f8f7)),
@@ -1062,7 +1071,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                     elevation: 0,
                     shadowColor: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.4),
+                    ).colorScheme.primary.withValues(alpha: 0.4),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

@@ -149,7 +149,7 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -193,7 +193,7 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -244,7 +244,7 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -260,7 +260,7 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155).withOpacity(0.5)
+                      ? const Color(0xFF334155).withValues(alpha: 0.5)
                       : const Color(0xFFf8fafc),
                   shape: BoxShape.circle,
                 ),
@@ -314,7 +314,7 @@ class LoanPaymentHistoryScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(
                     0xFF10b981,
-                  ).withOpacity(isDark ? 0.2 : 0.1),
+                  ).withValues(alpha: isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Row(

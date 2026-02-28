@@ -147,7 +147,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -164,9 +164,9 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -224,13 +224,13 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF131f17).withOpacity(0.8)
-                    : Colors.white.withOpacity(0.8),
+                    ? const Color(0xFF131f17).withValues(alpha: 0.8)
+                    : Colors.white.withValues(alpha: 0.8),
                 border: Border(
                   top: BorderSide(
                     color: isDark
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.black.withOpacity(0.05),
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.05),
                   ),
                 ),
               ),
@@ -249,7 +249,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                       elevation: 4,
                       shadowColor: Theme.of(
                         context,
-                      ).colorScheme.primary.withOpacity(0.3),
+                      ).colorScheme.primary.withValues(alpha: 0.3),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -320,7 +320,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
           height: 64,
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF14b8a6).withOpacity(0.1)
+                ? const Color(0xFF14b8a6).withValues(alpha: 0.1)
                 : const Color(0xFFccfbf1),
             shape: BoxShape.circle,
           ),
@@ -360,7 +360,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -449,7 +449,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -462,7 +462,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155).withOpacity(0.5)
+                      ? const Color(0xFF334155).withValues(alpha: 0.5)
                       : const Color(0xFFf1f5f9),
                   shape: BoxShape.circle,
                 ),
@@ -512,7 +512,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                     _updateCalculations();
                   });
                 },
-                activeColor: Theme.of(context).colorScheme.primary,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
               ),
             ],
           ),
@@ -530,7 +530,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -543,7 +543,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF334155).withOpacity(0.5)
+                        ? const Color(0xFF334155).withValues(alpha: 0.5)
                         : const Color(0xFFf1f5f9),
                     shape: BoxShape.circle,
                   ),
@@ -613,12 +613,12 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF334155).withOpacity(0.3)
+            ? const Color(0xFF334155).withValues(alpha: 0.3)
             : const Color(0xFFf8fafc),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF334155).withOpacity(0.5)
+              ? const Color(0xFF334155).withValues(alpha: 0.5)
               : const Color(0xFFe2e8f0),
         ),
       ),
@@ -688,7 +688,7 @@ class _UpdateIOUProgressScreenState extends State<UpdateIOUProgressScreen> {
             width: double.infinity,
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF334155).withOpacity(0.5)
+                  ? const Color(0xFF334155).withValues(alpha: 0.5)
                   : const Color(0xFFe2e8f0),
               borderRadius: BorderRadius.circular(6),
             ),

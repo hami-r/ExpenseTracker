@@ -252,7 +252,7 @@ class _MoneyOwedHistoryScreenState extends State<MoneyOwedHistoryScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isDark
-                    ? const Color(0xFF334155).withOpacity(0.4)
+                    ? const Color(0xFF334155).withValues(alpha: 0.4)
                     : const Color(0xFFf1f5f9),
               ),
             ),
@@ -264,7 +264,7 @@ class _MoneyOwedHistoryScreenState extends State<MoneyOwedHistoryScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
+                      color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(icon, color: color, size: 22),

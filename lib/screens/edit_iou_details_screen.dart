@@ -133,7 +133,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -150,9 +150,9 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -215,7 +215,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                       elevation: 4,
                       shadowColor: Theme.of(
                         context,
-                      ).colorScheme.primary.withOpacity(0.3),
+                      ).colorScheme.primary.withValues(alpha: 0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -332,12 +332,12 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF334155).withOpacity(0.5)
+              ? const Color(0xFF334155).withValues(alpha: 0.5)
               : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -368,7 +368,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: isDark
-                      ? const Color(0xFF334155).withOpacity(0.5)
+                      ? const Color(0xFF334155).withValues(alpha: 0.5)
                       : const Color(0xFFf8fafc),
                   hintText: 'Search contact or enter name',
                   hintStyle: TextStyle(
@@ -407,12 +407,12 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF334155).withOpacity(0.5)
+              ? const Color(0xFF334155).withValues(alpha: 0.5)
               : const Color(0xFFf1f5f9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -439,7 +439,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFfb923c).withOpacity(0.2),
+                      color: const Color(0xFFfb923c).withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -486,7 +486,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF334155).withOpacity(0.5)
+                        ? const Color(0xFF334155).withValues(alpha: 0.5)
                         : const Color(0xFFf8fafc),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
@@ -525,10 +525,14 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.15),
               ),
             ),
             child: Row(

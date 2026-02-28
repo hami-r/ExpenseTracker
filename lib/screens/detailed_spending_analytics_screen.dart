@@ -70,7 +70,7 @@ class _DetailedSpendingAnalyticsScreenState
           'percentage': percentage,
           'color': color,
           'icon': icon,
-          'bgColor': color.withOpacity(0.1),
+          'bgColor': color.withValues(alpha: 0.1),
         });
       }
 
@@ -184,7 +184,7 @@ class _DetailedSpendingAnalyticsScreenState
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 4,
                       ),
                     ],
@@ -293,7 +293,7 @@ class _DetailedSpendingAnalyticsScreenState
           color: isDark ? const Color(0xFF374151) : const Color(0xFFf3f4f6),
         ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
         ],
       ),
       child: Row(
@@ -402,7 +402,7 @@ class DonutChartPainter extends CustomPainter {
     // Background circle
     final backgroundPaint = Paint()
       ..color = (isDark ? const Color(0xFF374151) : const Color(0xFFe5e7eb))
-          .withOpacity(0.5)
+          .withValues(alpha: 0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 

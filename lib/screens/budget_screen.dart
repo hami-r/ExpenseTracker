@@ -46,6 +46,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
   Future<void> _loadData() async {
     final user = await _userService.getCurrentUser();
     if (user != null) {
+      if (!mounted) return;
+      final profileId = context.read<ProfileProvider>().activeProfileId;
       if (mounted) {
         setState(() {
           _userId = user.userId;
@@ -61,7 +63,6 @@ class _BudgetScreenState extends State<BudgetScreen> {
           final int year = _selectedDate.year;
 
           // Fetch budgets (will auto-carry-over if needed)
-          final profileId = context.read<ProfileProvider>().activeProfileId;
           _budgets = await _budgetService.getBudgets(
             _userId!,
             month,

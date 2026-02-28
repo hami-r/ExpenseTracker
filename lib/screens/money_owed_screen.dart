@@ -296,7 +296,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                   BoxShadow(
                     color: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.4),
+                    ).colorScheme.primary.withValues(alpha: 0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -379,11 +379,11 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
           colors: isDark
               ? [
                   const Color(0xFF1a2c26),
-                  const Color(0xFF064e3b).withOpacity(0.3),
+                  const Color(0xFF064e3b).withValues(alpha: 0.3),
                 ]
               : [
                   const Color(0xFFecfdf5),
-                  const Color(0xFFd1fae5).withOpacity(0.5),
+                  const Color(0xFFd1fae5).withValues(alpha: 0.5),
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -391,12 +391,12 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? const Color(0xFF064e3b).withOpacity(0.5)
+              ? const Color(0xFF064e3b).withValues(alpha: 0.5)
               : const Color(0xFFd1fae5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -415,7 +415,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                   letterSpacing: 1.5,
                   color: isDark
                       ? const Color(0xFF34d399)
-                      : const Color(0xFF059669).withOpacity(0.8),
+                      : const Color(0xFF059669).withValues(alpha: 0.8),
                 ),
               ),
               const SizedBox(height: 8),
@@ -472,7 +472,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -496,7 +496,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color: color.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(icon, size: 20, color: color),
@@ -581,7 +581,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                       child: LinearProgressIndicator(
                         value: percentage,
                         backgroundColor: isDark
-                            ? const Color(0xFF334155).withOpacity(0.5)
+                            ? const Color(0xFF334155).withValues(alpha: 0.5)
                             : const Color(0xFFf1f5f9),
                         valueColor: AlwaysStoppedAnimation<Color>(color),
                         minHeight: 8,
@@ -599,7 +599,7 @@ class _MoneyOwedScreenState extends State<MoneyOwedScreen> {
                   border: Border(
                     top: BorderSide(
                       color: isDark
-                          ? const Color(0xFF334155).withOpacity(0.5)
+                          ? const Color(0xFF334155).withValues(alpha: 0.5)
                           : const Color(0xFFf8fafc),
                     ),
                   ),

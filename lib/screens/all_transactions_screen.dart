@@ -196,7 +196,9 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     backgroundColor: isDark
                         ? const Color(0xFF1F2937)
                         : Colors.white,
-                    selectedColor: const Color(0xFF6366F1).withOpacity(0.2),
+                    selectedColor: const Color(
+                      0xFF6366F1,
+                    ).withValues(alpha: 0.2),
                     checkmarkColor: const Color(0xFF6366F1),
                     labelStyle: TextStyle(
                       color: isSelected
@@ -317,7 +319,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -490,7 +492,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 
   Color _getIconBgColor(TransactionItem item, bool isDark) {
     final color = _getIconColor(item);
-    return color.withOpacity(0.1);
+    return color.withValues(alpha: 0.1);
   }
 
   Color _getStatusColor(String status, bool isDark) {

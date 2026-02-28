@@ -147,7 +147,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                   colors: [
                     Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(isDark ? 0.1 : 0.4),
+                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -164,9 +164,9 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.3),
+                    Theme.of(context).colorScheme.tertiary.withValues(
+                      alpha: isDark ? 0.1 : 0.3,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -254,7 +254,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
-                        .withOpacity(0),
+                        .withValues(alpha: 0),
                     (isDark
                         ? const Color(0xFF131f17)
                         : const Color(0xFFf6f8f7)),
@@ -279,7 +279,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                       elevation: 8,
                       shadowColor: Theme.of(
                         context,
-                      ).colorScheme.primary.withOpacity(0.4),
+                      ).colorScheme.primary.withValues(alpha: 0.4),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -349,8 +349,8 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1e293b).withOpacity(0.5)
-            : const Color(0xFFe2e8f0).withOpacity(0.5),
+            ? const Color(0xFF1e293b).withValues(alpha: 0.5)
+            : const Color(0xFFe2e8f0).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -375,7 +375,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                   boxShadow: _selectedTypeIndex == 0
                       ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -418,7 +418,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                   boxShadow: _selectedTypeIndex == 1
                       ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -457,7 +457,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
             letterSpacing: 1.5,
             color: isDark
                 ? const Color(0xFF34d399)
-                : const Color(0xFF059669).withOpacity(0.8),
+                : const Color(0xFF059669).withValues(alpha: 0.8),
           ),
         ),
         const SizedBox(height: 8),
@@ -496,7 +496,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                   hintText: '0',
                   hintStyle: TextStyle(
                     color: isDark
-                        ? const Color(0xFF334155).withOpacity(0.5)
+                        ? const Color(0xFF334155).withValues(alpha: 0.5)
                         : const Color(0xFFe2e8f0),
                   ),
                 ),
@@ -536,7 +536,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -600,7 +600,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -648,7 +648,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -696,7 +696,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -736,7 +736,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -882,7 +882,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(isDark ? 0.2 : 0.15),
+                  color: color.withValues(alpha: isDark ? 0.2 : 0.15),
                   borderRadius: BorderRadius.circular(18),
                   border: isSelected
                       ? Border.all(color: color, width: 2)
@@ -905,7 +905,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),

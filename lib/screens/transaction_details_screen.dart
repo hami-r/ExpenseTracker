@@ -121,15 +121,15 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                             borderRadius: BorderRadius.circular(32),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
                             ],
                             border: Border.all(
                               color: isDark
-                                  ? Colors.white.withOpacity(0.05)
-                                  : Colors.black.withOpacity(0.05),
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.05),
                             ),
                           ),
                           child: Column(
@@ -149,9 +149,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                     style: TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.4),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.4),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
@@ -189,7 +190,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                 height: 1,
                                 color: Theme.of(
                                   context,
-                                ).dividerColor.withOpacity(0.1),
+                                ).dividerColor.withValues(alpha: 0.1),
                               ),
 
                               const SizedBox(height: 24),
@@ -286,7 +287,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Theme.of(context).scaffoldBackgroundColor.withOpacity(0),
+                    Theme.of(
+                      context,
+                    ).scaffoldBackgroundColor.withValues(alpha: 0),
                     Theme.of(context).scaffoldBackgroundColor,
                   ],
                   stops: const [0.0, 0.4],
@@ -297,16 +300,16 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
+                        final result = await Navigator.of(this.context).push(
                           MaterialPageRoute(
                             builder: (context) => EditExpenseScreen(
                               transaction: widget.transaction,
                             ),
                           ),
                         );
-                        if (result == true && mounted) {
-                          Navigator.pop(context, true);
+                        if (!mounted) return;
+                        if (result == true) {
+                          Navigator.of(this.context).pop(true);
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -321,7 +324,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           side: BorderSide(
                             color: Theme.of(
                               context,
-                            ).dividerColor.withOpacity(0.1),
+                            ).dividerColor.withValues(alpha: 0.1),
                           ),
                         ),
                       ),
@@ -333,7 +336,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                             size: 20,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
+                            ).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                           const SizedBox(width: 8),
                           const Text('Edit'),
@@ -353,7 +356,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         backgroundColor: Colors.red.shade500,
                         foregroundColor: Colors.white,
                         elevation: 8,
-                        shadowColor: Colors.red.withOpacity(0.3),
+                        shadowColor: Colors.red.withValues(alpha: 0.3),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -382,7 +385,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                     _isDeleteDialogVisible = false;
                   });
                 },
-                child: Container(color: Colors.black.withOpacity(0.4)),
+                child: Container(color: Colors.black.withValues(alpha: 0.4)),
               ),
             ),
 
@@ -409,7 +412,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 20,
                         offset: const Offset(0, -5),
                       ),
@@ -425,7 +428,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).dividerColor.withOpacity(0.1),
+                          ).dividerColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
@@ -436,11 +439,11 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.2),
+                              color: Colors.red.withValues(alpha: 0.2),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -472,7 +475,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                           height: 1.5,
                         ),
                       ),
@@ -495,7 +498,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 elevation: 8,
-                                shadowColor: Colors.red.withOpacity(0.3),
+                                shadowColor: Colors.red.withValues(alpha: 0.3),
                               ),
                               child: const Text(
                                 'Delete',
@@ -524,7 +527,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                   side: BorderSide(
                                     color: Theme.of(
                                       context,
-                                    ).dividerColor.withOpacity(0.1),
+                                    ).dividerColor.withValues(alpha: 0.1),
                                   ),
                                 ),
                               ),
@@ -533,9 +536,8 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.7),
                                 ),
                               ),
                             ),
@@ -566,10 +568,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.5),
+        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.05),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
         ),
       ),
       child: Column(
@@ -580,7 +582,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.4),
               letterSpacing: 0.5,
             ),
           ),
@@ -591,7 +595,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(isDark ? 0.2 : 0.1),
+                  color: color.withValues(alpha: isDark ? 0.2 : 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, size: 16, color: color),
@@ -618,7 +622,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           fontWeight: FontWeight.w600,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.4),
+                          ).colorScheme.onSurface.withValues(alpha: 0.4),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -645,7 +649,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -663,7 +667,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             child: Icon(
               icon,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(width: 12),
@@ -677,7 +683,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   fontWeight: FontWeight.bold,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.4),
+                  ).colorScheme.onSurface.withValues(alpha: 0.4),
                   letterSpacing: 0.5,
                 ),
               ),
