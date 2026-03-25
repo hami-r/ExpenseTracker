@@ -7,6 +7,7 @@ import '../database/services/category_service.dart';
 import '../models/category.dart';
 import 'set_budget_screen.dart';
 import '../providers/profile_provider.dart';
+import '../utils/icon_helper.dart';
 import 'package:provider/provider.dart';
 
 class BudgetScreen extends StatefulWidget {
@@ -541,26 +542,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       statusText = 'Untouched';
     }
 
-    // Icon parsing
-    IconData iconData = Icons.category_rounded;
-    // Hardcoded minimal mapping for safety in this scope, normally use helper
-    switch (category.iconName) {
-      case 'restaurant':
-        iconData = Icons.restaurant_rounded;
-        break;
-      case 'shopping_bag':
-        iconData = Icons.shopping_bag_rounded;
-        break;
-      case 'directions_car':
-        iconData = Icons.directions_car_rounded;
-        break;
-      case 'movie':
-        iconData = Icons.movie_rounded;
-        break;
-      case 'home':
-        iconData = Icons.home_rounded;
-        break;
-    }
+    final iconData = IconHelper.getIcon(category.iconName);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

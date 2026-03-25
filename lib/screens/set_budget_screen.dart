@@ -5,6 +5,8 @@ import '../database/services/budget_service.dart';
 import '../database/services/category_service.dart';
 import 'manage_categories_screen.dart';
 import '../providers/profile_provider.dart';
+import '../utils/color_helper.dart';
+import '../utils/icon_helper.dart';
 import 'package:provider/provider.dart';
 
 class SetBudgetScreen extends StatefulWidget {
@@ -164,7 +166,8 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
                         child: _buildInputCard(
                           isDark,
                           c.name,
-                          Icons.category_rounded, // Use simple icon for speed
+                          IconHelper.getIcon(c.iconName),
+                          ColorHelper.fromHex(c.colorHex),
                           _categoryControllers[c.categoryId!]!,
                           primaryColor,
                         ),
@@ -197,6 +200,7 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
     bool isDark,
     String label,
     IconData icon,
+    Color iconColor,
     TextEditingController controller,
     Color primaryColor,
   ) {
@@ -216,10 +220,10 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: primaryColor, size: 24),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
