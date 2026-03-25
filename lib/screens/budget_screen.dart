@@ -10,7 +10,9 @@ import '../providers/profile_provider.dart';
 import 'package:provider/provider.dart';
 
 class BudgetScreen extends StatefulWidget {
-  const BudgetScreen({super.key});
+  final int refreshTrigger;
+
+  const BudgetScreen({super.key, this.refreshTrigger = 0});
 
   @override
   State<BudgetScreen> createState() => _BudgetScreenState();
@@ -32,6 +34,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
   Map<int?, double> _monthlySpending = {};
   List<Category> _categories = [];
 
+  List<Budget> get _categoryBudgets =>
+      _budgets.where((budget) => budget.categoryId != null).toList();
+
+  int? _lastProfileId;
+
   NumberFormat get _currencyFormat => NumberFormat.currency(
     symbol: context.watch<ProfileProvider>().currencySymbol,
     decimalDigits: 0,
@@ -41,6 +48,24 @@ class _BudgetScreenState extends State<BudgetScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final profileId = context.watch<ProfileProvider>().activeProfileId;
+    if (_lastProfileId != null && _lastProfileId != profileId) {
+      _loadData();
+    }
+    _lastProfileId = profileId;
+  }
+
+  @override
+  void didUpdateWidget(covariant BudgetScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshTrigger != widget.refreshTrigger) {
+      _loadData();
+    }
   }
 
   Future<void> _loadData() async {
@@ -78,10 +103,16 @@ class _BudgetScreenState extends State<BudgetScreen> {
             profileId: profileId,
           );
 
-          // Calculate totals dynamically from category budgets
-          _totalBudget = _budgets.fold(0.0, (sum, b) => sum + b.amount);
+          // Only category budgets should count toward the visible total.
+          _totalBudget = _categoryBudgets.fold(
+            0.0,
+            (sum, budget) => sum + budget.amount,
+          );
 
-          _totalSpent = _monthlySpending[null] ?? 0.0;
+          _totalSpent = _categoryBudgets.fold(
+            0.0,
+            (sum, budget) => sum + (_monthlySpending[budget.categoryId] ?? 0.0),
+          );
         } catch (e) {
           debugPrint('Error loading budget data: $e');
         } finally {
@@ -249,7 +280,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     Color primaryColor,
     Color primaryDarkColor,
   ) {
-    if (_budgets.isEmpty) {
+    if (_categoryBudgets.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
@@ -441,7 +472,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   List<Widget> _buildCategoryList(bool isDark) {
-    if (_budgets.where((b) => b.categoryId != null).isEmpty) {
+    if (_categoryBudgets.isEmpty) {
       return [
         Center(
           child: Padding(
@@ -457,10 +488,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       ];
     }
 
-    final categoryBudgets = _budgets
-        .where((b) => b.categoryId != null)
-        .toList();
-    return categoryBudgets.map((b) => _buildCategoryItem(b, isDark)).toList();
+    return _categoryBudgets.map((b) => _buildCategoryItem(b, isDark)).toList();
   }
 
   Widget _buildCategoryItem(Budget budget, bool isDark) {

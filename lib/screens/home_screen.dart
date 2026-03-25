@@ -32,6 +32,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   int _transactionsRefreshTrigger = 0;
+  int _budgetRefreshTrigger = 0;
 
   // Services
   final AnalyticsService _analyticsService = AnalyticsService();
@@ -180,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
               AllTransactionsScreen(
                 refreshTrigger: _transactionsRefreshTrigger,
               ),
-              const BudgetScreen(),
+              BudgetScreen(refreshTrigger: _budgetRefreshTrigger),
               const ProfileScreen(),
             ],
           ),
@@ -1125,6 +1126,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       setState(() {
         _transactionsRefreshTrigger++;
+        _budgetRefreshTrigger++;
       });
     }
   }
