@@ -174,15 +174,21 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
   Future<void> _addNewItem() async {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
-      MaterialPageRoute(builder: (context) => const AddSplitItemScreen()),
+      MaterialPageRoute(
+        builder: (context) =>
+            AddSplitItemScreen(categories: _categoriesMap.values.toList()),
+      ),
     );
 
     if (result == null || !mounted) return;
 
+    final selectedCategoryId = result['categoryId'] as int?;
     final selectedCategoryName = result['category'] as String?;
-    int? categoryId;
-    Category? matchedCategory;
-    if (selectedCategoryName != null) {
+    int? categoryId = selectedCategoryId;
+    Category? matchedCategory = selectedCategoryId != null
+        ? _categoriesMap[selectedCategoryId]
+        : null;
+    if (matchedCategory == null && selectedCategoryName != null) {
       for (final entry in _categoriesMap.entries) {
         if (entry.value.name.toLowerCase() ==
             selectedCategoryName.toLowerCase()) {

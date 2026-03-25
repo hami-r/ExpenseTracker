@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../models/category.dart';
 import '../providers/profile_provider.dart';
+import '../utils/color_helper.dart';
+import '../utils/icon_helper.dart';
+import 'manage_categories_screen.dart';
 
 class AddSplitItemScreen extends StatefulWidget {
-  const AddSplitItemScreen({super.key});
+  final List<Category> categories;
+
+  const AddSplitItemScreen({super.key, required this.categories});
 
   @override
   State<AddSplitItemScreen> createState() => _AddSplitItemScreenState();
@@ -15,30 +21,30 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
   final TextEditingController _itemNameController = TextEditingController();
   int _selectedCategoryIndex = -1;
 
-  final List<Map<String, dynamic>> categories = [
-    {'name': 'Food', 'icon': Icons.lunch_dining, 'color': Colors.orange},
-    {'name': 'Shopping', 'icon': Icons.shopping_bag, 'color': Colors.purple},
-    {'name': 'Transport', 'icon': Icons.directions_car, 'color': Colors.blue},
-    {'name': 'Home', 'icon': Icons.home, 'color': Colors.teal},
-    {'name': 'Fun', 'icon': Icons.movie, 'color': Colors.pink},
-    {
-      'name': 'Health',
-      'icon': Icons.monitor_heart,
-      'color': Colors.pinkAccent,
-    }, // ecg_heart not always available, using monitor_heart or similar
-    {'name': 'Education', 'icon': Icons.school, 'color': Colors.indigo},
-    {
-      'name': 'Other',
-      'icon': Icons.more_horiz,
-      'color': Colors.grey,
-    }, // check icon for other
-  ];
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final tertiaryColor = Theme.of(context).colorScheme.tertiary;
+    const maxVisibleCategories = 8;
+    final visibleCategories = widget.categories
+        .take(maxVisibleCategories)
+        .toList();
+    final selectedCategory =
+        (_selectedCategoryIndex >= 0 &&
+            _selectedCategoryIndex < widget.categories.length)
+        ? widget.categories[_selectedCategoryIndex]
+        : null;
+
+    if (selectedCategory != null &&
+        !visibleCategories.any(
+          (category) => category.categoryId == selectedCategory.categoryId,
+        )) {
+      if (visibleCategories.length == maxVisibleCategories) {
+        visibleCategories.removeLast();
+      }
+      visibleCategories.add(selectedCategory);
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -190,34 +196,174 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
                           // Category Grid
                           Align(
                             alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: Text(
-                                'Category',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleLarge?.copyWith(fontSize: 14),
-                              ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  child: Text(
+                                    'Category',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(fontSize: 14),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: widget.categories.isEmpty
+                                      ? null
+                                      : () async {
+                                          final pickedCategory =
+                                              await Navigator.push<Category>(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const ManageCategoriesScreen(
+                                                        isSelectionMode: true,
+                                                      ),
+                                                ),
+                                              );
+
+                                          if (pickedCategory == null ||
+                                              !mounted) {
+                                            return;
+                                          }
+
+                                          final selectedIndex = widget
+                                              .categories
+                                              .indexWhere(
+                                                (category) =>
+                                                    category.categoryId ==
+                                                    pickedCategory.categoryId,
+                                              );
+                                          if (selectedIndex == -1) return;
+
+                                          setState(() {
+                                            _selectedCategoryIndex =
+                                                selectedIndex;
+                                          });
+                                        },
+                                  child: Text(
+                                    'See all',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: primaryColor,
+                                        ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 16),
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  mainAxisSpacing: 24,
-                                  crossAxisSpacing: 8,
-                                  childAspectRatio: 0.7,
+                          if (widget.categories.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Text(
+                                'No categories available',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            )
+                          else ...[
+                            if (selectedCategory != null) ...[
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
                                 ),
-                            itemCount: categories.length,
-                            itemBuilder: (context, index) {
-                              return _buildCategoryItem(context, index, isDark);
-                            },
-                          ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardTheme.color,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: primaryColor,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            ColorHelper.fromHex(
+                                              selectedCategory.colorHex,
+                                            ).withValues(
+                                              alpha: isDark ? 0.25 : 0.12,
+                                            ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        IconHelper.getIcon(
+                                          selectedCategory.iconName,
+                                        ),
+                                        size: 18,
+                                        color: isDark
+                                            ? ColorHelper.fromHex(
+                                                selectedCategory.colorHex,
+                                              ).withValues(alpha: 0.9)
+                                            : ColorHelper.fromHex(
+                                                selectedCategory.colorHex,
+                                              ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        selectedCategory.name,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                            ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Selected',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: primaryColor,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 4,
+                                    mainAxisSpacing: 24,
+                                    crossAxisSpacing: 8,
+                                    childAspectRatio: 0.7,
+                                  ),
+                              itemCount: visibleCategories.length,
+                              itemBuilder: (context, index) {
+                                return _buildCategoryItem(
+                                  context,
+                                  index,
+                                  isDark,
+                                  visibleCategories[index],
+                                );
+                              },
+                            ),
+                          ],
 
                           const SizedBox(height: 32),
 
@@ -380,15 +526,22 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
     );
   }
 
-  Widget _buildCategoryItem(BuildContext context, int index, bool isDark) {
-    final category = categories[index];
+  Widget _buildCategoryItem(
+    BuildContext context,
+    int index,
+    bool isDark,
+    Category category,
+  ) {
     final isSelected = _selectedCategoryIndex == index;
-    final color = category['color'] as Color;
+    final color = ColorHelper.fromHex(category.colorHex);
+    final icon = IconHelper.getIcon(category.iconName);
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedCategoryIndex = index;
+          _selectedCategoryIndex = widget.categories.indexWhere(
+            (item) => item.categoryId == category.categoryId,
+          );
         });
       },
       child: Column(
@@ -424,7 +577,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
               ],
             ),
             child: Icon(
-              category['icon'],
+              icon,
               size: 28,
               color: isSelected
                   ? Colors.white
@@ -433,7 +586,7 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            category['name'],
+            category.name,
             style: TextStyle(
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
@@ -451,19 +604,21 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
 
   void _submitItem() {
     if (_amountController.text.isEmpty) return; // Simple validation
+    if (widget.categories.isEmpty) return;
 
     final category = _selectedCategoryIndex >= 0
-        ? categories[_selectedCategoryIndex]
-        : categories.last; // Default to Other
+        ? widget.categories[_selectedCategoryIndex]
+        : widget.categories.first;
 
     Navigator.pop(context, {
       'name': _itemNameController.text.isEmpty
-          ? category['name']
+          ? category.name
           : _itemNameController.text,
       'amount': _amountController.text,
-      'category': category['name'],
-      'icon': category['icon'],
-      'color': category['color'],
+      'categoryId': category.categoryId,
+      'category': category.name,
+      'icon': IconHelper.getIcon(category.iconName),
+      'color': ColorHelper.fromHex(category.colorHex),
     });
   }
 

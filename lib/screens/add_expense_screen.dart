@@ -1458,7 +1458,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   final result = await Navigator.push<Map<String, dynamic>>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AddSplitItemScreen(),
+                      builder: (context) =>
+                          AddSplitItemScreen(categories: _categories),
                     ),
                   );
 
