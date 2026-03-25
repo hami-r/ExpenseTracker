@@ -139,20 +139,29 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final primaryDarkColor = Colors.teal[300] ?? primaryColor;
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF111827)
-          : const Color(0xFFF9FAFB),
+          ? const Color(0xFF131f17)
+          : const Color(0xFFf6f8f7),
       appBar: AppBar(
-        title: const Text('All Transactions'),
+        title: Text(
+          'All Transactions',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : const Color(0xFF30353E),
+          ),
+        ),
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           PopupMenuButton<TransactionSortOption>(
             icon: Icon(
               Icons.sort_rounded,
-              color: isDark ? Colors.white : Colors.black,
+              color: isDark ? Colors.white : const Color(0xFF30353E),
             ),
             onSelected: _updateSort,
             itemBuilder: (context) => [
@@ -181,7 +190,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           // Filters
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
               children: _filterOptions.map((option) {
                 final isSelected = _selectedTypeFilter == option['value'];
@@ -194,27 +203,29 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       _updateFilter(selected ? option['value'] : null);
                     },
                     backgroundColor: isDark
-                        ? const Color(0xFF1F2937)
+                        ? const Color(0xFF1a2c2b)
                         : Colors.white,
-                    selectedColor: const Color(
-                      0xFF6366F1,
-                    ).withValues(alpha: 0.2),
-                    checkmarkColor: const Color(0xFF6366F1),
+                    selectedColor: primaryColor.withValues(alpha: 0.16),
+                    checkmarkColor: primaryColor,
+                    side: BorderSide(
+                      color: isSelected
+                          ? primaryColor
+                          : (isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.grey[200]!),
+                    ),
                     labelStyle: TextStyle(
                       color: isSelected
-                          ? const Color(0xFF6366F1)
-                          : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                          ? (isDark ? primaryColor : primaryDarkColor)
+                          : (isDark
+                                ? Colors.grey[300]
+                                : const Color(0xFF717782)),
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.normal,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSelected
-                            ? const Color(0xFF6366F1)
-                            : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-                      ),
                     ),
                   ),
                 );
@@ -228,7 +239,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 ? _buildEmptyState(isDark)
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 120),
                     itemCount: _transactions.length + (_hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == _transactions.length) {
@@ -268,13 +279,13 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 
   Widget _buildMonthHeader(DateTime date, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+      padding: const EdgeInsets.fromLTRB(8, 24, 8, 12),
       child: Text(
         DateFormat('MMMM yyyy').format(date),
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF6366F1),
+          color: Theme.of(context).colorScheme.primary,
           letterSpacing: 0.5,
         ),
       ),
@@ -289,13 +300,13 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           Icon(
             Icons.receipt_long_rounded,
             size: 64,
-            color: isDark ? Colors.grey[700] : Colors.grey[300],
+            color: isDark ? Colors.grey[600] : Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
             'No transactions found',
             style: TextStyle(
-              color: isDark ? Colors.grey[500] : Colors.grey[400],
+              color: isDark ? Colors.grey[400] : const Color(0xFF717782),
               fontSize: 16,
             ),
           ),
@@ -313,15 +324,20 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
               : const Color(0xFF111827)); // Normal for money out
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : Colors.white,
+        color: isDark ? const Color(0xFF1a2c2b) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.grey[200]!,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -340,7 +356,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           item.title,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : const Color(0xFF111827),
+            color: isDark ? Colors.white : const Color(0xFF30353E),
           ),
         ),
         subtitle: Column(
@@ -351,14 +367,14 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 item.subtitle!,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : const Color(0xFF717782),
                 ),
               ),
             Text(
               DateFormat('MMM d, h:mm a').format(item.date),
               style: TextStyle(
                 fontSize: 11,
-                color: isDark ? Colors.grey[500] : Colors.grey[400],
+                color: isDark ? Colors.grey[500] : Colors.grey[500],
               ),
             ),
           ],
@@ -487,7 +503,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 
   Color _getIconColor(TransactionItem item) {
     if (item.colorHex != null) return ColorHelper.fromHex(item.colorHex);
-    return const Color(0xFF6366F1);
+    return Theme.of(context).colorScheme.primary;
   }
 
   Color _getIconBgColor(TransactionItem item, bool isDark) {
