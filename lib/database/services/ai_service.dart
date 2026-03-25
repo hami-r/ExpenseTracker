@@ -259,7 +259,7 @@ Available Payment Methods: [$methodsStr]
 
 Rules:
 1. "amount": numerical amount (double).
-2. "category_id": integer ID of the best matching category.
+2. "category_id": integer ID of the best matching category from Available Categories only.
 3. "payment_method_id": integer ID of the best matching payment method.
 4. "note": concise title/note for the transaction.
 5. "date": ISO 8601 date (YYYY-MM-DDTHH:mm:ss). Current date/time: ${DateTime.now().toIso8601String()}.
@@ -267,6 +267,10 @@ Rules:
 7. "split_items": array of objects, each with "name", "amount", "category_id".
 8. For non-split expenses, return "is_split": false and "split_items": [].
 9. If "is_split" is true, make sure split item amounts add up to "amount".
+10. Use only category IDs that exist in Available Categories. Never invent IDs.
+11. Every split item must use the best matching available category ID for that item.
+12. If the user mentions multiple items with different categories, classify each split item separately instead of reusing the parent category for all items unless that is clearly correct.
+13. Return IDs only for categories and payment methods. Do not output category names inside split items.
 
 Respond ONLY with a valid JSON object:
 {"amount": number, "category_id": number, "payment_method_id": number, "note": string, "date": string, "is_split": boolean, "split_items": [{"name": string, "amount": number, "category_id": number}]}
@@ -347,13 +351,17 @@ Available Payment Methods: [$methodsStr]
 
 Rules:
 1. "amount": final total on the receipt (double).
-2. "category_id": integer ID of the best matching category.
+2. "category_id": integer ID of the best matching category from Available Categories only.
 3. "payment_method_id": integer ID of the best matching payment method.
 4. "note": concise vendor/purchase description.
 5. "date": ISO 8601 date from the receipt. If not found, use ${DateTime.now().toIso8601String()}.
 6. "is_split": boolean. Set true only if you can confidently extract multiple purchase items.
 7. "split_items": array of objects with "name", "amount", and "category_id".
 8. If you cannot confidently extract itemized splits, return "is_split": false and "split_items": [].
+9. Use only category IDs that exist in Available Categories. Never invent IDs.
+10. For split items, assign the best matching available category ID to each line item individually.
+11. If item-level categorization is unclear, choose the closest available category ID rather than returning freeform category text.
+12. Return IDs only for categories and payment methods. Do not output category names inside split items.
 
 Respond ONLY with a valid JSON object:
 {"amount": number, "category_id": number, "payment_method_id": number, "note": string, "date": string, "is_split": boolean, "split_items": [{"name": string, "amount": number, "category_id": number}]}
