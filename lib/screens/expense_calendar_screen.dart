@@ -38,7 +38,6 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
   List<Transaction> _selectedDayTransactions = [];
   Map<int, Category> _categoriesMap = {};
   double _monthTotal = 0.0;
-  double _dailyAvg = 0.0;
   bool _isLoading = true;
   int? _userId;
 
@@ -95,21 +94,10 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
       double total = 0;
       expenses.forEach((_, amount) => total += amount);
 
-      // Calculate days in month so far or total days in past months
-      final daysInMonth = DateUtils.getDaysInMonth(
-        _currentMonth.year,
-        _currentMonth.month,
-      );
-      final isCurrentMonth =
-          _currentMonth.year == DateTime.now().year &&
-          _currentMonth.month == DateTime.now().month;
-      final daysPassed = isCurrentMonth ? DateTime.now().day : daysInMonth;
-
       if (mounted) {
         setState(() {
           _expensesByDay = expenses;
           _monthTotal = total;
-          _dailyAvg = daysPassed > 0 ? total / daysPassed : 0;
           _isLoading = false;
         });
       }
@@ -446,6 +434,8 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
   }
 
   Widget _buildBottomSheet(bool isDark, ScrollController scrollController) {
+    final selectedDayTotal = _expensesByDay[_selectedDate.day] ?? 0.0;
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1e293b) : Colors.white,
@@ -525,7 +515,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'DAILY AVG',
+                            'DAY\'S TOTAL',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -537,7 +527,7 @@ class _ExpenseCalendarScreenState extends State<ExpenseCalendarScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${context.read<ProfileProvider>().currencySymbol}${_dailyAvg.toStringAsFixed(0)}',
+                            '${context.read<ProfileProvider>().currencySymbol}${selectedDayTotal.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,

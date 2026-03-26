@@ -116,140 +116,6 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     }
   }
 
-  void _showSourceSheet() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).colorScheme.primary;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-            decoration: BoxDecoration(
-              color: (isDark ? const Color(0xFF1c3326) : Colors.white)
-                  .withValues(alpha: 0.9),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(32),
-              ),
-              border: Border(
-                top: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.black.withValues(alpha: 0.06),
-                ),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 28),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white24
-                        : Colors.black.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSourceOption(
-                        context: ctx,
-                        icon: Icons.camera_alt_rounded,
-                        label: 'Camera',
-                        source: ImageSource.camera,
-                        isDark: isDark,
-                        primary: primary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSourceOption(
-                        context: ctx,
-                        icon: Icons.image_rounded,
-                        label: 'Gallery',
-                        source: ImageSource.gallery,
-                        isDark: isDark,
-                        primary: primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSourceOption({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required ImageSource source,
-    required bool isDark,
-    required Color primary,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-        _pickImage(source);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : primary.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.07)
-                : primary.withValues(alpha: 0.15),
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: primary.withValues(alpha: 0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: primary, size: 30),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              label.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: isDark ? Colors.white54 : Colors.black45,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -415,45 +281,27 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
         // Retake button in top-right corner
         if (!_isProcessing)
           Positioned(
-            top: 12,
-            right: 12,
-            child: GestureDetector(
-              onTap: _showSourceSheet,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(99),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.refresh_rounded,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Retake',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildImageSwapAction(
+                    icon: Icons.camera_alt_rounded,
+                    label: 'Retake',
+                    onTap: () => _pickImage(ImageSource.camera),
                   ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildImageSwapAction(
+                    icon: Icons.image_rounded,
+                    label: 'Gallery',
+                    onTap: () => _pickImage(ImageSource.gallery),
+                  ),
+                ),
+              ],
             ),
           ),
       ],
@@ -462,35 +310,74 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
 
   // Empty state — upload prompt
   Widget _buildUploadPrompt(bool isDark, Color primary) {
-    return GestureDetector(
-      onTap: _showSourceSheet,
+    return Padding(
+      padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              color: primary.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: primary.withValues(alpha: 0.18),
+                  blurRadius: 28,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Icon(Icons.receipt_long_rounded, size: 42, color: primary),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Choose how you want to add the receipt',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Snap a fresh photo or upload one from your gallery. We will extract amount, date, category, and split items for you.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: isDark ? Colors.white54 : const Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 28),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildUploadIcon(
-                icon: Icons.camera_alt_rounded,
-                label: 'Camera',
-                primary: primary,
+              Expanded(
+                child: _buildSourceCard(
+                  icon: Icons.camera_alt_rounded,
+                  title: 'Use Camera',
+                  subtitle: 'Capture receipt now',
+                  primary: primary,
+                  isDark: isDark,
+                  onTap: () => _pickImage(ImageSource.camera),
+                ),
               ),
-              Container(
-                width: 1,
-                height: 40,
-                margin: const EdgeInsets.symmetric(horizontal: 28),
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.07),
-              ),
-              _buildUploadIcon(
-                icon: Icons.image_rounded,
-                label: 'Gallery',
-                primary: primary,
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildSourceCard(
+                  icon: Icons.image_rounded,
+                  title: 'Open Gallery',
+                  subtitle: 'Pick an existing photo',
+                  primary: primary,
+                  isDark: isDark,
+                  onTap: () => _pickImage(ImageSource.gallery),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -501,7 +388,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white38 : Colors.black38,
+                  color: isDark ? Colors.white38 : Colors.black45,
                 ),
               ),
             ],
@@ -540,41 +427,111 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     );
   }
 
-  Widget _buildUploadIcon({
+  Widget _buildSourceCard({
     required IconData icon,
-    required String label,
+    required String title,
+    required String subtitle,
     required Color primary,
+    required bool isDark,
+    required VoidCallback onTap,
   }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 64,
-          height: 64,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           decoration: BoxDecoration(
-            color: primary.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: primary.withValues(alpha: 0.2),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : primary.withValues(alpha: 0.16),
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: primary.withValues(alpha: 0.18),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: primary, size: 28),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.4,
+                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                ),
               ),
             ],
           ),
-          child: Icon(icon, color: primary, size: 28),
         ),
-        const SizedBox(height: 10),
-        Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.1,
-            color: Color(0xFF94A3B8),
+      ),
+    );
+  }
+
+  Widget _buildImageSwapAction({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Material(
+          color: Colors.black.withValues(alpha: 0.32),
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 16, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -590,9 +547,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       shadowColor: primary.withValues(alpha: 0.35),
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
-        onTap: hasImage && !_isProcessing
-            ? _processImage
-            : (!hasImage ? _showSourceSheet : null),
+        onTap: hasImage && !_isProcessing ? _processImage : null,
         child: Container(
           width: double.infinity,
           height: 64,
@@ -610,7 +565,9 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      hasImage ? 'Process Image' : 'Choose Image',
+                      hasImage
+                          ? 'Process Image'
+                          : 'Choose Camera or Gallery above',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
