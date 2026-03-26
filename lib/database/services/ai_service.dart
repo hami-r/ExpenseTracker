@@ -479,4 +479,65 @@ Guidelines:
       throw Exception('Chat failed: $e');
     }
   }
+
+  Future<String> chatWithScopedContext({
+    required String scopedContext,
+    required String userMessage,
+    required int userId,
+    required int profileId,
+  }) async {
+    final apiKey = await _getActiveApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('API Key not configured. Please set it in AI Settings.');
+    }
+
+    final systemInstruction = Content.system('''
+You are a warm, empathetic, and insightful Financial Therapist AI built into a personal finance app.
+Analyze only the scoped dataset below. Do not assume or reference unrelated financial data unless it is explicitly included here.
+
+Scoped dataset:
+$scopedContext
+
+Guidelines:
+- Stay tightly focused on the provided data slice.
+- Reference specific numbers from the dataset when relevant.
+- Be practical, concise, and supportive.
+- Keep responses concise (2-4 sentences for simple questions).
+- Format amounts naturally (e.g. ₹5,000 not 5000.0).
+- Today's date: ${DateTime.now().toString().split(' ')[0]}.
+''');
+
+    final model = GenerativeModel(
+      model: 'gemini-3-flash-preview',
+      apiKey: apiKey,
+      systemInstruction: systemInstruction,
+    );
+
+    try {
+      final response = await model.generateContent([Content.text(userMessage)]);
+      final reply =
+          response.text ?? 'I could not generate a response. Please try again.';
+
+      await _historyService.saveEntry(
+        AIHistory(
+          userId: userId,
+          profileId: profileId,
+          feature: 'chat',
+          title: userMessage.length > 40
+              ? '${userMessage.substring(0, 37)}...'
+              : userMessage,
+          payload: jsonEncode({
+            'question': userMessage,
+            'scoped_context': scopedContext,
+            'answer': reply,
+          }),
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      return reply;
+    } catch (e) {
+      throw Exception('Scoped chat failed: $e');
+    }
+  }
 }

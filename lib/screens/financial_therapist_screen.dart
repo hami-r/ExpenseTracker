@@ -4,16 +4,28 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../database/services/ai_service.dart';
 import '../database/services/analytics_service.dart';
+import '../database/services/iou_service.dart';
+import '../database/services/loan_service.dart';
+import '../database/services/receivable_service.dart';
+import '../database/services/reimbursement_service.dart';
 import '../database/services/transaction_service.dart';
 import '../database/services/category_service.dart';
 import '../database/services/payment_method_service.dart';
 import '../database/services/user_service.dart';
 import '../database/database_helper.dart';
+import '../models/therapist_scoped_preview.dart';
+import '../models/iou.dart';
+import '../models/loan.dart';
+import '../models/receivable.dart';
+import '../models/reimbursement.dart';
 import '../providers/profile_provider.dart';
 import '../providers/chat_provider.dart';
 import '../models/chat_message.dart';
+import '../services/financial_therapist_scope_service.dart';
+import '../widgets/custom_date_picker.dart';
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class FinancialTherapistScreen extends StatefulWidget {
@@ -33,22 +45,60 @@ class _FinancialTherapistScreenState extends State<FinancialTherapistScreen>
   final _analyticsService = AnalyticsService();
   final _transactionService = TransactionService();
   final _categoryService = CategoryService();
+  final _loanService = LoanService();
+  final _iouService = IOUService();
+  final _receivableService = ReceivableService();
+  final _reimbursementService = ReimbursementService();
+  final _scopeService = FinancialTherapistScopeService();
   late final AIService _aiService;
 
   bool _isLoading = true;
   bool _isTyping = false;
+  late DateTime _quickActionFromDate;
+  late DateTime _quickActionToDate;
 
   // Quick reply suggestions
-  final List<String> _suggestions = [
-    'Analyze my week',
-    'Where am I overspending?',
-    'What can I save?',
-    'My subscription expenses',
+  final List<String> _suggestions = [];
+
+  late final List<_TherapistQuickAction> _quickActions = [
+    _TherapistQuickAction(
+      label: 'Expenses',
+      subtitle: 'Preview a date range, then share or ask AI',
+      kind: TherapistScopedDataKind.expenses,
+    ),
+    _TherapistQuickAction(
+      label: 'Budget',
+      subtitle: 'Review a month budget, then share or ask AI',
+      kind: TherapistScopedDataKind.budget,
+    ),
+    _TherapistQuickAction(
+      label: 'Loan',
+      subtitle: 'Open a loan preview for sharing or analysis',
+      kind: TherapistScopedDataKind.loan,
+    ),
+    _TherapistQuickAction(
+      label: 'IOU',
+      subtitle: 'Open an IOU preview for sharing or analysis',
+      kind: TherapistScopedDataKind.iou,
+    ),
+    _TherapistQuickAction(
+      label: 'Lent',
+      subtitle: 'Open a lent-money preview for sharing or analysis',
+      kind: TherapistScopedDataKind.receivable,
+    ),
+    _TherapistQuickAction(
+      label: 'Reimbursement',
+      subtitle: 'Open a reimbursement preview for sharing or analysis',
+      kind: TherapistScopedDataKind.reimbursement,
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _quickActionFromDate = DateTime(now.year, now.month, 1);
+    _quickActionToDate = DateTime(now.year, now.month, now.day);
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -128,6 +178,18 @@ class _FinancialTherapistScreenState extends State<FinancialTherapistScreen>
       final topCategories = results[2] as List<CategorySpending>;
       final recentTx = results[3];
       final balance = results[4] as double;
+      final expenseShareSuggestion = _buildExpenseShareSuggestion(
+        recentTx as List<dynamic>,
+        now,
+      );
+
+      final dynamicSuggestions = <String>[
+        if (topCategories.isNotEmpty)
+          'What do you think of my ${topCategories.first.category.name.toLowerCase()} spending this month?',
+        expenseShareSuggestion,
+        'Where am I overspending this month?',
+        'Share my ${DateFormat('MMMM').format(now)} budget',
+      ];
 
       // Build the financial context string for Gemini
       final categoryLines = topCategories
@@ -196,7 +258,12 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
         profileId: profileId,
       );
 
-      setState(() => _isLoading = false);
+      setState(() {
+        _suggestions
+          ..clear()
+          ..addAll(dynamicSuggestions);
+        _isLoading = false;
+      });
 
       // Proactive greeting — send an initial message from the AI
       await _sendInitialGreeting();
@@ -251,6 +318,39 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
     _scrollToBottom();
   }
 
+  String _buildExpenseShareSuggestion(List<dynamic> recentTx, DateTime now) {
+    if (recentTx.isEmpty) {
+      return 'Share my ${DateFormat('MMMM').format(now)} expenses';
+    }
+
+    final latestDate = recentTx
+        .map((tx) => tx.transactionDate as DateTime)
+        .reduce(
+          (latest, current) => current.isAfter(latest) ? current : latest,
+        );
+
+    final monthLabel = latestDate.year == now.year
+        ? DateFormat('MMMM').format(latestDate)
+        : DateFormat('MMMM yyyy').format(latestDate);
+
+    return 'Share my $monthLabel expenses';
+  }
+
+  void _addScopedMessage({
+    required String text,
+    TherapistScopedPreview? preview,
+    List<TherapistScopedOption> options = const [],
+  }) {
+    _addMessage(
+      ChatMessage(
+        role: MessageRole.model,
+        text: text,
+        scopedPreview: preview,
+        scopedOptions: options,
+      ),
+    );
+  }
+
   Future<void> _sendMessage(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || _isTyping) return;
@@ -262,6 +362,9 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
     setState(() => _isTyping = true);
 
     try {
+      final handled = await _handleScopedRequest(trimmed);
+      if (handled) return;
+
       final reply = await _aiService.chatWithContext(
         history: chatProvider.geminiHistory,
         userMessage: trimmed,
@@ -280,6 +383,539 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
     } finally {
       if (mounted) setState(() => _isTyping = false);
     }
+  }
+
+  Future<bool> _handleScopedRequest(String text) async {
+    final chatProvider = context.read<ChatProvider>();
+    final resolution = await _scopeService.resolveTextRequest(
+      text: text,
+      userId: chatProvider.userId!,
+      profileId: chatProvider.profileId!,
+      currencySymbol: context.read<ProfileProvider>().currencySymbol,
+    );
+
+    if (resolution == null) return false;
+
+    if (resolution.isAmbiguous) {
+      _addScopedMessage(
+        text: resolution.ambiguityMessage!,
+        options: resolution.options,
+      );
+      return true;
+    }
+
+    final preview = resolution.preview;
+    if (preview == null) return false;
+
+    _addScopedMessage(
+      text: preview.intent == TherapistScopedIntent.share
+          ? 'I pulled the exact data below. You can share it or ask me to analyze it.'
+          : 'I pulled the exact data below. I’ll analyze this specific slice for you.',
+      preview: preview,
+    );
+
+    if (resolution.shouldAutoAnalyze) {
+      await _askAiAboutPreview(
+        preview,
+        userQuestion: resolution.analysisPrompt ?? text,
+      );
+    }
+
+    return true;
+  }
+
+  Future<void> _handleQuickAction(_TherapistQuickAction action) async {
+    final selectedFrom = DateTime(
+      _quickActionFromDate.year,
+      _quickActionFromDate.month,
+      _quickActionFromDate.day,
+    );
+    final selectedTo = DateTime(
+      _quickActionToDate.year,
+      _quickActionToDate.month,
+      _quickActionToDate.day,
+    );
+
+    switch (action.kind) {
+      case TherapistScopedDataKind.expenses:
+        await _buildQuickActionExpensePreview(selectedFrom, selectedTo);
+        break;
+      case TherapistScopedDataKind.budget:
+        await _buildQuickActionBudgetPreview(selectedFrom);
+        break;
+      case TherapistScopedDataKind.loan:
+        await _showRecordQuickActionSheet<Loan>(
+          kind: TherapistScopedDataKind.loan,
+          title: 'Choose Loan',
+          subtitle:
+              'Loan details with payment activity from ${_formatQuickActionDate(selectedFrom)} to ${_formatQuickActionDate(selectedTo)}.',
+          emptyTitle: 'No loans found',
+          emptySubtitle:
+              'Create a loan first, then you can share or analyze it.',
+          rangeStart: selectedFrom,
+          rangeEnd: selectedTo,
+          loadRecords: (userId, profileId) async {
+            final active = await _loanService.getActiveLoans(
+              userId,
+              profileId: profileId,
+            );
+            final completed = await _loanService.getCompletedLoans(
+              userId,
+              profileId: profileId,
+            );
+            return [...active, ...completed];
+          },
+          toOption: (loan) => TherapistScopedOption(
+            kind: TherapistScopedDataKind.loan,
+            intent: TherapistScopedIntent.share,
+            id: loan.loanId!,
+            label: loan.lenderName,
+            subtitle:
+                '${_formatMoney(loan.principalAmount)} • ${_capitalizeStatus(loan.status)}',
+          ),
+        );
+        break;
+      case TherapistScopedDataKind.iou:
+        await _showRecordQuickActionSheet<IOU>(
+          kind: TherapistScopedDataKind.iou,
+          title: 'Choose IOU',
+          subtitle:
+              'IOU details with payment activity from ${_formatQuickActionDate(selectedFrom)} to ${_formatQuickActionDate(selectedTo)}.',
+          emptyTitle: 'No IOUs found',
+          emptySubtitle:
+              'Create an IOU first, then you can share or analyze it.',
+          rangeStart: selectedFrom,
+          rangeEnd: selectedTo,
+          loadRecords: (userId, profileId) async {
+            final active = await _iouService.getActiveIOUs(
+              userId,
+              profileId: profileId,
+            );
+            final completed = await _iouService.getCompletedIOUs(
+              userId,
+              profileId: profileId,
+            );
+            return [...active, ...completed];
+          },
+          toOption: (iou) => TherapistScopedOption(
+            kind: TherapistScopedDataKind.iou,
+            intent: TherapistScopedIntent.share,
+            id: iou.iouId!,
+            label: iou.creditorName,
+            subtitle:
+                '${_formatMoney(iou.amount)} • ${_capitalizeStatus(iou.status)}',
+          ),
+        );
+        break;
+      case TherapistScopedDataKind.receivable:
+        await _showRecordQuickActionSheet<Receivable>(
+          kind: TherapistScopedDataKind.receivable,
+          title: 'Choose Lent Record',
+          subtitle:
+              'Lent details with receipts from ${_formatQuickActionDate(selectedFrom)} to ${_formatQuickActionDate(selectedTo)}.',
+          emptyTitle: 'No lent records found',
+          emptySubtitle:
+              'Create a lent record first, then you can share or analyze it.',
+          rangeStart: selectedFrom,
+          rangeEnd: selectedTo,
+          loadRecords: (userId, profileId) async {
+            final active = await _receivableService.getActiveReceivables(
+              userId,
+              profileId: profileId,
+            );
+            final completed = await _receivableService.getCompletedReceivables(
+              userId,
+              profileId: profileId,
+            );
+            return [...active, ...completed];
+          },
+          toOption: (receivable) => TherapistScopedOption(
+            kind: TherapistScopedDataKind.receivable,
+            intent: TherapistScopedIntent.share,
+            id: receivable.receivableId!,
+            label: receivable.recipientName,
+            subtitle:
+                '${_formatMoney(receivable.principalAmount)} • ${_capitalizeStatus(receivable.status)}',
+          ),
+        );
+        break;
+      case TherapistScopedDataKind.reimbursement:
+        await _showRecordQuickActionSheet<Reimbursement>(
+          kind: TherapistScopedDataKind.reimbursement,
+          title: 'Choose Reimbursement',
+          subtitle:
+              'Reimbursements from ${_formatQuickActionDate(selectedFrom)} to ${_formatQuickActionDate(selectedTo)}.',
+          emptyTitle: 'No reimbursements found',
+          emptySubtitle:
+              'Create a reimbursement first, then you can share or analyze it.',
+          rangeStart: selectedFrom,
+          rangeEnd: selectedTo,
+          loadRecords: (userId, profileId) async {
+            final active = await _reimbursementService.getActiveReimbursements(
+              userId,
+              profileId: profileId,
+            );
+            final completed = await _reimbursementService
+                .getCompletedReimbursements(userId, profileId: profileId);
+            return [...active, ...completed];
+          },
+          toOption: (reimbursement) => TherapistScopedOption(
+            kind: TherapistScopedDataKind.reimbursement,
+            intent: TherapistScopedIntent.share,
+            id: reimbursement.reimbursementId!,
+            label: reimbursement.sourceName,
+            subtitle:
+                '${_formatMoney(reimbursement.amount)} • ${_capitalizeStatus(reimbursement.status)}',
+          ),
+        );
+        break;
+    }
+  }
+
+  Future<void> _showRecordQuickActionSheet<T>({
+    required TherapistScopedDataKind kind,
+    required String title,
+    required String subtitle,
+    required String emptyTitle,
+    required String emptySubtitle,
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
+    required Future<List<T>> Function(int userId, int profileId) loadRecords,
+    required TherapistScopedOption Function(T record) toOption,
+  }) async {
+    final chatProvider = context.read<ChatProvider>();
+    final records = await loadRecords(
+      chatProvider.userId!,
+      chatProvider.profileId!,
+    );
+
+    if (!mounted) return;
+
+    if (records.isEmpty) {
+      _addScopedMessage(
+        text: emptySubtitle,
+        preview: TherapistScopedPreview(
+          kind: kind,
+          intent: TherapistScopedIntent.share,
+          title: emptyTitle,
+          subtitle: emptySubtitle,
+          body: emptySubtitle,
+          shareText: emptySubtitle,
+          aiContext: emptySubtitle,
+          defaultQuestion: 'What should I do next?',
+          actionsEnabled: false,
+        ),
+      );
+      return;
+    }
+
+    await _showQuickActionOptionsSheet(
+      title: title,
+      subtitle: subtitle,
+      options: records.map((record) {
+        final option = toOption(record);
+        return _QuickActionChoice(
+          label: option.label,
+          subtitle: option.subtitle ?? '',
+          onTap: () => _handleScopedOptionTap(
+            option,
+            rangeStart: rangeStart,
+            rangeEnd: rangeEnd,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _showQuickActionOptionsSheet({
+    required String title,
+    required String subtitle,
+    required List<_QuickActionChoice> options,
+  }) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final maxSheetHeight = MediaQuery.of(context).size.height * 0.68;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: SizedBox(
+              height: maxSheetHeight,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1c3326) : Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.05),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      title,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? Colors.white60
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: EdgeInsets.zero,
+                        itemCount: options.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final option = options[index];
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await option.onTap();
+                              },
+                              borderRadius: BorderRadius.circular(18),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : primary.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : primary.withValues(alpha: 0.18),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            option.label,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          if (option.subtitle.isNotEmpty) ...[
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              option.subtitle,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: isDark
+                                                    ? Colors.white60
+                                                    : const Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: isDark
+                                          ? Colors.white38
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _buildQuickActionExpensePreview(
+    DateTime fromDate,
+    DateTime toDate,
+  ) async {
+    final chatProvider = context.read<ChatProvider>();
+    setState(() => _isTyping = true);
+    try {
+      final resolution = await _scopeService.buildExpensePreviewForRange(
+        intent: TherapistScopedIntent.share,
+        userId: chatProvider.userId!,
+        profileId: chatProvider.profileId!,
+        currencySymbol: context.read<ProfileProvider>().currencySymbol,
+        start: fromDate,
+        end: toDate,
+      );
+
+      if (resolution.isAmbiguous) {
+        _addScopedMessage(
+          text: resolution.ambiguityMessage!,
+          options: resolution.options,
+        );
+        return;
+      }
+
+      final preview = resolution.preview;
+      if (preview == null) return;
+
+      _addScopedMessage(
+        text:
+            'Here’s the prepared dataset. You can share it or ask me about it.',
+        preview: preview,
+      );
+    } finally {
+      if (mounted) setState(() => _isTyping = false);
+    }
+  }
+
+  Future<void> _buildQuickActionBudgetPreview(DateTime fromDate) async {
+    final chatProvider = context.read<ChatProvider>();
+    setState(() => _isTyping = true);
+    try {
+      final resolution = await _scopeService.buildBudgetPreviewForMonth(
+        intent: TherapistScopedIntent.share,
+        userId: chatProvider.userId!,
+        profileId: chatProvider.profileId!,
+        currencySymbol: context.read<ProfileProvider>().currencySymbol,
+        monthDate: fromDate,
+      );
+
+      final preview = resolution.preview;
+      if (preview == null) return;
+
+      _addScopedMessage(
+        text:
+            'Here’s the prepared dataset. You can share it or ask me about it.',
+        preview: preview,
+      );
+    } finally {
+      if (mounted) setState(() => _isTyping = false);
+    }
+  }
+
+  String _formatMoney(double amount) {
+    return '${context.read<ProfileProvider>().currencySymbol}${amount.toStringAsFixed(0)}';
+  }
+
+  String _capitalizeStatus(String status) {
+    if (status.isEmpty) return status;
+    return '${status[0].toUpperCase()}${status.substring(1)}';
+  }
+
+  Future<void> _handleScopedOptionTap(
+    TherapistScopedOption option, {
+    DateTime? rangeStart,
+    DateTime? rangeEnd,
+  }) async {
+    final chatProvider = context.read<ChatProvider>();
+    setState(() => _isTyping = true);
+    try {
+      final resolution = await _scopeService.resolveOption(
+        option: option,
+        intent: option.intent,
+        userId: chatProvider.userId!,
+        profileId: chatProvider.profileId!,
+        currencySymbol: context.read<ProfileProvider>().currencySymbol,
+        rangeStart: rangeStart,
+        rangeEnd: rangeEnd,
+      );
+      final preview = resolution.preview;
+      if (preview == null) return;
+
+      _addScopedMessage(
+        text: option.intent == TherapistScopedIntent.share
+            ? 'I resolved your selection below. You can share it or ask me about it.'
+            : 'I resolved your selection below. I’ll analyze this exact data next.',
+        preview: preview,
+      );
+
+      if (resolution.shouldAutoAnalyze) {
+        await _askAiAboutPreview(preview);
+      }
+    } finally {
+      if (mounted) setState(() => _isTyping = false);
+    }
+  }
+
+  Future<void> _sharePreview(TherapistScopedPreview preview) async {
+    await SharePlus.instance.share(ShareParams(text: preview.shareText));
+  }
+
+  Future<void> _askAiAboutPreview(
+    TherapistScopedPreview preview, {
+    String? userQuestion,
+  }) async {
+    final chatProvider = context.read<ChatProvider>();
+    final prompt = _normalizeScopedQuestion(
+      userQuestion?.trim(),
+      preview.defaultQuestion,
+    );
+    final reply = await _aiService.chatWithScopedContext(
+      scopedContext: preview.aiContext,
+      userMessage: prompt,
+      userId: chatProvider.userId!,
+      profileId: chatProvider.profileId!,
+    );
+    if (mounted) {
+      _addAIMessage(reply);
+    }
+  }
+
+  String _normalizeScopedQuestion(String? value, String fallback) {
+    if (value == null || value.isEmpty) return fallback;
+    final lower = value.toLowerCase();
+    if (lower.contains('share')) {
+      return fallback;
+    }
+    return value;
   }
 
   void _resetChat() {
@@ -629,115 +1265,24 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // AI avatar dot
-          Container(
-            width: 32,
-            height: 32,
-            margin: const EdgeInsets.only(right: 8, bottom: 2),
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                colors: [primary, primary.withValues(alpha: 0.4)],
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              size: 15,
-              color: Color(0xFF102217),
+          Text(
+            DateFormat('h:mm a').format(msg.timestamp),
+            style: TextStyle(
+              fontSize: 10,
+              color: isDark ? Colors.white24 : Colors.black26,
             ),
           ),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  DateFormat('h:mm a').format(msg.timestamp),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isDark ? Colors.white24 : Colors.black26,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(6),
-                    topRight: Radius.circular(20),
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: (isDark ? const Color(0xFF1c3326) : Colors.white)
-                            .withValues(alpha: 0.75),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(6),
-                          topRight: Radius.circular(20),
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
-                        ),
-                        border: Border.all(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.06)
-                              : Colors.black.withValues(alpha: 0.05),
-                        ),
-                      ),
-                      child: Text(
-                        msg.text,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF0F172A),
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Show suggestions after last AI message
-                if (index == context.read<ChatProvider>().messages.length - 1 &&
-                    !_isTyping)
-                  _buildSuggestions(primary, isDark),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypingIndicator(bool isDark, Color primary) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                colors: [primary, primary.withValues(alpha: 0.4)],
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              size: 15,
-              color: Color(0xFF102217),
-            ),
-          ),
+          const SizedBox(height: 4),
           ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(6),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
@@ -748,27 +1293,72 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
                 decoration: BoxDecoration(
                   color: (isDark ? const Color(0xFF1c3326) : Colors.white)
                       .withValues(alpha: 0.75),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(6),
+                    topRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
                   border: Border.all(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.06)
                         : Colors.black.withValues(alpha: 0.05),
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildDot(primary, 0),
-                    const SizedBox(width: 4),
-                    _buildDot(primary, 150),
-                    const SizedBox(width: 4),
-                    _buildDot(primary, 300),
-                  ],
+                child: Text(
+                  msg.text,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    height: 1.5,
+                  ),
                 ),
               ),
             ),
           ),
+          if (msg.scopedPreview != null)
+            _buildScopedPreviewCard(msg.scopedPreview!, isDark, primary),
+          if (msg.scopedOptions.isNotEmpty)
+            _buildScopedOptions(msg.scopedOptions, isDark, primary),
+          if (index == context.read<ChatProvider>().messages.length - 1 &&
+              !_isTyping)
+            _buildSuggestions(primary, isDark),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTypingIndicator(bool isDark, Color primary) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: (isDark ? const Color(0xFF1c3326) : Colors.white)
+                  .withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.black.withValues(alpha: 0.05),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDot(primary, 0),
+                const SizedBox(width: 4),
+                _buildDot(primary, 150),
+                const SizedBox(width: 4),
+                _buildDot(primary, 300),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -836,6 +1426,119 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
     );
   }
 
+  Widget _buildScopedPreviewCard(
+    TherapistScopedPreview preview,
+    bool isDark,
+    Color primary,
+  ) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: (isDark ? const Color(0xFF13271d) : Colors.white).withValues(
+          alpha: 0.9,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.07)
+              : primary.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            preview.title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            preview.subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? Colors.white60 : const Color(0xFF475569),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            preview.body,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.5,
+              color: isDark ? Colors.white70 : const Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: preview.actionsEnabled
+                      ? () => _sharePreview(preview)
+                      : null,
+                  icon: const Icon(Icons.share_rounded, size: 16),
+                  label: const Text('Share'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: preview.actionsEnabled
+                      ? () => _askAiAboutPreview(preview)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                    foregroundColor: const Color(0xFF102217),
+                  ),
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                  label: const Text('Ask AI'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScopedOptions(
+    List<TherapistScopedOption> options,
+    bool isDark,
+    Color primary,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: options.map((option) {
+          return ActionChip(
+            onPressed: () => _handleScopedOptionTap(option),
+            backgroundColor: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : primary.withValues(alpha: 0.08),
+            side: BorderSide(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : primary.withValues(alpha: 0.18),
+            ),
+            label: Text(
+              option.subtitle == null
+                  ? option.label
+                  : '${option.label} • ${option.subtitle}',
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildInputBar(bool isDark, Color primary) {
     return ClipRect(
       child: BackdropFilter(
@@ -861,9 +1564,35 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
           ),
           child: Row(
             children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _showQuickActionsSheet,
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.06),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.add_chart_rounded,
+                      color: isDark ? Colors.white70 : const Color(0xFF334155),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.06)
@@ -890,15 +1619,7 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
                         fontSize: 15,
                       ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          Icons.mic_rounded,
-                          color: isDark ? Colors.white38 : Colors.black38,
-                          size: 22,
-                        ),
-                        onPressed: () {},
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                     onSubmitted: _sendMessage,
                   ),
@@ -923,9 +1644,9 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
                     ],
                   ),
                   child: const Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Color(0xFF102217),
-                    size: 22,
+                    Icons.send_rounded,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
               ),
@@ -935,4 +1656,375 @@ ${(recentTx as dynamic).map((t) => '  - ${t.note ?? 'Expense'}: $currencySymbol$
       ),
     );
   }
+
+  void _showQuickActionsSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final maxSheetHeight = MediaQuery.of(context).size.height * 0.72;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SizedBox(
+                  height: maxSheetHeight,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1c3326) : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : Colors.black.withValues(alpha: 0.05),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 36,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Quick Actions',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Choose a date range first, then pick what you want to review.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? Colors.white60
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildQuickActionDateField(
+                                label: 'From',
+                                value: _quickActionFromDate,
+                                isDark: isDark,
+                                primary: primary,
+                                onTap: () => _pickQuickActionDate(
+                                  initialDate: _quickActionFromDate,
+                                  onSelected: (picked) {
+                                    setModalState(() {
+                                      _quickActionFromDate = DateTime(
+                                        picked.year,
+                                        picked.month,
+                                        picked.day,
+                                      );
+                                      if (_quickActionFromDate.isAfter(
+                                        _quickActionToDate,
+                                      )) {
+                                        _quickActionToDate =
+                                            _quickActionFromDate;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildQuickActionDateField(
+                                label: 'To',
+                                value: _quickActionToDate,
+                                isDark: isDark,
+                                primary: primary,
+                                onTap: () => _pickQuickActionDate(
+                                  initialDate: _quickActionToDate,
+                                  onSelected: (picked) {
+                                    setModalState(() {
+                                      _quickActionToDate = DateTime(
+                                        picked.year,
+                                        picked.month,
+                                        picked.day,
+                                      );
+                                      if (_quickActionToDate.isBefore(
+                                        _quickActionFromDate,
+                                      )) {
+                                        _quickActionFromDate =
+                                            _quickActionToDate;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.04)
+                                : primary.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            '${_formatQuickActionDate(_quickActionFromDate)} to ${_formatQuickActionDate(_quickActionToDate)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF334155),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Expanded(
+                          child: ListView.separated(
+                            padding: EdgeInsets.zero,
+                            itemCount: _quickActions.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final action = _quickActions[index];
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    _handleQuickAction(action);
+                                  },
+                                  borderRadius: BorderRadius.circular(18),
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.05)
+                                          : primary.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.white.withValues(
+                                                alpha: 0.08,
+                                              )
+                                            : primary.withValues(alpha: 0.18),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 36,
+                                          height: 36,
+                                          decoration: BoxDecoration(
+                                            color: primary.withValues(
+                                              alpha: 0.12,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            _iconForQuickAction(action.kind),
+                                            color: primary,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                action.label,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: isDark
+                                                      ? Colors.white
+                                                      : const Color(0xFF0F172A),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                action.subtitle,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: isDark
+                                                      ? Colors.white60
+                                                      : const Color(0xFF64748B),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.chevron_right_rounded,
+                                          color: isDark
+                                              ? Colors.white38
+                                              : const Color(0xFF94A3B8),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickActionDateField({
+    required String label,
+    required DateTime value,
+    required bool isDark,
+    required Color primary,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : primary.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.calendar_month_rounded, size: 16, color: primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _formatQuickActionDate(value),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickQuickActionDate({
+    required DateTime initialDate,
+    required ValueChanged<DateTime> onSelected,
+  }) async {
+    CustomDatePicker.show(
+      context,
+      initialDate: initialDate,
+      onDateSelected: onSelected,
+    );
+  }
+
+  String _formatQuickActionDate(DateTime date) {
+    return DateFormat('dd MMM yyyy').format(date);
+  }
+
+  IconData _iconForQuickAction(TherapistScopedDataKind kind) {
+    switch (kind) {
+      case TherapistScopedDataKind.expenses:
+        return Icons.receipt_long_rounded;
+      case TherapistScopedDataKind.budget:
+        return Icons.account_balance_wallet_rounded;
+      case TherapistScopedDataKind.loan:
+        return Icons.account_balance_rounded;
+      case TherapistScopedDataKind.iou:
+        return Icons.handshake_rounded;
+      case TherapistScopedDataKind.receivable:
+        return Icons.call_received_rounded;
+      case TherapistScopedDataKind.reimbursement:
+        return Icons.payments_rounded;
+    }
+  }
+}
+
+class _TherapistQuickAction {
+  final String label;
+  final String subtitle;
+  final TherapistScopedDataKind kind;
+
+  const _TherapistQuickAction({
+    required this.label,
+    required this.subtitle,
+    required this.kind,
+  });
+}
+
+class _QuickActionChoice {
+  final String label;
+  final String subtitle;
+  final Future<void> Function() onTap;
+
+  const _QuickActionChoice({
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
 }
