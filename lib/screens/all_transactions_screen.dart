@@ -322,6 +322,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         : (isDark
               ? Colors.white
               : const Color(0xFF111827)); // Normal for money out
+    final subtitle = _displaySubtitle(item);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -352,19 +353,26 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           ),
           child: Icon(_getIcon(item), color: _getIconColor(item), size: 24),
         ),
-        title: Text(
-          item.title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : const Color(0xFF30353E),
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                item.title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF30353E),
+                ),
+              ),
+            ),
+            if (item.isSplit) _buildSplitBadge(item, isDark),
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (item.subtitle != null && item.subtitle!.isNotEmpty)
+            if (subtitle != null)
               Text(
-                item.subtitle!,
+                subtitle,
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.grey[400] : const Color(0xFF717782),
@@ -420,7 +428,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
               'category': item.categoryName ?? 'Uncategorized',
               'icon': _getIcon(item),
               'color': _getIconColor(item),
-              'note': item.subtitle ?? '',
+              'note': item.note ?? '',
               'paymentMethod': item.paymentMethodName ?? 'Unknown',
             };
 
@@ -486,6 +494,45 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         item.type == TransactionType.loan || // Getting a loan is money IN
         item.type == TransactionType.receivablePayment ||
         item.type == TransactionType.reimbursementPayment;
+  }
+
+  String? _displaySubtitle(TransactionItem item) {
+    final rawSubtitle = item.subtitle?.trim();
+    if (rawSubtitle == null || rawSubtitle.isEmpty) {
+      return null;
+    }
+
+    final normalizedTitle = item.title.trim().toLowerCase();
+    if (rawSubtitle.toLowerCase() == normalizedTitle) {
+      return null;
+    }
+
+    return rawSubtitle;
+  }
+
+  Widget _buildSplitBadge(TransactionItem item, bool isDark) {
+    final label = item.splitItemCount > 0
+        ? 'Split ${item.splitItemCount}'
+        : 'Split';
+
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
   }
 
   IconData _getIcon(TransactionItem item) {

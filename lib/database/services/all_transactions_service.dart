@@ -50,15 +50,33 @@ class AllTransactionsService {
 
     final transactionsQuery =
         '''
-      SELECT 
+      SELECT
         t.transaction_id as id,
         t.user_id as user_id,
         'expense' as type,
         t.amount as amount,
         t.transaction_date as date,
-        COALESCE(NULLIF(TRIM(t.note), ''), c.name, 'Expense') as title,
-        t.note as subtitle,
+        CASE
+          WHEN t.is_split = 1 THEN COALESCE(NULLIF(TRIM(t.note), ''), 'Split Expense')
+          ELSE COALESCE(NULLIF(TRIM(t.note), ''), c.name, 'Expense')
+        END as title,
+        CASE
+          WHEN t.is_split = 1 THEN
+            CASE
+              WHEN COALESCE(sm.split_item_count, 0) > 0
+                THEN 'Split into ' || sm.split_item_count || ' item' ||
+                  CASE WHEN sm.split_item_count = 1 THEN '' ELSE 's' END
+              ELSE 'Split Expense'
+            END
+          WHEN NULLIF(TRIM(t.note), '') IS NOT NULL
+            AND c.name IS NOT NULL
+            AND LOWER(TRIM(t.note)) != LOWER(TRIM(c.name))
+            THEN c.name
+          ELSE NULL
+        END as subtitle,
+        t.note as note,
         t.is_split as is_split,
+        COALESCE(sm.split_item_count, 0) as split_item_count,
         t.category_id as category_id,
         c.name as category_name,
         t.payment_method_id as payment_method_id,
@@ -68,6 +86,13 @@ class AllTransactionsService {
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.category_id
       LEFT JOIN payment_methods pm ON t.payment_method_id = pm.payment_method_id
+      LEFT JOIN (
+        SELECT
+          transaction_id,
+          COUNT(*) as split_item_count
+        FROM split_items
+        GROUP BY transaction_id
+      ) sm ON sm.transaction_id = t.transaction_id
       WHERE t.parent_transaction_id IS NULL$transactionsProfileClause
     ''';
 
@@ -81,7 +106,9 @@ class AllTransactionsService {
         start_date as date,
         lender_name as title,
         'Loan Taken' as subtitle,
+        NULL as note,
         0 as is_split,
+        0 as split_item_count,
         NULL as category_id,
         NULL as category_name,
         NULL as payment_method_id,
@@ -102,7 +129,9 @@ class AllTransactionsService {
         lp.payment_date as date,
         l.lender_name as title,
         'Loan Repayment' as subtitle,
+        NULL as note,
         0 as is_split,
+        0 as split_item_count,
         NULL as category_id,
         NULL as category_name,
         NULL as payment_method_id,
@@ -124,7 +153,9 @@ class AllTransactionsService {
         COALESCE(created_at, date('now')) as date,
         creditor_name as title,
         'IOU Added' as subtitle,
+        NULL as note,
         0 as is_split,
+        0 as split_item_count,
         NULL as category_id,
         NULL as category_name,
         NULL as payment_method_id,
@@ -145,7 +176,9 @@ class AllTransactionsService {
         ip.payment_date as date,
         i.creditor_name as title,
         'IOU Payment' as subtitle,
+        NULL as note,
         0 as is_split,
+        0 as split_item_count,
         NULL as category_id,
         NULL as category_name,
         NULL as payment_method_id,
@@ -167,7 +200,9 @@ class AllTransactionsService {
         COALESCE(created_at, date('now')) as date,
         recipient_name as title,
         'Money Lent' as subtitle,
+        NULL as note,
         0 as is_split,
+        0 as split_item_count,
         NULL as category_id,
         NULL as category_name,
         NULL as payment_method_id,
@@ -188,7 +223,9 @@ class AllTransactionsService {
         rp.payment_date as date,
         r.recipient_name as title,
         'Received Payment' as subtitle,
+        NULL as note,
         0 as is_split,
+        0 as split_item_count,
         NULL as category_id,
         NULL as category_name,
         NULL as payment_method_id,
@@ -210,7 +247,9 @@ class AllTransactionsService {
         COALESCE(created_at, date('now')) as date,
         source_name as title,
         'Reimbursement Expected' as subtitle,
+        NULL as note,
         0 as is_split,
+        0 as split_item_count,
         NULL as category_id,
         NULL as category_name,
         NULL as payment_method_id,
@@ -231,7 +270,9 @@ class AllTransactionsService {
         rp.payment_date as date,
         r.source_name as title,
         'Reimbursement Received' as subtitle,
+        NULL as note,
         0 as is_split,
+        0 as split_item_count,
         NULL as category_id,
         NULL as category_name,
         NULL as payment_method_id,
@@ -280,9 +321,11 @@ class AllTransactionsService {
           date: DateTime.parse(row['date'] as String),
           title: row['title'] as String? ?? 'Unknown',
           subtitle: row['subtitle'] as String?,
+          note: row['note'] as String?,
           type: _parseTransactionType(row['type'] as String),
           status: row['status'] as String?,
           isSplit: (row['is_split'] as int) == 1,
+          splitItemCount: _asInt(row['split_item_count']) ?? 0,
           categoryId: _asInt(row['category_id']),
           paymentMethodId: _asInt(row['payment_method_id']),
           paymentMethodName: row['payment_method_name'] as String?,

@@ -18,9 +18,11 @@ class TransactionItem {
   final DateTime date;
   final String title;
   final String? subtitle;
+  final String? note;
   final TransactionType type;
   final String? status; // 'active', 'paid', 'pending', etc.
   final bool isSplit;
+  final int splitItemCount;
   final int? categoryId;
   final int? paymentMethodId;
   final String? paymentMethodName;
@@ -34,9 +36,11 @@ class TransactionItem {
     required this.date,
     required this.title,
     this.subtitle,
+    this.note,
     required this.type,
     this.status,
     this.isSplit = false,
+    this.splitItemCount = 0,
     this.categoryId,
     this.paymentMethodId,
     this.paymentMethodName,
