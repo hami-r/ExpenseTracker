@@ -3,7 +3,10 @@ package com.example.expense_tracker_ai
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -15,6 +18,13 @@ import io.flutter.plugin.common.MethodChannel
 import java.util.Locale
 
 class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
+    companion object {
+        private const val ERROR_TOO_MANY_REQUESTS = 10
+        private const val ERROR_SERVER_DISCONNECTED = 11
+        private const val ERROR_LANGUAGE_NOT_SUPPORTED = 12
+        private const val ERROR_LANGUAGE_UNAVAILABLE = 13
+    }
+
     private val methodChannelName = "expense_tracker_ai/speech_control"
     private val eventChannelName = "expense_tracker_ai/speech_events"
 
@@ -24,6 +34,13 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
 
     private var manualStop = false
     private var listeningSessionActive = false
+    private var continuousListeningActive = false
+    private var speechSessionCounter = 0L
+    private var activeSpeechSessionId: Long? = null
+    private var activeLocaleTag: String? = null
+    private var segmentedSessionRequested = false
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var restartRunnable: Runnable? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -50,7 +67,7 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
                     }
 
                     "cancelListening" -> {
-                        stopListeningInternal()
+                        cancelListeningInternal()
                         result.success(true)
                     }
 
@@ -72,12 +89,15 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
         eventSink = null
     }
 
-    private fun ensureRecognizer(locale: String?): Boolean {
+    private fun ensureRecognizer(locale: String?, recreate: Boolean = false): Boolean {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             return false
         }
 
-        if (speechRecognizer == null) {
+        activeLocaleTag = locale?.takeIf { it.isNotBlank() } ?: Locale.getDefault().toLanguageTag()
+        segmentedSessionRequested = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        if (recreate || speechRecognizer == null) {
+            teardownRecognizer()
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
             speechRecognizer?.setRecognitionListener(recognitionListener)
         }
@@ -90,16 +110,23 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 20000L)
+            putExtra(
+                RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,
+                4000L
+            )
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 60000L)
             putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE,
-                locale?.takeIf { it.isNotBlank() } ?: Locale.getDefault().toLanguageTag()
+                activeLocaleTag
             )
-            // These values are not guaranteed by all OEM implementations, but can
-            // reduce premature cutoff (and repeated start beeps) on some devices.
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 9000L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5500L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 20000L)
+
+            if (segmentedSessionRequested) {
+                putExtra(
+                    RecognizerIntent.EXTRA_SEGMENTED_SESSION,
+                    RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS
+                )
+            }
         }
 
         return true
@@ -118,31 +145,33 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
             return
         }
 
-        if (!ensureRecognizer(locale)) {
+        if (!ensureRecognizer(locale, recreate = true)) {
             result.error("NOT_AVAILABLE", "Speech recognizer is not available", null)
             return
         }
 
+        clearPendingRestart()
         manualStop = false
+        continuousListeningActive = true
+        speechSessionCounter += 1
+        activeSpeechSessionId = speechSessionCounter
 
         try {
-            if (listeningSessionActive) {
-                speechRecognizer?.cancel()
-                listeningSessionActive = false
-            }
-            speechRecognizer?.startListening(recognizerIntent)
-            listeningSessionActive = true
-            emitStatus("listening")
-            result.success(true)
+            startRecognizerAttempt()
+            result.success(activeSpeechSessionId?.toInt())
         } catch (t: Throwable) {
+            continuousListeningActive = false
             listeningSessionActive = false
+            activeSpeechSessionId = null
             emitError(-1, t.message ?: "Failed to start listening")
             result.error("START_FAILED", t.message, null)
         }
     }
 
     private fun stopListeningInternal() {
+        clearPendingRestart()
         manualStop = true
+        continuousListeningActive = false
         listeningSessionActive = false
         try {
             speechRecognizer?.stopListening()
@@ -153,12 +182,108 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
                 // No-op
             }
         }
+        emitStatus("processing")
+    }
+
+    private fun cancelListeningInternal() {
+        clearPendingRestart()
+        manualStop = true
+        continuousListeningActive = false
+        listeningSessionActive = false
+        try {
+            speechRecognizer?.cancel()
+        } catch (_: Throwable) {
+            // No-op
+        }
+        finishLogicalSession()
+    }
+
+    private fun startRecognizerAttempt() {
+        speechRecognizer?.startListening(recognizerIntent)
+        listeningSessionActive = true
+        emitStatus("listening")
+    }
+
+    private fun clearPendingRestart() {
+        restartRunnable?.let(mainHandler::removeCallbacks)
+        restartRunnable = null
+    }
+
+    private fun shouldAutoRestart(error: Int): Boolean {
+        if (manualStop || !continuousListeningActive || activeSpeechSessionId == null) {
+            return false
+        }
+
+        return error == SpeechRecognizer.ERROR_NO_MATCH ||
+            error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT ||
+            error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY ||
+            error == ERROR_SERVER_DISCONNECTED
+    }
+
+    private fun scheduleRestart(forceRecreate: Boolean = false, delayMs: Long = 700L) {
+        if (manualStop || !continuousListeningActive || activeSpeechSessionId == null) {
+            return
+        }
+
+        clearPendingRestart()
+        restartRunnable = Runnable {
+            restartRunnable = null
+
+            if (manualStop || !continuousListeningActive || activeSpeechSessionId == null) {
+                return@Runnable
+            }
+
+            if (!ensureRecognizer(activeLocaleTag, recreate = forceRecreate)) {
+                emitError(
+                    SpeechRecognizer.ERROR_CLIENT,
+                    "Speech recognizer is not available"
+                )
+                finishLogicalSession()
+                return@Runnable
+            }
+
+            try {
+                startRecognizerAttempt()
+            } catch (t: Throwable) {
+                if (!forceRecreate && ensureRecognizer(activeLocaleTag, recreate = true)) {
+                    try {
+                        startRecognizerAttempt()
+                        return@Runnable
+                    } catch (_: Throwable) {
+                        // Fall through to emit a final error below.
+                    }
+                }
+
+                emitError(-1, t.message ?: "Failed to restart listening")
+                finishLogicalSession()
+            }
+        }
+        mainHandler.postDelayed(restartRunnable!!, delayMs)
+    }
+
+    private fun finishLogicalSession(emitDone: Boolean = false) {
+        clearPendingRestart()
+        continuousListeningActive = false
+        listeningSessionActive = false
+
+        if (emitDone) {
+            emitStatus("done")
+        }
         emitStatus("notListening")
+        activeSpeechSessionId = null
+        activeLocaleTag = null
+        segmentedSessionRequested = false
     }
 
     private fun emitStatus(status: String) {
         runOnUiThread {
-            eventSink?.success(mapOf("type" to "status", "status" to status))
+            eventSink?.success(
+                mapOf(
+                    "type" to "status",
+                    "status" to status,
+                    "sessionId" to activeSpeechSessionId
+                )
+            )
         }
     }
 
@@ -168,7 +293,8 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
                 mapOf(
                     "type" to "result",
                     "text" to text,
-                    "final" to isFinal
+                    "final" to isFinal,
+                    "sessionId" to activeSpeechSessionId
                 )
             )
         }
@@ -180,7 +306,8 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
                 mapOf(
                     "type" to "error",
                     "code" to code,
-                    "message" to message
+                    "message" to message,
+                    "sessionId" to activeSpeechSessionId
                 )
             )
         }
@@ -191,7 +318,8 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
             eventSink?.success(
                 mapOf(
                     "type" to "rms",
-                    "value" to level
+                    "value" to level,
+                    "sessionId" to activeSpeechSessionId
                 )
             )
         }
@@ -208,7 +336,11 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
             SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognizer busy"
             SpeechRecognizer.ERROR_SERVER -> "Server error"
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Speech timeout"
-            else -> "Unknown error"
+            ERROR_TOO_MANY_REQUESTS -> "Too many speech requests"
+            ERROR_SERVER_DISCONNECTED -> "Speech service disconnected"
+            ERROR_LANGUAGE_NOT_SUPPORTED -> "Language not supported"
+            ERROR_LANGUAGE_UNAVAILABLE -> "Language unavailable"
+            else -> "Unknown error ($error)"
         }
     }
 
@@ -230,19 +362,54 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
 
         override fun onEndOfSpeech() {
             listeningSessionActive = false
-            emitStatus("endOfSpeech")
+            if (manualStop) {
+                emitStatus("processing")
+            }
+        }
+
+        override fun onSegmentResults(segmentResults: Bundle) {
+            val spoken = segmentResults
+                .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                ?.firstOrNull()
+                ?.trim()
+                .orEmpty()
+
+            if (spoken.isNotEmpty()) {
+                emitResult(spoken, true)
+            }
+        }
+
+        override fun onEndOfSegmentedSession() {
+            listeningSessionActive = false
+
+            if (manualStop || !continuousListeningActive) {
+                finishLogicalSession(emitDone = true)
+                return
+            }
+
+            scheduleRestart(delayMs = 350L)
         }
 
         override fun onError(error: Int) {
             listeningSessionActive = false
             val isManualClientError = manualStop && error == SpeechRecognizer.ERROR_CLIENT
             if (isManualClientError) {
-                emitStatus("notListening")
+                finishLogicalSession()
+                return
+            }
+
+            if (shouldAutoRestart(error)) {
+                val forceRecreate =
+                    error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY ||
+                        error == ERROR_SERVER_DISCONNECTED
+                val restartDelay =
+                    if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY) 1200L else 700L
+                scheduleRestart(forceRecreate = forceRecreate, delayMs = restartDelay)
                 return
             }
 
             emitError(error, errorMessage(error))
-            emitStatus("notListening")
+            finishLogicalSession()
         }
 
         override fun onResults(results: Bundle?) {
@@ -256,8 +423,13 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
             if (spoken.isNotEmpty()) {
                 emitResult(spoken, true)
             }
-            emitStatus("done")
-            emitStatus("notListening")
+
+            if (manualStop || !continuousListeningActive) {
+                finishLogicalSession(emitDone = true)
+                return
+            }
+
+            scheduleRestart()
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
@@ -275,9 +447,7 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
         override fun onEvent(eventType: Int, params: Bundle?) {}
     }
 
-    private fun destroyRecognizer() {
-        manualStop = true
-        listeningSessionActive = false
+    private fun teardownRecognizer() {
         try {
             speechRecognizer?.cancel()
         } catch (_: Throwable) {
@@ -290,6 +460,17 @@ class MainActivity : FlutterFragmentActivity(), EventChannel.StreamHandler {
         }
         speechRecognizer = null
         recognizerIntent = null
+    }
+
+    private fun destroyRecognizer() {
+        clearPendingRestart()
+        manualStop = true
+        continuousListeningActive = false
+        listeningSessionActive = false
+        activeSpeechSessionId = null
+        activeLocaleTag = null
+        segmentedSessionRequested = false
+        teardownRecognizer()
     }
 
     override fun onDestroy() {
