@@ -84,6 +84,9 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final tertiaryColor = Theme.of(context).colorScheme.tertiary;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -100,9 +103,7 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: isDark ? 0.1 : 0.4),
+                    primaryColor.withValues(alpha: isDark ? 0.1 : 0.4),
                     Colors.transparent,
                   ],
                 ),
@@ -119,9 +120,7 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(context).colorScheme.tertiary.withValues(
-                      alpha: isDark ? 0.1 : 0.3,
-                    ),
+                    tertiaryColor.withValues(alpha: isDark ? 0.1 : 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -199,11 +198,8 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    (isDark ? const Color(0xFF131f17) : const Color(0xFFf6f8f7))
-                        .withValues(alpha: 0),
-                    (isDark
-                        ? const Color(0xFF131f17)
-                        : const Color(0xFFf6f8f7)),
+                    backgroundColor.withValues(alpha: 0),
+                    backgroundColor,
                   ],
                   stops: const [0.0, 0.3],
                 ),
@@ -217,15 +213,13 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
                   child: ElevatedButton(
                     onPressed: _saveChanges,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-                      shadowColor: const Color(
-                        0xFF2bb961,
-                      ).withValues(alpha: 0.3),
+                      shadowColor: primaryColor.withValues(alpha: 0.3),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -288,9 +282,9 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
             fontSize: 12,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
-            color: isDark
-                ? const Color(0xFF34d399)
-                : const Color(0xFF059669).withValues(alpha: 0.8),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: isDark ? 0.95 : 0.8),
           ),
         ),
         const SizedBox(height: 8),
@@ -362,7 +356,9 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1a2c26) : Colors.white,
+        color:
+            Theme.of(context).cardTheme.color ??
+            Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -403,7 +399,7 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1e293b) : const Color(0xFFf8fafc),
+              color: Theme.of(context).colorScheme.surface,
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -421,7 +417,9 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1a2c26) : Colors.white,
+        color:
+            Theme.of(context).cardTheme.color ??
+            Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -468,7 +466,9 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1a2c26) : Colors.white,
+          color:
+              Theme.of(context).cardTheme.color ??
+              Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -508,7 +508,9 @@ class _EditLentDetailsScreenState extends State<EditLentDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1a2c26) : Colors.white,
+        color:
+            Theme.of(context).cardTheme.color ??
+            Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

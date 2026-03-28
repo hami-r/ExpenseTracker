@@ -35,6 +35,7 @@ class _PaymentSelectionBottomSheetState
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -104,6 +105,7 @@ class _PaymentSelectionBottomSheetState
                     (method) => _buildMethodTile(
                       method,
                       isDark,
+                      primaryColor: primaryColor,
                       isSelected: _selectedId == method.paymentMethodId,
                     ),
                   ),
@@ -161,6 +163,7 @@ class _PaymentSelectionBottomSheetState
   Widget _buildMethodTile(
     PaymentMethod method,
     bool isDark, {
+    required Color primaryColor,
     required bool isSelected,
   }) {
     final color = ColorHelper.fromHex(method.colorHex);
@@ -170,8 +173,8 @@ class _PaymentSelectionBottomSheetState
       child: Material(
         color: isSelected
             ? (isDark
-                  ? const Color(0xFF2bb961).withValues(alpha: 0.1)
-                  : const Color(0xFF2bb961).withValues(alpha: 0.05))
+                  ? primaryColor.withValues(alpha: 0.16)
+                  : primaryColor.withValues(alpha: 0.07))
             : (isDark ? const Color(0xFF1a2c26) : Colors.white),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
@@ -189,7 +192,7 @@ class _PaymentSelectionBottomSheetState
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF2bb961)
+                    ? primaryColor
                     : (isDark
                           ? const Color(0xFF1e293b)
                           : const Color(0xFFf1f5f9)),
@@ -221,7 +224,7 @@ class _PaymentSelectionBottomSheetState
                     IconHelper.getIcon(method.iconName),
                     size: 20,
                     color: isSelected
-                        ? const Color(0xFF2bb961)
+                        ? primaryColor
                         : (isDark ? color.withValues(alpha: 0.8) : color),
                   ),
                 ),
@@ -253,17 +256,15 @@ class _PaymentSelectionBottomSheetState
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2bb961,
-                                ).withValues(alpha: 0.12),
+                                color: primaryColor.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(999),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'PRIMARY',
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF2bb961),
+                                  color: primaryColor,
                                   letterSpacing: 0.4,
                                 ),
                               ),
@@ -308,15 +309,11 @@ class _PaymentSelectionBottomSheetState
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1,
-                          color: const Color(0xFF2bb961),
+                          color: primaryColor,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(
-                        Icons.check_circle,
-                        size: 18,
-                        color: Color(0xFF2bb961),
-                      ),
+                      Icon(Icons.check_circle, size: 18, color: primaryColor),
                     ],
                   ),
               ],

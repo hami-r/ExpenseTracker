@@ -62,15 +62,15 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF2bb961);
-    final scaffoldBg = isDark
-        ? const Color(0xFF131f17)
-        : const Color(0xFFf6f8f7);
-    final surfaceColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF0f172a);
-    final subTextColor = isDark
-        ? const Color(0xFF94a3b8)
-        : const Color(0xFF64748b);
+    final colorScheme = Theme.of(context).colorScheme;
+    final primaryColor = colorScheme.primary;
+    final secondaryColor = colorScheme.secondary;
+    final tertiaryColor = colorScheme.tertiary;
+    final scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final surfaceColor =
+        Theme.of(context).cardTheme.color ?? colorScheme.surface;
+    final textColor = colorScheme.onSurface;
+    final subTextColor = colorScheme.onSurface.withValues(alpha: 0.6);
 
     return Scaffold(
       backgroundColor: scaffoldBg,
@@ -78,10 +78,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
         backgroundColor: scaffoldBg.withValues(alpha: 0.95),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_rounded,
-            color: isDark ? Colors.white : const Color(0xFF475569),
-          ),
+          icon: Icon(Icons.arrow_back_rounded, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -113,7 +110,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                               'CSV File',
                               'csv',
                               Icons.description_outlined,
-                              const Color(0xFF10b981), // Emerald
+                              primaryColor,
                               isDark,
                               surfaceColor,
                               textColor,
@@ -126,7 +123,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                               'Excel (XLSX)',
                               'xlsx',
                               Icons.table_view_outlined,
-                              const Color(0xFF3b82f6), // Blue
+                              secondaryColor,
                               isDark,
                               surfaceColor,
                               textColor,
@@ -159,7 +156,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                               'All Time',
                               'all_time',
                               Icons.history,
-                              Colors.purple,
+                              secondaryColor,
                               isDark,
                               textColor,
                               subTextColor,
@@ -168,7 +165,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                               'Custom Range',
                               'custom',
                               Icons.date_range,
-                              Colors.orange,
+                              tertiaryColor,
                               isDark,
                               textColor,
                               subTextColor,
@@ -415,7 +412,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
           fontSize: 12,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.0,
-          color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+          color: Theme.of(
+            context,
+          ).colorScheme.primary.withValues(alpha: isDark ? 0.75 : 0.6),
         ),
       ),
     );
@@ -432,8 +431,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     Color subTextColor,
   ) {
     final isSelected = _fileFormat == value;
-    final primaryColor = const Color(0xFF2bb961);
-
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return GestureDetector(
       onTap: () => setState(() => _fileFormat = value),
       child: Container(
@@ -532,7 +530,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     Color subTextColor,
   ) {
     final isSelected = _dateRangeType == value;
-    final primaryColor = const Color(0xFF2bb961);
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return InkWell(
       onTap: () => setState(() => _dateRangeType = value),
@@ -607,10 +605,12 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
           padding: const EdgeInsets.only(left: 4, bottom: 4),
           child: Text(
             label.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF94a3b8),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -628,7 +628,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             decoration: BoxDecoration(
               color: isDark
                   ? const Color(0xFF334155).withValues(alpha: 0.5)
-                  : const Color(0xFFf8fafc),
+                  : Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isDark
@@ -644,16 +644,16 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white : const Color(0xFF334155),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.calendar_today_rounded,
                   size: 16,
-                  color: isDark
-                      ? const Color(0xFF94a3b8)
-                      : const Color(0xFF64748b),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ],
             ),
@@ -683,10 +683,14 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             decoration: BoxDecoration(
               color: isDark
                   ? const Color(0xFF334155).withValues(alpha: 0.5)
-                  : const Color(0xFFf1f5f9),
+                  : Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFF64748b), size: 20),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -711,7 +715,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: const Color(0xFF2bb961),
+            activeThumbColor: Theme.of(context).colorScheme.primary,
           ),
         ],
       ),
@@ -719,6 +723,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
   }
 
   Widget _buildSortOption(bool isDark, Color textColor, Color subTextColor) {
+    final accentColor = Theme.of(context).colorScheme.secondary;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -727,10 +732,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.1),
+              color: accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.sort, color: Colors.blue, size: 20),
+            child: Icon(Icons.sort, color: accentColor, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -756,7 +761,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             value: _sortOption,
             underline: const SizedBox(),
             icon: Icon(Icons.keyboard_arrow_down, color: subTextColor),
-            dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+            dropdownColor: surfaceColorForDropdown(isDark, context),
             style: TextStyle(
               fontSize: 14,
               color: textColor,
@@ -797,6 +802,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     Color subTextColor,
     Color primaryColor,
   ) {
+    final accentColor = Theme.of(context).colorScheme.tertiary;
     String subtitle = _selectedCategoryIds.isEmpty
         ? 'All categories selected'
         : '${_selectedCategoryIds.length} categories selected';
@@ -811,10 +817,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.purple.withValues(alpha: 0.1),
+                color: accentColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.category, color: Colors.purple, size: 20),
+              child: Icon(Icons.category, color: accentColor, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -847,14 +853,17 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              backgroundColor:
+                  Theme.of(context).cardTheme.color ??
+                  Theme.of(context).colorScheme.surface,
               title: Text(
                 'Select Categories',
-                style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               content: _isLoadingCategories
                   ? const Center(child: CircularProgressIndicator())
@@ -867,7 +876,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                             title: Text(
                               'Select All',
                               style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             value: _selectedCategoryIds.isEmpty,
@@ -892,11 +901,15 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                               title: Text(
                                 category.name,
                                 style: TextStyle(
-                                  color: isDark ? Colors.white : Colors.black,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                               value: isSelected,
-                              activeColor: const Color(0xFF2bb961),
+                              activeColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
                               onChanged: (bool? value) {
                                 setDialogState(() {
                                   if (value == true) {
@@ -1032,7 +1045,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error generating report: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -1047,8 +1060,11 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final surfaceColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-        final textColor = isDark ? Colors.white : const Color(0xFF0f172a);
+        final primaryColor = Theme.of(context).colorScheme.primary;
+        final surfaceColor =
+            Theme.of(context).cardTheme.color ??
+            Theme.of(context).colorScheme.surface;
+        final textColor = Theme.of(context).colorScheme.onSurface;
 
         return Container(
           decoration: BoxDecoration(
@@ -1068,11 +1084,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Icon(
-                Icons.check_circle_outline,
-                size: 64,
-                color: const Color(0xFF2bb961),
-              ),
+              Icon(Icons.check_circle_outline, size: 64, color: primaryColor),
               const SizedBox(height: 16),
               Text(
                 'Report Generated!',
@@ -1137,7 +1149,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       label: const Text('Share'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF2bb961),
+                        backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -1154,5 +1166,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
         );
       },
     );
+  }
+
+  Color surfaceColorForDropdown(bool isDark, BuildContext context) {
+    return Theme.of(context).cardTheme.color ??
+        (isDark ? Theme.of(context).colorScheme.surface : Colors.white);
   }
 }
