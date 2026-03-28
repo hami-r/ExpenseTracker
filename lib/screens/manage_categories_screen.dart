@@ -19,6 +19,8 @@ class ManageCategoriesScreen extends StatefulWidget {
 class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   List<Category> categories = [];
   bool _isLoading = true;
+  int? _userId;
+  String _categorySortMode = 'recent';
   final CategoryService _categoryService = CategoryService();
   final UserService _userService = UserService();
   final TextEditingController _searchController = TextEditingController();
@@ -39,6 +41,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
       );
       if (mounted) {
         setState(() {
+          _userId = user.userId;
+          _categorySortMode = user.categorySortMode;
           categories = loadedCategories;
           _isLoading = false;
         });
@@ -73,6 +77,145 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
       await _categoryService.deactivateCategory(category.categoryId!);
       _loadData();
     }
+  }
+
+  Future<void> _setCategorySortMode(String sortMode) async {
+    if (_userId == null || _categorySortMode == sortMode) return;
+
+    try {
+      await _userService.updateCategorySortMode(_userId!, sortMode);
+      if (!mounted) return;
+
+      setState(() {
+        _categorySortMode = sortMode;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            sortMode == 'custom'
+                ? 'Expense picker now uses your custom order'
+                : 'Expense picker now uses your recent 10 categories',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not update sort mode: $e')));
+    }
+  }
+
+  Future<void> _reorderCategories(int oldIndex, int newIndex) async {
+    if (_userId == null) return;
+
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    final previousCategories = List<Category>.from(categories);
+    final previousSortMode = _categorySortMode;
+    final reorderedCategories = List<Category>.from(categories);
+    final movedCategory = reorderedCategories.removeAt(oldIndex);
+    reorderedCategories.insert(newIndex, movedCategory);
+
+    setState(() {
+      categories = reorderedCategories;
+      _categorySortMode = 'custom';
+    });
+
+    try {
+      await _categoryService.updateCategoryOrder(_userId!, reorderedCategories);
+      if (previousSortMode != 'custom') {
+        await _userService.updateCategorySortMode(_userId!, 'custom');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        categories = previousCategories;
+        _categorySortMode = previousSortMode;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save category order: $e')),
+      );
+    }
+  }
+
+  Widget _buildQuickPickerSettings(bool isDark) {
+    final isRecentMode = _categorySortMode != 'custom';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1a2c26) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quick Picker',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF0f172a),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isRecentMode
+                ? 'Expense forms show your 10 most recently used categories.'
+                : 'Expense forms use the custom order you set below.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: isRecentMode
+                      ? null
+                      : () => _setCategorySortMode('recent'),
+                  icon: const Icon(Icons.history_rounded, size: 18),
+                  label: const Text('Recent 10'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: isRecentMode
+                      ? () => _setCategorySortMode('custom')
+                      : null,
+                  icon: const Icon(Icons.drag_indicator_rounded, size: 18),
+                  label: const Text('Custom Order'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Drag categories below to update your custom order.',
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF6b7280),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -180,6 +323,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                             ),
                           ),
 
+                        if (!widget.isSelectionMode) ...[
+                          const SizedBox(height: 16),
+                          _buildQuickPickerSettings(isDark),
+                        ],
+
                         if (widget.isSelectionMode)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -279,7 +427,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                               ),
                             ),
                           )
-                        else
+                        else if (widget.isSelectionMode)
                           ..._filteredCategories.asMap().entries.map(
                             (entry) => Builder(
                               builder: (context) => _buildCategoryCard(
@@ -289,6 +437,30 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                                 context,
                               ),
                             ),
+                          )
+                        else
+                          ReorderableListView.builder(
+                            shrinkWrap: true,
+                            primary: false,
+                            physics: const NeverScrollableScrollPhysics(),
+                            buildDefaultDragHandles: false,
+                            itemCount: categories.length,
+                            onReorder: _reorderCategories,
+                            itemBuilder: (context, index) {
+                              final category = categories[index];
+                              return Container(
+                                key: ValueKey(
+                                  category.categoryId ?? 'category_$index',
+                                ),
+                                child: _buildCategoryCard(
+                                  category,
+                                  index,
+                                  isDark,
+                                  context,
+                                  showDragHandle: true,
+                                ),
+                              );
+                            },
                           ),
 
                         const SizedBox(height: 48),
@@ -351,8 +523,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     Category category,
     int index,
     bool isDark,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    bool showDragHandle = false,
+  }) {
     final color = ColorHelper.fromHex(category.colorHex);
     final icon = IconHelper.getIcon(category.iconName);
     return Container(
@@ -491,6 +664,29 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                         ),
                       ),
                     ),
+                    if (showDragHandle) ...[
+                      const SizedBox(width: 4),
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : const Color(0xFFf1f5f9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.drag_indicator_rounded,
+                            size: 20,
+                            color: isDark
+                                ? const Color(0xFF94a3b8)
+                                : const Color(0xFF64748b),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],

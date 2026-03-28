@@ -9,8 +9,13 @@ import 'manage_categories_screen.dart';
 
 class AddSplitItemScreen extends StatefulWidget {
   final List<Category> categories;
+  final List<Category>? suggestedCategories;
 
-  const AddSplitItemScreen({super.key, required this.categories});
+  const AddSplitItemScreen({
+    super.key,
+    required this.categories,
+    this.suggestedCategories,
+  });
 
   @override
   State<AddSplitItemScreen> createState() => _AddSplitItemScreenState();
@@ -26,8 +31,13 @@ class _AddSplitItemScreenState extends State<AddSplitItemScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final tertiaryColor = Theme.of(context).colorScheme.tertiary;
-    const maxVisibleCategories = 8;
-    final visibleCategories = widget.categories
+    final quickPickCategories =
+        widget.suggestedCategories != null &&
+            widget.suggestedCategories!.isNotEmpty
+        ? widget.suggestedCategories!
+        : widget.categories;
+    const maxVisibleCategories = 10;
+    final visibleCategories = quickPickCategories
         .take(maxVisibleCategories)
         .toList();
     final selectedCategory =

@@ -19,7 +19,7 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 12,
+      version: 13,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -264,6 +264,14 @@ class DatabaseHelper {
         );
       }
     }
+
+    if (oldVersion < 13) {
+      if (!await _columnExists(db, 'users', 'category_sort_mode')) {
+        await db.execute(
+          "ALTER TABLE users ADD COLUMN category_sort_mode TEXT DEFAULT 'recent'",
+        );
+      }
+    }
   }
 
   Future<void> _backfillLoanSnapshots(Database db) async {
@@ -365,6 +373,7 @@ class DatabaseHelper {
         avatar_path TEXT,
         theme_preference TEXT DEFAULT 'system',
         theme_color TEXT DEFAULT 'Emerald Green',
+        category_sort_mode TEXT DEFAULT 'recent',
         primary_currency_id INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,

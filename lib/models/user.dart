@@ -7,6 +7,7 @@ class User {
   final String? avatarPath;
   final String themePreference;
   final String themeColor;
+  final String categorySortMode;
   final int primaryCurrencyId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -20,6 +21,7 @@ class User {
     this.avatarPath,
     this.themePreference = 'system',
     this.themeColor = 'Emerald Green',
+    this.categorySortMode = 'recent',
     this.primaryCurrencyId = 1,
     this.createdAt,
     this.updatedAt,
@@ -35,6 +37,7 @@ class User {
       'avatar_path': avatarPath,
       'theme_preference': themePreference,
       'theme_color': themeColor,
+      'category_sort_mode': categorySortMode,
       'primary_currency_id': primaryCurrencyId,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
@@ -51,6 +54,7 @@ class User {
       avatarPath: map['avatar_path'] as String?,
       themePreference: map['theme_preference'] as String? ?? 'system',
       themeColor: map['theme_color'] as String? ?? 'Emerald Green',
+      categorySortMode: map['category_sort_mode'] as String? ?? 'recent',
       primaryCurrencyId: map['primary_currency_id'] as int? ?? 1,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
@@ -70,6 +74,7 @@ class User {
     String? avatarPath,
     String? themePreference,
     String? themeColor,
+    String? categorySortMode,
     int? primaryCurrencyId,
   }) {
     return User(
@@ -81,6 +86,7 @@ class User {
       avatarPath: avatarPath ?? this.avatarPath,
       themePreference: themePreference ?? this.themePreference,
       themeColor: themeColor ?? this.themeColor,
+      categorySortMode: categorySortMode ?? this.categorySortMode,
       primaryCurrencyId: primaryCurrencyId ?? this.primaryCurrencyId,
       createdAt: createdAt,
       updatedAt: DateTime.now(),

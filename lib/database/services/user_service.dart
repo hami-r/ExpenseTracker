@@ -53,4 +53,17 @@ class UserService {
       whereArgs: [userId],
     );
   }
+
+  Future<void> updateCategorySortMode(int userId, String sortMode) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'users',
+      {
+        'category_sort_mode': sortMode,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
+  }
 }

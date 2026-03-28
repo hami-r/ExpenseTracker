@@ -60,6 +60,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   // Data
   int? _userId;
   List<Category> _categories = [];
+  List<Category> _suggestedCategories = [];
   List<PaymentMethod> _paymentMethods = [];
 
   int _selectedCategoryIndex = 0;
@@ -216,6 +217,40 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     });
   }
 
+  List<Category> _buildSuggestedCategories(
+    List<Category> allCategories,
+    List<Category> recentCategories,
+    String sortMode,
+  ) {
+    if (sortMode == 'custom') {
+      return allCategories.take(10).toList();
+    }
+
+    if (recentCategories.isEmpty) {
+      return allCategories.take(10).toList();
+    }
+
+    final suggestions = <Category>[...recentCategories.take(10)];
+    final existingIds = suggestions
+        .map((category) => category.categoryId)
+        .whereType<int>()
+        .toSet();
+
+    for (final category in allCategories) {
+      final categoryId = category.categoryId;
+      if (categoryId != null && existingIds.contains(categoryId)) {
+        continue;
+      }
+
+      suggestions.add(category);
+      if (suggestions.length == 10) {
+        break;
+      }
+    }
+
+    return suggestions;
+  }
+
   Future<void> _loadData() async {
     try {
       final user = await _userService.getCurrentUser();
@@ -227,6 +262,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         final profileId = context.read<ProfileProvider>().activeProfileId;
         final results = await Future.wait([
           _categoryService.getAllCategories(user.userId!),
+          _categoryService.getRecentCategories(
+            user.userId!,
+            profileId: profileId,
+            limit: 10,
+          ),
           _paymentMethodService.getAllPaymentMethods(
             user.userId!,
             profileId: profileId,
@@ -234,9 +274,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         ]);
 
         if (mounted) {
+          final allCategories = results[0] as List<Category>;
+          final recentCategories = results[1] as List<Category>;
           setState(() {
-            _categories = results[0] as List<Category>;
-            _paymentMethods = results[1] as List<PaymentMethod>;
+            _categories = allCategories;
+            _suggestedCategories = _buildSuggestedCategories(
+              allCategories,
+              recentCategories,
+              user.categorySortMode,
+            );
+            _paymentMethods = results[2] as List<PaymentMethod>;
 
             if (widget.initialCategoryId != null && _categories.isNotEmpty) {
               final index = _categories.indexWhere(
@@ -641,8 +688,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               : 0)
         : -1;
     final selectedCategory = hasCategories ? _categories[selectedIndex] : null;
-    const maxVisibleCategories = 8;
-    final visibleCategories = _categories.take(maxVisibleCategories).toList();
+    const maxVisibleCategories = 10;
+    final quickPickCategories = _suggestedCategories.isNotEmpty
+        ? _suggestedCategories
+        : _categories;
+    final visibleCategories = quickPickCategories
+        .take(maxVisibleCategories)
+        .toList();
     if (selectedCategory != null &&
         !visibleCategories.any(
           (category) => category.categoryId == selectedCategory.categoryId,
@@ -1458,8 +1510,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   final result = await Navigator.push<Map<String, dynamic>>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          AddSplitItemScreen(categories: _categories),
+                      builder: (context) => AddSplitItemScreen(
+                        categories: _categories,
+                        suggestedCategories: _suggestedCategories,
+                      ),
                     ),
                   );
 
