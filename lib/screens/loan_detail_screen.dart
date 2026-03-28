@@ -47,7 +47,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
       return 'Every month • ${_getOrdinal(recurringDay)}';
     }
     if (_loan?.dueDate != null) {
-      return DateFormat('MMM dd, yyyy').format(_loan!.dueDate!);
+      return DateFormat('dd MMM yyyy').format(_loan!.dueDate!);
     }
     return 'N/A';
   }
@@ -910,7 +910,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
   }
 
   Widget _buildPaymentItem(LoanPayment payment, bool isDark) {
-    final dateFormatter = DateFormat('MMM dd, yyyy');
+    final dateFormatter = DateFormat('dd MMM yyyy');
     final currencyFormatter = NumberFormat.currency(
       locale: 'en_IN',
       symbol: context.read<ProfileProvider>().currencySymbol,

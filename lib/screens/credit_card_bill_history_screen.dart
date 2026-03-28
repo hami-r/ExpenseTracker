@@ -627,7 +627,7 @@ class _CreditCardBillHistoryScreenState
                             ),
                             Text(
                               dueDate != null
-                                  ? 'Due: ${DateFormat('MMM dd, yyyy').format(dueDate)}'
+                                  ? 'Due: ${DateFormat('dd MMM yyyy').format(dueDate)}'
                                   : 'Due date not set',
                               style: TextStyle(
                                 fontSize: 12,

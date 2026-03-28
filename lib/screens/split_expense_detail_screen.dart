@@ -139,7 +139,7 @@ class _SplitExpenseDetailScreenState extends State<SplitExpenseDetailScreen> {
     final amount = widget.transaction['amount'] as double;
     final note = widget.transaction['note'] as String?;
     final date = widget.transaction['date'] as DateTime;
-    final formattedDate = DateFormat('MMM dd, yyyy').format(date);
+    final formattedDate = DateFormat('dd MMM yyyy').format(date);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

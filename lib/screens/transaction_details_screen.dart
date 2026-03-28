@@ -258,7 +258,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           'Date',
                           widget.transaction['date'] is DateTime
                               ? DateFormat(
-                                  'd MMM, yyyy',
+                                  'dd MMM yyyy',
                                 ).format(widget.transaction['date'])
                               : widget.transaction['date']?.toString() ??
                                     'Today',

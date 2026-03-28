@@ -742,7 +742,7 @@ class _IOUDetailScreenState extends State<IOUDetailScreen> {
   }
 
   Widget _buildPaymentItem(IOUPayment payment, bool isDark) {
-    final dateFormatter = DateFormat('MMM dd, yyyy');
+    final dateFormatter = DateFormat('dd MMM yyyy');
     final currencyFormatter = NumberFormat.currency(
       locale: 'en_IN',
       symbol: context.read<ProfileProvider>().currencySymbol,

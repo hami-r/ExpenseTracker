@@ -844,7 +844,7 @@ class _EditPaymentMethodScreenState extends State<EditPaymentMethodScreen> {
                                       _cardIssuedOn == null
                                           ? 'Select issued date'
                                           : DateFormat(
-                                              'MMM dd, yyyy',
+                                              'dd MMM yyyy',
                                             ).format(_cardIssuedOn!),
                                       style: TextStyle(
                                         fontSize: 16,

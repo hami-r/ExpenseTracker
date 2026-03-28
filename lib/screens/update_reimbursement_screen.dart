@@ -513,7 +513,7 @@ class _UpdateReimbursementScreenState extends State<UpdateReimbursementScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                DateFormat('yyyy-MM-dd').format(_selectedDate),
+                DateFormat('dd MMM yyyy').format(_selectedDate),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

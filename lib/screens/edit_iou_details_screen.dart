@@ -498,7 +498,7 @@ class _EditIOUDetailsScreenState extends State<EditIOUDetailsScreen> {
                   child: Row(
                     children: [
                       Text(
-                        DateFormat('MMM dd, yyyy').format(_repaymentDate),
+                        DateFormat('dd MMM yyyy').format(_repaymentDate),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,

@@ -603,7 +603,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                 icon: Icons.calendar_month_rounded,
                 label: 'Date Lent',
                 value: _receivable!.createdAt != null
-                    ? DateFormat('MMM dd, yyyy').format(_receivable!.createdAt!)
+                    ? DateFormat('dd MMM yyyy').format(_receivable!.createdAt!)
                     : 'N/A',
                 isDark: isDark,
               ),
@@ -615,7 +615,7 @@ class _ReceivableDetailScreenState extends State<ReceivableDetailScreen> {
                 label: 'Expected By',
                 value: _receivable!.expectedDate != null
                     ? DateFormat(
-                        'MMM dd, yyyy',
+                        'dd MMM yyyy',
                       ).format(_receivable!.expectedDate!)
                     : 'N/A',
                 isDark: isDark,

@@ -713,7 +713,7 @@ class _AddLentAmountScreenState extends State<AddLentAmountScreen> {
             Expanded(
               child: Text(
                 _expectedDate != null
-                    ? DateFormat('dd/MM/yyyy').format(_expectedDate!)
+                    ? DateFormat('dd MMM yyyy').format(_expectedDate!)
                     : '',
                 style: TextStyle(
                   fontSize: 14,

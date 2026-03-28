@@ -878,7 +878,7 @@ class _EditLoanDetailsScreenState extends State<EditLoanDetailsScreen> {
                   child: Row(
                     children: [
                       Text(
-                        DateFormat('MMM dd, yyyy').format(_startDate),
+                        DateFormat('dd MMM yyyy').format(_startDate),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,

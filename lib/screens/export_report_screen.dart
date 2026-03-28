@@ -640,7 +640,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    DateFormat('MMM d, yyyy').format(date),
+                    DateFormat('dd MMM yyyy').format(date),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

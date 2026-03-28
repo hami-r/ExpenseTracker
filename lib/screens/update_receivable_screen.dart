@@ -437,7 +437,7 @@ class _UpdateReceivableScreenState extends State<UpdateReceivableScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    DateFormat('dd MMM, yyyy').format(_selectedDate),
+                    DateFormat('dd MMM yyyy').format(_selectedDate),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,

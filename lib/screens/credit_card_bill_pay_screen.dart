@@ -260,7 +260,7 @@ class _CreditCardBillPayScreenState extends State<CreditCardBillPayScreen> {
                                     Expanded(
                                       child: Text(
                                         DateFormat(
-                                          'dd/MM/yyyy',
+                                          'dd MMM yyyy',
                                         ).format(selectedDueDate),
                                         style: TextStyle(
                                           fontSize: 15,
@@ -745,8 +745,8 @@ class _CreditCardBillPayScreenState extends State<CreditCardBillPayScreen> {
                   const SizedBox(width: 6),
                   Text(
                     isPaid
-                        ? 'Paid on ${DateFormat('MMM dd, yyyy').format(paidAt ?? DateTime.now())}'
-                        : 'Due: ${DateFormat('MMM dd, yyyy').format(dueDate ?? DateTime.now())}',
+                        ? 'Paid on ${DateFormat('dd MMM yyyy').format(paidAt ?? DateTime.now())}'
+                        : 'Due: ${DateFormat('dd MMM yyyy').format(dueDate ?? DateTime.now())}',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,

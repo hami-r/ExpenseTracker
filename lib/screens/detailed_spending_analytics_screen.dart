@@ -117,7 +117,7 @@ class _DetailedSpendingAnalyticsScreenState
   }
 
   String _formatDateRange() {
-    final dateFormat = DateFormat('d MMM yyyy');
+    final dateFormat = DateFormat('dd MMM yyyy');
     return '${dateFormat.format(_selectedDateRange.start)} - ${dateFormat.format(_selectedDateRange.end)}';
   }
 

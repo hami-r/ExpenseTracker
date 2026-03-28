@@ -652,7 +652,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                 label: 'SUBMISSION',
                 value: _reimbursement!.createdAt != null
                     ? DateFormat(
-                        'MMM dd, yyyy',
+                        'dd MMM yyyy',
                       ).format(_reimbursement!.createdAt!)
                     : 'Unknown',
                 isDark: isDark,
@@ -665,7 +665,7 @@ class _ReimbursementDetailScreenState extends State<ReimbursementDetailScreen> {
                 label: 'EXPECTED BY',
                 value: _reimbursement!.expectedDate != null
                     ? DateFormat(
-                        'MMM dd, yyyy',
+                        'dd MMM yyyy',
                       ).format(_reimbursement!.expectedDate!)
                     : 'Not set',
                 isDark: isDark,

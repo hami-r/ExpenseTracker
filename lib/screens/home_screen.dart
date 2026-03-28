@@ -160,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
-    final dateFormat = DateFormat('EEEE, d MMM yyyy');
+    final dateFormat = DateFormat('EEEE, dd MMM yyyy');
 
     return Scaffold(
       backgroundColor: isDark

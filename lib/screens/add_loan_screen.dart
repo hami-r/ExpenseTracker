@@ -734,7 +734,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                           children: [
                                             Text(
                                               DateFormat(
-                                                'MMM dd, yyyy',
+                                                'dd MMM yyyy',
                                               ).format(_startDate),
                                               style: TextStyle(
                                                 fontSize: 14,
@@ -1080,7 +1080,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                                           children: [
                                             Text(
                                               DateFormat(
-                                                'MMM dd, yyyy',
+                                                'dd MMM yyyy',
                                               ).format(_startDate),
                                               style: TextStyle(
                                                 fontSize: 14,

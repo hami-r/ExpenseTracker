@@ -596,7 +596,7 @@ class _EditSplitExpenseScreenState extends State<EditSplitExpenseScreen> {
                               surfaceColor,
                               Icons.calendar_today_rounded,
                               'DATE',
-                              DateFormat('MMM dd, yyyy').format(_selectedDate),
+                              DateFormat('dd MMM yyyy').format(_selectedDate),
                               hasArrow: true,
                             ),
                           ),
