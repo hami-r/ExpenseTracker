@@ -21,6 +21,8 @@ class _ManagePaymentMethodsScreenState
     extends State<ManagePaymentMethodsScreen> {
   List<PaymentMethod> paymentMethods = [];
   bool _isLoading = true;
+  int? _userId;
+  int? _profileId;
   final PaymentMethodService _paymentMethodService = PaymentMethodService();
   final UserService _userService = UserService();
 
@@ -42,6 +44,8 @@ class _ManagePaymentMethodsScreenState
       );
       if (mounted) {
         setState(() {
+          _userId = user.userId;
+          _profileId = profileId;
           paymentMethods = loadedMethods;
           _isLoading = false;
         });
@@ -68,6 +72,49 @@ class _ManagePaymentMethodsScreenState
         method.paymentMethodId!,
       );
       _loadData();
+    }
+  }
+
+  Future<void> _reorderPaymentMethods(int oldIndex, int newIndex) async {
+    if (_userId == null) return;
+    final hasPrimaryOnTop =
+        paymentMethods.isNotEmpty && paymentMethods.first.isPrimary;
+
+    if (hasPrimaryOnTop && oldIndex == 0) {
+      return;
+    }
+
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    if (hasPrimaryOnTop && newIndex == 0) {
+      newIndex = 1;
+    }
+
+    final previousMethods = List<PaymentMethod>.from(paymentMethods);
+    final reorderedMethods = List<PaymentMethod>.from(paymentMethods);
+    final movedMethod = reorderedMethods.removeAt(oldIndex);
+    reorderedMethods.insert(newIndex, movedMethod);
+
+    setState(() {
+      paymentMethods = reorderedMethods;
+    });
+
+    try {
+      await _paymentMethodService.updatePaymentMethodOrder(
+        _userId!,
+        reorderedMethods,
+        profileId: _profileId,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        paymentMethods = previousMethods;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save payment order: $e')),
+      );
     }
   }
 
@@ -165,6 +212,34 @@ class _ManagePaymentMethodsScreenState
 
                     const SizedBox(height: 24),
 
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1a2c26) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'Your primary method stays pinned at the top. Drag the rest below to set the order shown when choosing how you paid.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.4,
+                          color: isDark
+                              ? const Color(0xFF94a3b8)
+                              : const Color(0xFF64748b),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
                     // Section Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -213,13 +288,23 @@ class _ManagePaymentMethodsScreenState
                         ),
                       )
                     else
-                      ...paymentMethods.asMap().entries.map((entry) {
-                        return _buildPaymentCard(
-                          entry.value,
-                          entry.key,
-                          isDark,
-                        );
-                      }),
+                      ReorderableListView.builder(
+                        shrinkWrap: true,
+                        primary: false,
+                        physics: const NeverScrollableScrollPhysics(),
+                        buildDefaultDragHandles: false,
+                        itemCount: paymentMethods.length,
+                        onReorder: _reorderPaymentMethods,
+                        itemBuilder: (context, index) {
+                          final method = paymentMethods[index];
+                          return Container(
+                            key: ValueKey(
+                              method.paymentMethodId ?? 'payment_$index',
+                            ),
+                            child: _buildPaymentCard(method, index, isDark),
+                          );
+                        },
+                      ),
 
                     const SizedBox(height: 24),
 
@@ -235,8 +320,7 @@ class _ManagePaymentMethodsScreenState
   }
 
   Widget _buildPaymentCard(PaymentMethod method, int index, bool isDark) {
-    // Model doesn't have isPrimary yet, assuming false or logic needed
-    final isPrimary = false;
+    final isPrimary = method.isPrimary;
     final color = ColorHelper.fromHex(method.colorHex);
     final icon = IconHelper.getIcon(method.iconName);
 
@@ -297,6 +381,30 @@ class _ManagePaymentMethodsScreenState
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    if (isPrimary) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'PRIMARY',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.primary,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 if (method.type == 'Card') ...[
@@ -396,6 +504,28 @@ class _ManagePaymentMethodsScreenState
                   ),
                 ),
               ],
+              const SizedBox(width: 4),
+              if (!isPrimary)
+                ReorderableDragStartListener(
+                  index: index,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : const Color(0xFFf3f4f6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.drag_indicator_rounded,
+                      size: 20,
+                      color: isDark
+                          ? const Color(0xFF94a3b8)
+                          : const Color(0xFF64748b),
+                    ),
+                  ),
+                ),
             ],
           ),
         ],

@@ -32,21 +32,9 @@ class _PaymentSelectionBottomSheetState
     _selectedId = widget.selectedPaymentMethodId;
   }
 
-  Map<String, List<PaymentMethod>> _groupedMethods() {
-    final Map<String, List<PaymentMethod>> grouped = {};
-    for (var method in widget.paymentMethods) {
-      if (!grouped.containsKey(method.type)) {
-        grouped[method.type] = [];
-      }
-      grouped[method.type]!.add(method);
-    }
-    return grouped;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final groupedMethods = _groupedMethods();
 
     return Container(
       decoration: BoxDecoration(
@@ -112,35 +100,13 @@ class _PaymentSelectionBottomSheetState
                       ),
                     ),
 
-                  ...groupedMethods.entries.map((entry) {
-                    final type = entry.key;
-                    final methods = entry.value;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          type.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                            color: isDark
-                                ? const Color(0xFF64748b)
-                                : const Color(0xFF94a3b8),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ...methods.map(
-                          (method) => _buildMethodTile(
-                            method,
-                            isDark,
-                            isSelected: _selectedId == method.paymentMethodId,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                    );
-                  }),
+                  ...widget.paymentMethods.map(
+                    (method) => _buildMethodTile(
+                      method,
+                      isDark,
+                      isSelected: _selectedId == method.paymentMethodId,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -264,22 +230,62 @@ class _PaymentSelectionBottomSheetState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        method.name,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF0f172a),
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              method.name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0f172a),
+                              ),
+                            ),
+                          ),
+                          if (method.isPrimary)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF2bb961,
+                                ).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                'PRIMARY',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF2bb961),
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       if (method.accountNumber != null) ...[
                         const SizedBox(height: 2),
                         Text(
                           method.accountNumber!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? const Color(0xFF64748b)
+                                : const Color(0xFF94a3b8),
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          method.type,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,

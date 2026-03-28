@@ -5,6 +5,20 @@ import '../database_helper.dart';
 class PaymentMethodService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
+  Future<int> _getNextDisplayOrder(
+    DatabaseExecutor db,
+    int userId, {
+    int? profileId,
+  }) async {
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+    final args = profileId != null ? [userId, profileId] : [userId];
+    final result = await db.rawQuery(
+      'SELECT COALESCE(MAX(display_order), 0) + 1 AS next_order FROM payment_methods WHERE user_id = ?$profileClause',
+      args,
+    );
+    return (result.first['next_order'] as int?) ?? 1;
+  }
+
   // Get all payment methods for a user (optionally scoped to a profile)
   Future<List<PaymentMethod>> getAllPaymentMethods(
     int userId, {
@@ -43,6 +57,13 @@ class PaymentMethodService {
     return await db.transaction<int>((txn) async {
       final map = paymentMethod.toMap();
       if (profileId != null) map['profile_id'] = profileId;
+      if ((map['display_order'] as int? ?? 0) <= 0) {
+        map['display_order'] = await _getNextDisplayOrder(
+          txn,
+          paymentMethod.userId,
+          profileId: profileId,
+        );
+      }
 
       if (paymentMethod.isPrimary) {
         final where = profileId != null
@@ -98,6 +119,32 @@ class PaymentMethodService {
         where: 'payment_method_id = ?',
         whereArgs: [paymentMethod.paymentMethodId],
       );
+    });
+  }
+
+  Future<void> updatePaymentMethodOrder(
+    int userId,
+    List<PaymentMethod> methods, {
+    int? profileId,
+  }) async {
+    final db = await _dbHelper.database;
+    final updatedAt = DateTime.now().toIso8601String();
+    final profileClause = profileId != null ? ' AND profile_id = ?' : '';
+
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (var index = 0; index < methods.length; index++) {
+        final methodId = methods[index].paymentMethodId;
+        if (methodId == null) continue;
+
+        batch.update(
+          'payment_methods',
+          {'display_order': index + 1, 'updated_at': updatedAt},
+          where: 'payment_method_id = ? AND user_id = ?$profileClause',
+          whereArgs: [methodId, userId, if (profileId != null) profileId],
+        );
+      }
+      await batch.commit(noResult: true);
     });
   }
 
